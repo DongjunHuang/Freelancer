@@ -1,6 +1,6 @@
 <script setup>
-import { useMetricStore } from '../stores/metric'
-const metric = useMetricStore()
+// import { useMetricStore } from '../stores/metric'
+// const metric = useMetricStore()
 </script>
 
 <template>

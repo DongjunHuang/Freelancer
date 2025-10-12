@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { useMetricStore } from '../stores/metric'
+// import { useMetricStore } from '../stores/metric'
 
 const router = useRouter()
 const metric = useMetricStore()

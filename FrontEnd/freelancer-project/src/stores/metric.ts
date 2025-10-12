@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+/*
 export const useMetricStore = defineStore('metric', {
   state: () => ({
     data: null,
@@ -23,4 +24,4 @@ export const useMetricStore = defineStore('metric', {
       }
     },
   },
-})
+})*/
