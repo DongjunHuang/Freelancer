@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+type: Opaque
+stringData:
+  MYSQL_DATABASE: yourdb
+  MYSQL_USER: youruser
+  MYSQL_PASSWORD: yourpass
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spring-app-cm
+data:
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-freelancer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-freelancer
+  template:
+    metadata:
+      labels:
+        app: spring-freelancer
+    spec:
+      containers:
+      - name: app
+        image: <你的仓库>/spring-freelancer:1.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://db:3306/$(MYSQL_DATABASE)?useSSL=false&serverTimezone=UTC&characterEncoding=utf8
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_USER } }
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_PASSWORD } }
+        - name: MYSQL_DATABASE
+          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_DATABASE } }
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          valueFrom: { configMapKeyRef: { name: spring-app-cm, key: SPRING_JPA_HIBERNATE_DDL_AUTO } }
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          valueFrom: { configMapKeyRef: { name: spring-app-cm, key: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE } }
+        readinessProbe:
+          httpGet: { path: /actuator/health, port: 8080 }
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: { path: /actuator/health, port: 8080 }
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        resources:
+          requests: { cpu: "500m", memory: "512Mi" }
+          limits:   { cpu: "1", memory: "1Gi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-freelancer
+spec:
+  selector:
+    app: spring-freelancer
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP

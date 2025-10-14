@@ -10,12 +10,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-@Entity @Table(name = "metrics")
+@Entity
+@Table(name = "metrics")
 @Data
 public class Metric {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false) private Instant ts;
-  @Column(nullable = false) private Double value;
+  @Column(nullable = false)
+  private Instant ts;
+  @Column(nullable = false)
+  private Double value;
 }
