@@ -56,8 +56,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           
       - name: Print image tag
         run: echo "IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}"
