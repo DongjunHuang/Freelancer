@@ -51,10 +51,13 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./BackEnd/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_SHA }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          
+      - name: Print image tag
+        run: echo "IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}"
