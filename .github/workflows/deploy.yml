@@ -1,9 +1,5 @@
 name: CI/CD to VPS
 
-on:
-  push:
-    branches: [ "main" ]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
