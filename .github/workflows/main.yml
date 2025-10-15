@@ -47,15 +47,16 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Build image and push to repo
-      - name: Build and push
+      - name: Build & Push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./BackEnd
           file: ./BackEnd/Dockerfile
           push: true
+          platforms: linux/amd64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:latest
+            ghcr.io/${{ toLower(github.repository) }}:${{ github.sha }}
+            ghcr.io/${{ toLower(github.repository) }}:latest
           
       - name: Print image tag
         run: echo "IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}"
