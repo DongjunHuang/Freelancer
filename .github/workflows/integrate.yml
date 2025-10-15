@@ -1,23 +1,7 @@
-name: Build → (optional) Deploy
+name: Build & Deploy
 
 on:
   workflow_dispatch:
-    inputs:
-      deploy:
-        description: "Deploy after build?"
-        required: true
-        type: choice
-        options: [ "no", "yes" ]
-        default: "yes"
-      target_env:
-        description: "Deploy environment"
-        required: true
-        type: choice
-        options: [ "dev", "staging", "prod" ]
-        default: "staging"
-      image_tag:
-        description: "Override image tag (optional). Leave blank to use commit SHA."
-        required: false
 
 concurrency:
   group: integrate-${{ github.ref_name }}
