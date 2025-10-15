@@ -1,5 +1,8 @@
 name: CI/CD to VPS
 
+on:
+  workflow_dispatch:
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
