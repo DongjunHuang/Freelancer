@@ -8,53 +8,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Fetch the source code 
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2. Set up SSH private key
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
+      
+      # 3. Add VPS address to the host
       - name: Add VPS to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Rsync project to VPS
+      
+      # 4. direct secrets into the env
+      - name: Replace environment variables in secrets.yaml
         run: |
-          rsync -az --delete \
-            -e "ssh -p ${{ secrets.VPS_PORT }}" \
-            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.APP_DIR || '/home/deploy/app' }}/
-
-      - name: Create/Update .env on VPS (optional)
-        if: ${{ env.NEED_ENV || true }}  # 需要就留着，不需要可删掉该步骤
+          envsubst < k8s/secrets.yaml > k8s/secrets.resolved.yaml
         env:
-          APP_DIR: ${{ secrets.APP_DIR || '/home/deploy/app' }}
-          # 示例：把仓库 Secrets 写入 .env
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD || '' }}
-        run: |
-          ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          set -e
-          cd "${APP_DIR:-/home/deploy/app}"
-          if [ ! -f .env ]; then touch .env; fi
-          # 按需写入 key=value（示例）
-          if [ -n "${MYSQL_ROOT_PASSWORD}" ]; then
-            grep -q '^MYSQL_ROOT_PASSWORD=' .env && \
-              sed -i "s#^MYSQL_ROOT_PASSWORD=.*#MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}#" .env || \
-              echo "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}" >> .env
-          fi
-          EOF
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
 
-      - name: Docker compose up
-        env:
-          APP_DIR: ${{ secrets.APP_DIR || '/home/deploy/app' }}
+      # 2) 用 envsubst 将应用清单里的镜像/变量替换
+      - name: Render app manifest
         run: |
-          ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          set -e
-          cd "${APP_DIR:-/home/deploy/app}"
-          sudo docker compose pull || true
-          sudo docker compose build --pull || true
-          sudo docker compose up -d
-          sudo docker image prune -f
-          EOF
+          export IMAGE="$REGISTRY/$IMAGE_NAME:$TAG"
+          envsubst < k8s/Freelancer-app.yaml > k8s/_app.resolved.yaml
+
+      #  （如果 mysql 清单也有变量占位符，同样处理）
+      - name: Render mysql manifest
+        run: |
+          envsubst < k8s/Freelancer-mysql.yaml > k8s/_mysql.resolved.yaml
+        env:
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/secrets.resolved.yaml
+          kubectl apply -f k8s/Freelancer-mysql.yaml
+          kubectl apply -f k8s/Freelancer-app.yaml
+
