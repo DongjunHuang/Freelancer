@@ -1,0 +1,61 @@
+name: CI/CD to VPS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Rsync project to VPS
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${{ secrets.VPS_PORT }}" \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.APP_DIR || '/home/deploy/app' }}/
+
+      - name: Create/Update .env on VPS (optional)
+        if: ${{ env.NEED_ENV || true }}  # 需要就留着，不需要可删掉该步骤
+        env:
+          APP_DIR: ${{ secrets.APP_DIR || '/home/deploy/app' }}
+          # 示例：把仓库 Secrets 写入 .env
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD || '' }}
+        run: |
+          ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -e
+          cd "${APP_DIR:-/home/deploy/app}"
+          if [ ! -f .env ]; then touch .env; fi
+          # 按需写入 key=value（示例）
+          if [ -n "${MYSQL_ROOT_PASSWORD}" ]; then
+            grep -q '^MYSQL_ROOT_PASSWORD=' .env && \
+              sed -i "s#^MYSQL_ROOT_PASSWORD=.*#MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}#" .env || \
+              echo "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}" >> .env
+          fi
+          EOF
+
+      - name: Docker compose up
+        env:
+          APP_DIR: ${{ secrets.APP_DIR || '/home/deploy/app' }}
+        run: |
+          ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -e
+          cd "${APP_DIR:-/home/deploy/app}"
+          sudo docker compose pull || true
+          sudo docker compose build --pull || true
+          sudo docker compose up -d
+          sudo docker image prune -f
+          EOF
