@@ -1,0 +1,47 @@
+name: Build → (optional) Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy after build?"
+        required: true
+        type: choice
+        options: [ "no", "yes" ]
+        default: "yes"
+      target_env:
+        description: "Deploy environment"
+        required: true
+        type: choice
+        options: [ "dev", "staging", "prod" ]
+        default: "staging"
+      image_tag:
+        description: "Override image tag (optional). Leave blank to use commit SHA."
+        required: false
+
+concurrency:
+  group: integrate-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build Image
+    uses: ./.github/workflows/build.yml
+    with:
+      image_tag: ${{ github.event.inputs.image_tag }}
+    secrets: inherit
+
+  deploy:
+    name: Deploy to K8s
+    needs: build
+    if: ${{ github.event.inputs.deploy == 'yes' }}
+    uses: ./.github/workflows/deploy.yml
+    with:
+      image: ${{ needs.build.outputs.image }}
+      target_env: ${{ github.event.inputs.target_env }}
+    secrets: inherit
