@@ -46,6 +46,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase repo name
+        run: echo "IMAGE_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       # Build image and push to repo
       - name: Build & Push
         uses: docker/build-push-action@v6
@@ -55,8 +58,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ toLower(github.repository) }}:${{ github.sha }}
-            ghcr.io/${{ toLower(github.repository) }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:latest
           
       - name: Print image tag
         run: echo "IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}"
