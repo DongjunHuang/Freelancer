@@ -120,8 +120,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            KCFG=/etc/rancher/k3s/k3s.yaml
-            sudo kubectl --kubeconfig $KCFG apply -f /home/deploy/k8s/
+            set -euo pipefail
+            export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"  
+            kubectl apply -f /home/deploy/k8s/
             
       # 12. cleanup: remove manifests from VPS
       - name: Cleanup manifests on VPS
