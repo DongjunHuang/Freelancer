@@ -63,7 +63,7 @@ jobs:
         run: |
           rsync -az \
             -e "ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no" \
-            k8s/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/app/k8s/
+            k8s/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/k8s/
       
       # 9. upsert Secret on VPS via kubectl (NO FILE)
       - name: Create/Update K8s Secret on VPS (no file)
@@ -104,7 +104,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            ls -lah /home/deploy/app/k8s/
+            ls -lah /home/deploy/k8s/
 
       #11. run yaml in VPS
       - name: Apply manifests on VPS
@@ -116,7 +116,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             KCFG=/etc/rancher/k3s/k3s.yaml
-            sudo kubectl --kubeconfig $KCFG apply -f /home/deploy/app/k8s/
+            sudo kubectl --kubeconfig $KCFG apply -f /home/deploy/k8s/
             
       # 12. cleanup: remove manifests from VPS
       - name: Cleanup manifests on VPS
@@ -128,5 +128,5 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -euo pipefail
-            sudo find /home/deploy/app/k8s -type f -name '*.yaml' -delete || true
-            sudo rmdir /home/deploy/app/k8s 2>/dev/null || true
+            sudo find /home/deploy/k8s/ -type f -name '*.yaml' -delete || true
+            sudo rmdir /home/deploy/k8s/ 2>/dev/null || true
