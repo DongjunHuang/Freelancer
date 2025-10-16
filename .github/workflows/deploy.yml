@@ -84,16 +84,14 @@ jobs:
           script: |
             set -euo pipefail
             KCFG=/etc/rancher/k3s/k3s.yaml
-            # 命名空间存在则跳过
-            sudo kubectl --kubeconfig "$KCFG" get ns "$NS" >/dev/null 2>&1 || \
-            sudo kubectl --kubeconfig "$KCFG" create ns "$NS"
-            sudo kubectl --kubeconfig "$KCFG" -n "$NS" create secret generic "$DB_SECRET_NAME" \
+            NS=${NS:-default}
+            kubectl --kubeconfig "$KCFG" get ns "$NS" >/dev/null 2>&1 || kubectl --kubeconfig "$KCFG" create ns "$NS"
+            kubectl --kubeconfig "$KCFG" -n "$NS" create secret generic "$DB_SECRET_NAME" \
               --from-literal=MYSQL_DATABASE="$MYSQL_DATABASE" \
               --from-literal=MYSQL_USER="$MYSQL_USER" \
               --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
               --from-literal=MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
-              --dry-run=client -o yaml \
-            | sudo kubectl --kubeconfig "$KCFG" -n "$NS" apply -f -
+              --dry-run=client -o yaml | kubectl --kubeconfig "$KCFG" -n "$NS" apply -f -
 
       #10. verify files pushed to the VPS
       - name: Verify uploaded files on VPS
