@@ -114,4 +114,16 @@ jobs:
           script: |
             KCFG=/etc/rancher/k3s/k3s.yaml
             sudo kubectl --kubeconfig $KCFG apply -f /home/deploy/app/k8s/
-
+            
+      # 12. cleanup: remove manifests from VPS
+      - name: Cleanup manifests on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -euo pipefail
+            sudo find /home/deploy/app/k8s -type f -name '*.yaml' -delete || true
+            sudo rmdir /home/deploy/app/k8s 2>/dev/null || true
