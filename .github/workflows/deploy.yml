@@ -42,6 +42,7 @@ jobs:
       # 4. push secrets into etcd 
       - name: Replace environment variables in secrets.yaml
         run: |
+          mkdir -p k8s
           envsubst < Kubernetes/secrets.yaml > k8s/secrets.resolved.yaml
         env:
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
