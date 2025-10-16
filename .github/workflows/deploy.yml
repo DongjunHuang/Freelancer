@@ -1,16 +1,28 @@
 name: Deploy
 
 on:
-  workflow_run:
-    workflows: ["build"]
-    types: [completed]
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Full image ref (e.g. ghcr.io/<owner>/<repo>:<tag>), or just a tag like <sha> or run-12345"
+        required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 0. find image
+      - name: Resolve IMAGE (allow full ref or just tag)
+        run: |
+          REPO_LC="${GITHUB_REPOSITORY,,}"
+          if echo "${{ inputs.image }}" | grep -q '/'; then
+            echo "IMAGE=${{ inputs.image }}" >> $GITHUB_ENV
+          else
+            echo "IMAGE=ghcr.io/${REPO_LC}:${{ inputs.image }}" >> $GITHUB_ENV
+          fi
+          echo "Will deploy IMAGE=$IMAGE"
+  
       # 1. Fetch the source code 
       - name: Checkout
         uses: actions/checkout@v4
