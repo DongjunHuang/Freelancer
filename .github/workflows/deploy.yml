@@ -83,8 +83,14 @@ jobs:
           envs: NS,DB_SECRET_NAME,MYSQL_DATABASE,MYSQL_USER,MYSQL_PASSWORD,MYSQL_ROOT_PASSWORD
           script: |
             set -euo pipefail
-            NS=${NS:-default}
+            export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
+
+            # Sanity check
+            whoami
+            echo "Using KUBECONFIG=$KUBECONFIG"
+            test -r "$KUBECONFIG" || { echo "kubeconfig not readable: $KUBECONFIG"; exit 1; }
             
+            NS=${NS:-default}
             kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
             
             kubectl -n "$NS" create secret generic "$DB_SECRET_NAME" \
