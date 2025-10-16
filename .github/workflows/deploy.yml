@@ -38,11 +38,13 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare k8s directory
+        run: mkdir -p k8s
       
       # 5. render config map
       - name: Replace environment variables in configmap.yaml
         run: |
-          mkdir -p k8s
           cp Kubernetes/configmap.yaml  k8s/configmap.resolved.yaml
           
       # 6. render mysql file
