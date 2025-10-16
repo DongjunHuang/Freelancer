@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 0. find image
+      # 1. find image
       - name: Resolve IMAGE (allow full ref or just tag)
         run: |
           REPO_LC="${GITHUB_REPOSITORY,,}"
@@ -23,54 +23,95 @@ jobs:
           fi
           echo "Will deploy IMAGE=$IMAGE"
   
-      # 1. Fetch the source code 
+      # 2. Checkout resource code 
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Set up SSH private key
+      # 3. Set up SSH private key
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
-      # 3. Add VPS address to the host
+      # 4. Add VPS address to the host
       - name: Add VPS to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
       
-      # 4. push secrets into etcd 
-      - name: Replace environment variables in secrets.yaml
-        run: |
-          mkdir -p k8s
-          envsubst < Kubernetes/secrets.yaml > k8s/secrets.resolved.yaml
-        env:
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-
-      # 5. push config map into etcd 
+      # 5. render config map
       - name: Replace environment variables in configmap.yaml
         run: |
           cp Kubernetes/configmap.yaml  k8s/configmap.resolved.yaml
           
-      # 6. push mysql to VPS
+      # 6. render mysql file
       - name: Render mysql manifest
         run: |
           cp Kubernetes/Freelancer-mysql.yaml k8s/mysql.resolved.yaml
           
-      # 7. push app yaml to VPS
+      # 7. render app yaml file
       - name: Render app manifest
         run: |
           export IMAGE="$REGISTRY/$IMAGE_NAME:$TAG"
           envsubst < Kubernetes/Freelancer-app.yaml > k8s/app.resolved.yaml
 
-      # 6. deploy     
-      - name: Apply Kubernetes manifests
+      # 8. push generated yaml files to VPS
+      - name: Upload rendered secrets to VPS
         run: |
-          kubectl apply -f k8s/secrets.resolved.yaml
-          kubectl apply -f k8s/configmap.resolved.yaml
-          kubectl apply -f k8s/app.resolved.yaml
-          kubectl apply -f k8s/mysql.resolved.yaml
+          rsync -az \
+            -e "ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no" \
+            k8s/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/app/k8s/
+      
+      # 9. upsert Secret on VPS via kubectl (NO FILE)
+      - name: Create/Update K8s Secret on VPS (no file)
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          NS: default
+          DB_SECRET_NAME: db-secret
+          MYSQL_DATABASE:       ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER:           ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD:       ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD:  ${{ secrets.MYSQL_ROOT_PASSWORD }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          envs: NS,DB_SECRET_NAME,MYSQL_DATABASE,MYSQL_USER,MYSQL_PASSWORD,MYSQL_ROOT_PASSWORD
+          script: |
+            set -euo pipefail
+            KCFG=/etc/rancher/k3s/k3s.yaml
+            # 命名空间存在则跳过
+            kubectl --kubeconfig "$KCFG" get ns "$NS" >/dev/null 2>&1 || \
+            kubectl --kubeconfig "$KCFG" create ns "$NS"
+            kubectl --kubeconfig "$KCFG" -n "$NS" create secret generic "$DB_SECRET_NAME" \
+              --from-literal=MYSQL_DATABASE="$MYSQL_DATABASE" \
+              --from-literal=MYSQL_USER="$MYSQL_USER" \
+              --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+              --from-literal=MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+              --dry-run=client -o yaml \
+            | kubectl --kubeconfig "$KCFG" -n "$NS" apply -f -
+
+      #10. verify files pushed to the VPS
+      - name: Verify uploaded files on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            ls -lah /home/deploy/app/k8s/
+
+      #11. run yaml in VPS
+      - name: Apply manifests on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            KCFG=/etc/rancher/k3s/k3s.yaml
+            sudo kubectl --kubeconfig $KCFG apply -f /home/deploy/app/k8s/
 
