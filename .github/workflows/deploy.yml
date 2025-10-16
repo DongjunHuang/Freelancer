@@ -24,7 +24,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
       
-      # 4. direct secrets into the env
+      # 4. push secrets into etcd 
       - name: Replace environment variables in secrets.yaml
         run: |
           envsubst < k8s/secrets.yaml > k8s/secrets.resolved.yaml
@@ -34,25 +34,22 @@ jobs:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
 
-      # 2) 用 envsubst 将应用清单里的镜像/变量替换
+
+      # 5. push mysql to VPS
+      - name: Render mysql manifest
+        run: |
+          cp k8s/Freelancer-mysql.yaml k8s/mysql.resolved.yaml
+          
+      # 5. push app yaml to VPS
       - name: Render app manifest
         run: |
           export IMAGE="$REGISTRY/$IMAGE_NAME:$TAG"
-          envsubst < k8s/Freelancer-app.yaml > k8s/_app.resolved.yaml
+          envsubst < k8s/Freelancer-app.yaml > k8s/app.resolved.yaml
 
-      #  （如果 mysql 清单也有变量占位符，同样处理）
-      - name: Render mysql manifest
-        run: |
-          envsubst < k8s/Freelancer-mysql.yaml > k8s/_mysql.resolved.yaml
-        env:
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-
+      # 6. deploy     
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s/secrets.resolved.yaml
-          kubectl apply -f k8s/Freelancer-mysql.yaml
-          kubectl apply -f k8s/Freelancer-app.yaml
+          kubectl apply -f k8s/app.resolved.yaml
+          kubectl apply -f k8s/mysql.resolved.yaml
 
