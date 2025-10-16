@@ -19,10 +19,9 @@ spec:
         ports: [{ containerPort: 3306 }]
         envFrom:
           - secretRef:
-            name: db-secret
+              name: db-secret
         volumeMounts:
-        - name: data
-          mountPath: /var/lib/mysql
+            - { name: data, mountPath: /var/lib/mysql }
         resources:
           requests: { cpu: "250m", memory: "256Mi" }
           limits:   { cpu: "500m", memory: "512Gi" }
