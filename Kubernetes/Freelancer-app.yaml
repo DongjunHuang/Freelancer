@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spring-freelancer
+  labels:
+    app: spring-freelancer
 spec:
   replicas: 1
   selector:
@@ -14,54 +16,64 @@ spec:
     spec:
       containers:
         - name: app
-          image: ${IMAGE} 
+          image: ${IMAGE}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+
           env:
             - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: freelancer-secret
+                  name: db-secret           
                   key: MYSQL_DATABASE
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://db:3306/$(MYSQL_DATABASE)?useSSL=false&serverTimezone=UTC&characterEncoding=utf8
-
+              value: "jdbc:mysql://db:3306/$(MYSQL_DATABASE)?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: freelancer-secret
+                  name: db-secret
                   key: MYSQL_USER
-
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: freelancer-secret
+                  name: db-secret
                   key: MYSQL_PASSWORD
-                  
-        envFrom:
-          - configMapRef:
-              name: spring-app-cm
-        readinessProbe:
-          httpGet: { path: /actuator/health, port: 8080 }
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        livenessProbe:
-          httpGet: { path: /actuator/health, port: 8080 }
-          initialDelaySeconds: 15
-          periodSeconds: 10
-        resources:
-          requests: { cpu: "500m", memory: "512Mi" }
-          limits:   { cpu: "1", memory: "1Gi" }
+
+          # 这些字段与 env 同级，属于容器层
+          envFrom:
+            - configMapRef:
+                name: freelancer-cm          # ← 你已创建的 ConfigMap 名
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: spring-freelancer
+  labels:
+    app: spring-freelancer
 spec:
   selector:
     app: spring-freelancer
   ports:
-  - port: 8080
-    targetPort: 8080
+    - port: 8080
+      targetPort: 8080
   type: ClusterIP
