@@ -1,4 +1,4 @@
-name: CI/CD to VPS
+name: Deploy
 
 on:
   workflow_dispatch:
@@ -27,29 +27,34 @@ jobs:
       # 4. push secrets into etcd 
       - name: Replace environment variables in secrets.yaml
         run: |
-          envsubst < k8s/secrets.yaml > k8s/secrets.resolved.yaml
+          envsubst < Kubernetes/secrets.yaml > k8s/secrets.resolved.yaml
         env:
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
 
-
-      # 5. push mysql to VPS
+      # 5. push config map into etcd 
+      - name: Replace environment variables in configmap.yaml
+        run: |
+          cp Kubernetes/configmap.yaml  k8s/configmap.resolved.yaml
+          
+      # 6. push mysql to VPS
       - name: Render mysql manifest
         run: |
-          cp k8s/Freelancer-mysql.yaml k8s/mysql.resolved.yaml
+          cp Kubernetes/Freelancer-mysql.yaml k8s/mysql.resolved.yaml
           
-      # 5. push app yaml to VPS
+      # 7. push app yaml to VPS
       - name: Render app manifest
         run: |
           export IMAGE="$REGISTRY/$IMAGE_NAME:$TAG"
-          envsubst < k8s/Freelancer-app.yaml > k8s/app.resolved.yaml
+          envsubst < Kubernetes/Freelancer-app.yaml > k8s/app.resolved.yaml
 
       # 6. deploy     
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s/secrets.resolved.yaml
+          kubectl apply -f k8s/configmap.resolved.yaml
           kubectl apply -f k8s/app.resolved.yaml
           kubectl apply -f k8s/mysql.resolved.yaml
 
