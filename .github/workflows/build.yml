@@ -14,41 +14,38 @@ jobs:
       contents: read
       packages: write  
     steps:
-      # pull code
+      # 1. Check out source code
       - uses: actions/checkout@v4
 
-      # Set up JDK
+      # 2. Set up JDK
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
       
-      # Build maven
+      # 3. Build application through Maven
       - name: Build Maven project
         run: mvn clean package -DskipTests
         working-directory: BackEnd
 
-      # Optional
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      # Install DockerX 
+      # 4. Install DockerX 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Login to GHCR
+      # 5. Login to GHCR
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+      
+      # Configure the repo name to readable format
       - name: Set lowercase repo name
         run: echo "IMAGE_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-
-      # Build image and push to repo
+      
+      # 6. Build image and push to repo
       - name: Build & Push
         uses: docker/build-push-action@v6
         with:
@@ -58,7 +55,13 @@ jobs:
           platforms: linux/amd64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:run-${{ github.run_id }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:latest
-          
-      - name: Print image tag
-        run: echo "IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_LC }}:${{ env.TAG_SHA }}"
+
+      # Print the information
+      - name: Print image refs (copy one for deploy)
+        run: |
+          echo "Use ONE of these in deploy:"
+          echo "  ${REGISTRY}/${IMAGE_LC}:${GITHUB_SHA}"
+          echo "  ${REGISTRY}/${IMAGE_LC}:run-${GITHUB_RUN_ID}"
+          echo "  ${REGISTRY}/${IMAGE_LC}:latest   (not recommended for prod)"
