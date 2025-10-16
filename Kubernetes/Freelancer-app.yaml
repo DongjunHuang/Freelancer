@@ -1,21 +1,3 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-secret
-type: Opaque
-stringData:
-  MYSQL_DATABASE: yourdb
-  MYSQL_USER: youruser
-  MYSQL_PASSWORD: yourpass
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: spring-app-cm
-data:
-  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
-  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,23 +13,35 @@ spec:
         app: spring-freelancer
     spec:
       containers:
-      - name: app
-        image: <你的仓库>/spring-freelancer:1.0
-        ports:
-        - containerPort: 8080
-        env:
-        - name: SPRING_DATASOURCE_URL
-          value: jdbc:mysql://db:3306/$(MYSQL_DATABASE)?useSSL=false&serverTimezone=UTC&characterEncoding=utf8
-        - name: SPRING_DATASOURCE_USERNAME
-          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_USER } }
-        - name: SPRING_DATASOURCE_PASSWORD
-          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_PASSWORD } }
-        - name: MYSQL_DATABASE
-          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_DATABASE } }
-        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-          valueFrom: { configMapKeyRef: { name: spring-app-cm, key: SPRING_JPA_HIBERNATE_DDL_AUTO } }
-        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
-          valueFrom: { configMapKeyRef: { name: spring-app-cm, key: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE } }
+        - name: app
+          image: ${IMAGE} 
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: freelancer-secret
+                  key: MYSQL_DATABASE
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://db:3306/$(MYSQL_DATABASE)?useSSL=false&serverTimezone=UTC&characterEncoding=utf8
+
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: freelancer-secret
+                  key: MYSQL_USER
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: freelancer-secret
+                  key: MYSQL_PASSWORD
+                  
+        envFrom:
+          - configMapRef:
+              name: spring-app-cm
         readinessProbe:
           httpGet: { path: /actuator/health, port: 8080 }
           initialDelaySeconds: 5

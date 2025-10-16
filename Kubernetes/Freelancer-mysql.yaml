@@ -15,22 +15,30 @@ spec:
       - name: mysql
         image: mysql:8
         ports: [{ containerPort: 3306 }]
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_ROOT_PASSWORD } }
-        - name: MYSQL_DATABASE
-          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_DATABASE } }
-        - name: MYSQL_USER
-          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_USER } }
-        - name: MYSQL_PASSWORD
-          valueFrom: { secretKeyRef: { name: freelancer-secret, key: MYSQL_PASSWORD } }
+        envFrom:
+          - secretRef:
+            name: freelancer-secret
         volumeMounts:
         - name: data
           mountPath: /var/lib/mysql
         resources:
-          requests: { cpu: "200m", memory: "256Mi" }
+          requests: { cpu: "250m", memory: "256Mi" }
           limits:   { cpu: "500m", memory: "512Gi" }
+        readinessProbe:
+          exec:
+            command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
 
+        livenessProbe:
+          exec:
+            command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 5
   volumeClaimTemplates:
   - metadata:
       name: data
@@ -39,6 +47,7 @@ spec:
       resources:
         requests:
           storage: 45Gi
+      storageClassName: standard  
 ---          
 apiVersion: v1
 kind: Service
