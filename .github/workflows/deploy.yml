@@ -37,11 +37,12 @@ jobs:
           
       - name: Write kubeconfig
         run: |
+          set -euo pipefail
           mkdir -p ~/.kube
           echo "${KUBECONFIG_INLINE}" > base64 -d ~/.kube/config
           chmod 600 ~/.kube/config
-          echo "== kubeconfig created =="
-          ls -lah ~/.kube/
+          echo "== server =="
+          kubectl config view --raw --minify | sed -n 's/^[[:space:]]*server:[[:space:]]*//p'
           
       - name: Check cluster
         run: |
