@@ -24,7 +24,7 @@ jobs:
       - name: Write kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${KUBECONFIG_INLINE}" > ~/.kube/config
+          printf '%s' "$KUBECONFIG_INLINE" > ~/.kube/config
           chmod 600 ~/.kube/config
           
       # 2) 解析镜像参数：支持“完整镜像地址”或“仅 tag”
