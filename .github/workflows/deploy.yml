@@ -38,9 +38,11 @@ jobs:
       - name: Write kubeconfig
         run: |
           mkdir -p ~/.kube
-          printf '%s' "${KUBECONFIG_INLINE}" > base64 -d ~/.kube/config
+          echo "${KUBECONFIG_INLINE}" > base64 -d ~/.kube/config
           chmod 600 ~/.kube/config
-      
+          echo "== kubeconfig created =="
+          ls -lah ~/.kube/
+          
       - name: Check cluster
         run: |
           kubectl cluster-info
