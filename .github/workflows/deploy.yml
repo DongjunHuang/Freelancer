@@ -10,7 +10,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    env:
+      NS: default
+      
     steps:
        # 0) 准备 kubectl
       - name: Setup kubectl
@@ -56,7 +58,11 @@ jobs:
           envsubst < Kubernetes/Freelancer-app.yaml > /tmp/k8s/app.yaml
           echo "=== Rendered app.yaml ==="
           grep -n 'image:' /tmp/k8s/app.yaml || true
-      
+
+      - name: Debug NS
+        run: |
+          echo "Namespace value is: '$NS'"
+    
       # 6) 直接在集群内创建/更新 Secret（不在 VPS 保留文件）
       - name: Upsert Secret (freelancer-secret)
         run: |
