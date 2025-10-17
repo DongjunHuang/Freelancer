@@ -25,19 +25,19 @@ spec:
             - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: db-secret           
+                  name: freelancer-secret           
                   key: MYSQL_DATABASE
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:mysql://db:3306/$(MYSQL_DATABASE)?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: db-secret
+                  name: freelancer-secret
                   key: MYSQL_USER
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: db-secret
+                  name: freelancer-secret
                   key: MYSQL_PASSWORD
 
           # 这些字段与 env 同级，属于容器层
