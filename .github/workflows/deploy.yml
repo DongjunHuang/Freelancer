@@ -38,7 +38,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.kube
-          echo "${KUBECONFIG_INLINE}" > base64 -d ~/.kube/config
+          printf '%s' "${KUBECONFIG_INLINE}" | base64 -d ~/.kube/config
+          
+          # 验证文件是否写入成功
+          if [ ! -s ~/.kube/config ]; then
+            echo "❌ ~/.kube/config not created"; exit 1
+          fi
+          
           chmod 600 ~/.kube/config
           echo "== server =="
           kubectl config view --raw --minify | sed -n 's/^[[:space:]]*server:[[:space:]]*//p'
