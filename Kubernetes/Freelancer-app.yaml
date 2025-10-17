@@ -28,7 +28,7 @@ spec:
                   name: freelancer-secret           
                   key: MYSQL_DATABASE
             - name: SPRING_DATASOURCE_URL
-              value: "jdbc:mysql://db:3306/$(MYSQL_DATABASE)?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
+              value: "jdbc:mysql://db:3306/$(MYSQL_DATABASE)?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -40,10 +40,9 @@ spec:
                   name: freelancer-secret
                   key: MYSQL_PASSWORD
 
-          # 这些字段与 env 同级，属于容器层
           envFrom:
             - configMapRef:
-                name: freelancer-cm          # ← 你已创建的 ConfigMap 名
+                name: freelancer-cm         
           readinessProbe:
             httpGet:
               path: /actuator/health
