@@ -20,12 +20,19 @@ jobs:
         with:
           version: 'v1.30.2'
 
+      - name: Assert kubeconfig secret exists
+        run: |
+          test -n "${{ secrets.KUBECONFIG_INLINE }}" || { echo "KUBECONFIG_B64 not set"; exit 1; }
+          
       # 1) 写入 kubeconfig（把你的 kubeconfig 作为 Secret：KUBECONFIG_INLINE）
       - name: Write kubeconfig
         run: |
           mkdir -p ~/.kube
-          printf '%s' "$KUBECONFIG_INLINE" > ~/.kube/config
+          printf '%s' "${KUBECONFIG_INLINE}" > ~/.kube/config
           chmod 600 ~/.kube/config
+        env:
+          KUBECONFIG_BINLINE: ${{ secrets.KUBECONFIG_INLINE }}   
+      
       - name: Check cluster
         run: |
           kubectl cluster-info
