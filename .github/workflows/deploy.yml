@@ -73,7 +73,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           NS: default
-          DB_SECRET_NAME: db-secret
+          DB_SECRET_NAME: freelancer-secret
           MYSQL_DATABASE:       ${{ secrets.MYSQL_DATABASE }}
           MYSQL_USER:           ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD:       ${{ secrets.MYSQL_PASSWORD }}
