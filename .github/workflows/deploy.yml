@@ -56,7 +56,7 @@ jobs:
       - name: Render app manifest
         run: |
           export IMAGE="$REGISTRY/$IMAGE_NAME:$TAG"
-          envsubst < Kubernetes/Freelancer-app.yaml > k8s/app.resolved.yaml
+          IMAGE=${{ github.event.inputs.image }} envsubst < Kubernetes/Freelancer-app.yaml > k8s/app.resolved.yaml
           # Verify the parameters added to the yaml is correct
           echo "✅ Generated resolved YAML:"
           cat k8s/app.resolved.yaml
