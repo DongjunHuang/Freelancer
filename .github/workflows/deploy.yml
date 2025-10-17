@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NS: default
+      KUBECONFIG_INLINE: ${{ secrets.KUBECONFIG_INLINE }} 
       
     steps:
        # 0) 准备 kubectl
@@ -32,8 +33,6 @@ jobs:
           echo "${KUBECONFIG_INLINE}" | base64 -d | grep -E "current-context|name:"
           echo "== Showing first 10 lines =="
           echo "${KUBECONFIG_INLINE}" | base64 -d | head -n 10
-        env:
-          KUBECONFIG_INLINE: ${{ secrets.KUBECONFIG_INLINE }}
           
       - name: Write kubeconfig
         run: |
