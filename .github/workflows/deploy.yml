@@ -60,7 +60,7 @@ jobs:
       # 6) 直接在集群内创建/更新 Secret（不在 VPS 保留文件）
       - name: Upsert Secret (freelancer-secret)
         run: |
-          kubectl -n "$NS" get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
+          kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
           kubectl -n "$NS" create secret generic freelancer-secret \
             --from-literal=MYSQL_DATABASE="${{ secrets.MYSQL_DATABASE }}" \
             --from-literal=MYSQL_USER="${{ secrets.MYSQL_USER }}" \
