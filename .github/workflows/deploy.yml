@@ -99,7 +99,7 @@ jobs:
             --from-literal=MYSQL_USER="${{ secrets.MYSQL_USER }}" \
             --from-literal=MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD }}" \
             --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
-            --dry-run=client -o yaml | kubectl -n "$NS" apply -f 
+            --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
       
       # 7) 直接 apply（无需上传到 VPS）
       - name: Apply manifests
