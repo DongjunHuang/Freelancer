@@ -57,6 +57,9 @@ jobs:
         run: |
           export IMAGE="$REGISTRY/$IMAGE_NAME:$TAG"
           envsubst < Kubernetes/Freelancer-app.yaml > k8s/app.resolved.yaml
+          # Verify the parameters added to the yaml is correct
+          echo "✅ Generated resolved YAML:"
+          cat k8s/app.resolved.yaml
 
       # 8. push generated yaml files to VPS
       - name: Upload rendered secrets to VPS
