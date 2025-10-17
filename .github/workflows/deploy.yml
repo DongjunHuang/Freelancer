@@ -12,8 +12,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. find image
-      - name: Resolve IMAGE (allow full ref or just tag)
+       # 0) 准备 kubectl
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.30.2'
+
+      # 1) 写入 kubeconfig（把你的 kubeconfig 作为 Secret：KUBECONFIG_INLINE）
+      - name: Write kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${KUBECONFIG_INLINE}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          
+      # 2) 解析镜像参数：支持“完整镜像地址”或“仅 tag”
+      - name: Resolve IMAGE
         run: |
           REPO_LC="${GITHUB_REPOSITORY,,}"
           if echo "${{ inputs.image }}" | grep -q '/'; then
@@ -27,115 +40,50 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 3. Set up SSH private key
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      # 4) 安装 envsubst
+      - name: Install envsubst
+        run: sudo apt-get update && sudo apt-get install -y gettext-base
       
-      # 4. Add VPS address to the host
-      - name: Add VPS to known_hosts
+      # 5) 渲染/准备清单（全部在 runner 临时目录进行，不落地 VPS）
+      - name: Render manifests
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Prepare k8s directory
-        run: mkdir -p k8s
+          mkdir -p /tmp/k8s
+          # configmap / mysql 原样拷贝（如果不需要变量替换）
+          cp Kubernetes/configmap.yaml /tmp/k8s/configmap.yaml
+          cp Kubernetes/Freelancer-mysql.yaml /tmp/k8s/mysql.yaml
+          # 渲染 app（替换 ${IMAGE}）
+          export IMAGE="$IMAGE"
+          envsubst < Kubernetes/Freelancer-app.yaml > /tmp/k8s/app.yaml
+          echo "=== Rendered app.yaml ==="
+          grep -n 'image:' /tmp/k8s/app.yaml || true
       
-      # 5. render config map
-      - name: Replace environment variables in configmap.yaml
+      # 6) 直接在集群内创建/更新 Secret（不在 VPS 保留文件）
+      - name: Upsert Secret (freelancer-secret)
         run: |
-          cp Kubernetes/configmap.yaml  k8s/configmap.resolved.yaml
+          kubectl -n "$NS" get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
+          kubectl -n "$NS" create secret generic freelancer-secret \
+            --from-literal=MYSQL_DATABASE="${{ secrets.MYSQL_DATABASE }}" \
+            --from-literal=MYSQL_USER="${{ secrets.MYSQL_USER }}" \
+            --from-literal=MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD }}" \
+            --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
+            --dry-run=client -o yaml | kubectl -n "$NS" apply -f 
+      
+      # 7) 直接 apply（无需上传到 VPS）
+      - name: Apply manifests
+        run: |
+          set -euo pipefail
+          kubectl -n "$NS" apply -f /tmp/k8s/configmap.yaml
+          kubectl -n "$NS" apply -f /tmp/k8s/mysql.yaml
+          kubectl -n "$NS" apply -f /tmp/k8s/app.yaml
           
-      # 6. render mysql file
-      - name: Render mysql manifest
+      # 8) 等待就绪 & 输出状态
+      - name: Wait for rollout
         run: |
-          cp Kubernetes/Freelancer-mysql.yaml k8s/mysql.resolved.yaml
-          
-      # 7. render app yaml file
-      - name: Render app manifest
-        run: |
-          export IMAGE="$REGISTRY/$IMAGE_NAME:$TAG"
-          IMAGE=${{ github.event.inputs.image }} envsubst < Kubernetes/Freelancer-app.yaml > k8s/app.resolved.yaml
-          # Verify the parameters added to the yaml is correct
-          echo "✅ Generated resolved YAML:"
-          cat k8s/app.resolved.yaml
-
-      # 8. push generated yaml files to VPS
-      - name: Upload rendered secrets to VPS
-        run: |
-          rsync -az \
-            -e "ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no" \
-            k8s/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/k8s/
-      
-      # 9. upsert Secret on VPS via kubectl (NO FILE)
-      - name: Create/Update K8s Secret on VPS (no file)
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          NS: default
-          DB_SECRET_NAME: freelancer-secret
-          MYSQL_DATABASE:       ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER:           ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD:       ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_ROOT_PASSWORD:  ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          envs: NS,DB_SECRET_NAME,MYSQL_DATABASE,MYSQL_USER,MYSQL_PASSWORD,MYSQL_ROOT_PASSWORD
-          script: |
-            set -euo pipefail
-            export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
-
-            # Sanity check
-            whoami
-            echo "Using KUBECONFIG=$KUBECONFIG"
-            test -r "$KUBECONFIG" || { echo "kubeconfig not readable: $KUBECONFIG"; exit 1; }
-            
-            NS=${NS:-default}
-            kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
-            
-            kubectl -n "$NS" create secret generic "$DB_SECRET_NAME" \
-              --from-literal=MYSQL_DATABASE="$MYSQL_DATABASE" \
-              --from-literal=MYSQL_USER="$MYSQL_USER" \
-              --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
-              --from-literal=MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
-              --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
-
-      #10. verify files pushed to the VPS
-      - name: Verify uploaded files on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            ls -lah /home/deploy/k8s/
-
-      #11. run yaml in VPS
-      - name: Apply manifests on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            set -euo pipefail
-            export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"  
-            kubectl apply -f /home/deploy/k8s/
-            
-      # 12. cleanup: remove manifests from VPS
-      - name: Cleanup manifests on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            set -euo pipefail
-            sudo find /home/deploy/k8s/ -type f -name '*.yaml' -delete || true
-            sudo rmdir /home/deploy/k8s/ 2>/dev/null || true
+          set -e
+          # 这些资源名按你的实际为准
+          kubectl -n "$NS" rollout status statefulset/mysql --timeout=180s || true
+          kubectl -n "$NS" rollout status deployment/spring-freelancer --timeout=180s || true
+          echo "---- pods ----"
+          kubectl -n "$NS" get pods -o wide
+          echo "---- pvc ----"
+          kubectl -n "$NS" get pvc
