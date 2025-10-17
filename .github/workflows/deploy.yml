@@ -26,6 +26,10 @@ jobs:
           mkdir -p ~/.kube
           printf '%s' "$KUBECONFIG_INLINE" > ~/.kube/config
           chmod 600 ~/.kube/config
+      - name: Check cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes    
           
       # 2) 解析镜像参数：支持“完整镜像地址”或“仅 tag”
       - name: Resolve IMAGE
