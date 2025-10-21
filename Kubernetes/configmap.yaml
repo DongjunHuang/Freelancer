@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: freelancer-cm
 data:
-  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_HIBERNATE_DDL_AUTO: validate
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
   LOGGING_LEVEL_ROOT: INFO
   TZ: Asia/Shanghai

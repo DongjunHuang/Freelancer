@@ -3,7 +3,7 @@ package com.example.controllers;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.models.MetricDTO;
-import com.example.models.MetricRepo;
+import com.example.services.MetricService;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,17 +12,25 @@ import java.util.List;
 @RequestMapping("/api/metrics")
 @CrossOrigin(origins = "*")
 public class MetricController {
-  private final MetricRepo repo;
-  public MetricController(MetricRepo repo){ this.repo = repo; }
+  private final MetricService svc;
 
-  @GetMapping
-  public List<MetricDTO> list(
-      @RequestParam Instant from,
-      @RequestParam Instant to) {
-    return repo.
-          findRange(from, to)
-          .stream()
-          .map(MetricDTO::from)
-          .toList();
+  public MetricController(MetricService svc){ 
+    this.svc = svc; 
+  }
+
+  @PostMapping("/insert")
+  public MetricDTO insert(@RequestBody CreateMetricReq req){
+      return svc.insert(req);
+  }
+
+  @GetMapping("/list")
+  public List<MetricDTO> list(@RequestParam(required=false) String from,
+                              @RequestParam(required=false) String to) {
+      return svc.findRange(Instant.parse(from), Instant.parse(to));
+  }
+
+  @GetMapping("/getNumber")
+  public long getNumber() {
+      return svc.getNumber();
   }
 }
