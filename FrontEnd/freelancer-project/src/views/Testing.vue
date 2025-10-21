@@ -36,6 +36,7 @@
 import { ref } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { insertMetric, fetchCount } from '../api/metrics'
+import { isAxiosError } from 'axios'
 
 onMounted(() => console.log('[Testing] mounted'))
 onBeforeUnmount(() => console.log('[Testing] unmounted'))
