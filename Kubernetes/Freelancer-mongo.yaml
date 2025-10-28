@@ -38,8 +38,12 @@ spec:
             - secretRef:
                 name: freelancer-secret
           volumeMounts:
-            - name: mongodb-data
-              mountPath: /data/db
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+          volumes:
+            - name: init-scripts
+              configMap:
+                name: mongo-init
           resources:
             requests: { cpu: "250m", memory: "256Mi" }
             limits:   { cpu: "500m", memory: "512Mi" }
