@@ -15,16 +15,18 @@ jobs:
       KUBECONFIG_INLINE: ${{ secrets.KUBECONFIG_INLINE }} 
       
     steps:
-       # 0) 准备 kubectl
+      # 1. Prepare K8S
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'v1.30.2'
-
+      
+      # 2. Check if secrets available 
       - name: Assert kubeconfig secret exists
         run: |
           test -n "${{ secrets.KUBECONFIG_INLINE }}" || { echo "KUBECONFIG_B64 not set"; exit 1; }
 
+      # 3. Verify the private key of the VPS
       - name: Debug kubeconfig (safe)
         run: |
           echo "== Checking server address =="
@@ -33,14 +35,14 @@ jobs:
           echo "${KUBECONFIG_INLINE}" | base64 -d | grep -E "current-context|name:"
           echo "== Showing first 10 lines =="
           echo "${KUBECONFIG_INLINE}" | base64 -d | head -n 10
-          
+
+      # 4. Prepare kube config 
       - name: Write kubeconfig
         run: |
           set -euo pipefail
           mkdir -p ~/.kube
           printf '%s' "${KUBECONFIG_INLINE}" | base64 -d > ~/.kube/config
           
-          # 验证文件是否写入成功
           if [ ! -s ~/.kube/config ]; then
             echo "❌ ~/.kube/config not created"; exit 1
           fi
@@ -48,13 +50,14 @@ jobs:
           chmod 600 ~/.kube/config
           echo "== server =="
           kubectl config view --raw --minify | sed -n 's/^[[:space:]]*server:[[:space:]]*//p'
-          
+      
+      # 5. Check the cluster information    
       - name: Check cluster
         run: |
           kubectl cluster-info
           kubectl get nodes    
           
-      # 2) 解析镜像参数：支持“完整镜像地址”或“仅 tag”
+      # 6. Find image from build workflow
       - name: Resolve IMAGE
         run: |
           REPO_LC="${GITHUB_REPOSITORY,,}"
@@ -65,33 +68,36 @@ jobs:
           fi
           echo "Will deploy IMAGE=$IMAGE"
   
-      # 2. Checkout resource code 
+      # 7. Checkout source code ready to deploy
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 4) 安装 envsubst
+      # 8. Install envsubst
       - name: Install envsubst
         run: sudo apt-get update && sudo apt-get install -y gettext-base
       
-      # 5) 渲染/准备清单（全部在 runner 临时目录进行，不落地 VPS）
+      # 9. Copy yaml files to deploy online temporary repo
       - name: Render manifests
         run: |
           mkdir -p /tmp/k8s
-          # configmap / mysql 原样拷贝（如果不需要变量替换）
+
           cp Kubernetes/configmap.yaml /tmp/k8s/configmap.yaml
           cp Kubernetes/Freelancer-mysql.yaml /tmp/k8s/mysql.yaml
+          cp Kubernetes/Freelancer-mongo.yaml /tmp/k8s/mongo.yaml
+          cp Kubernetes/mongo-init.yaml /tmp/k8s/mongo-init.yaml
           cp Kubernetes/ingress.yaml /tmp/k8s/ingress.yaml
-          # 渲染 app（替换 ${IMAGE}）
+          
           export IMAGE="$IMAGE"
           envsubst < Kubernetes/Freelancer-app.yaml > /tmp/k8s/app.yaml
           echo "=== Rendered app.yaml ==="
           grep -n 'image:' /tmp/k8s/app.yaml || true
 
+      # 10. Print namespace
       - name: Debug NS
         run: |
           echo "Namespace value is: '$NS'"
     
-      # 6) 直接在集群内创建/更新 Secret（不在 VPS 保留文件）
+      # 11. Apply secrets directly to the VPS without hardcode
       - name: Upsert Secret (freelancer-secret)
         run: |
           kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
@@ -100,22 +106,29 @@ jobs:
             --from-literal=MYSQL_USER="${{ secrets.MYSQL_USER }}" \
             --from-literal=MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD }}" \
             --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
+            --from-literal=MONGO_INITDB_ROOT_USERNAME="${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" \
+            --from-literal=MONGO_INITDB_ROOT_PASSWORD="${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}" \
+            --from-literal=MONGO_APP_USER="${{ secrets.MONGO_APP_USER }}" \
+            --from-literal=MONGO_APP_PASSWORD="${{ secrets.MONGO_APP_PASSWORD }}" \
+            --from-literal=MONGO_INITDB_DATABASE="${{ secrets.MONGO_INITDB_DATABASE }}" \
             --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
       
-      # 7) 直接 apply（无需上传到 VPS）
+      # 12. Start deployment
       - name: Apply manifests
         run: |
           set -euo pipefail
+          kubectl -n "$NS" apply -f /tmp/k8s/mongo-init.yaml
+          kubectl -n "$NS" apply -f /tmp/k8s/mongo.yaml
           kubectl -n "$NS" apply -f /tmp/k8s/ingress.yaml
           kubectl -n "$NS" apply -f /tmp/k8s/configmap.yaml
           kubectl -n "$NS" apply -f /tmp/k8s/mysql.yaml
           kubectl -n "$NS" apply -f /tmp/k8s/app.yaml
           
-      # 8) 等待就绪 & 输出状态
+      # 13. post deployment
       - name: Wait for rollout
         run: |
           set -e
-          # 这些资源名按你的实际为准
+          
           kubectl -n "$NS" rollout status statefulset/mysql --timeout=180s || true
           kubectl -n "$NS" rollout status deployment/spring-freelancer --timeout=180s || true
           echo "---- pods ----"
