@@ -3,8 +3,11 @@
     <h2>Testing Page</h2>
 
     <div class="actions">
-      <button :disabled="loading" @click="onInsert">➕ Insert one metric</button>
-      <button :disabled="loading" @click="onQuery">🔍 Query metrics</button>
+      <button :disabled="loading" @click="onInsertMysql">➕ Insert one metric</button>
+      <button :disabled="loading" @click="onQueryMysql">🔍 Query metrics</button>
+      <button :disabled="loading" @click="onInsertNosql">➕ Insert one metric to MongoDB</button>
+      <button :disabled="loading" @click="onQueryNosql">🔍 Query metrics from MongoDB</button>
+    
     </div>
 
     <p v-if="toast" class="toast">{{ toast }}</p>
@@ -30,12 +33,11 @@
   </section>
 </template>
 
-
 <script setup>
 
 import { ref } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
-import { insertMetric, fetchCount } from '../api/metrics'
+import { insertMetricMysql, fetchCountMysql,  insertMetricNosql, fetchCountNosql} from '../api/metrics'
 import { isAxiosError } from 'axios'
 
 onMounted(() => console.log('[Testing] mounted'))
@@ -50,7 +52,7 @@ function showToast(msg, ms = 1800) {
 }
 
 // The on insert function to insert metric to the backend server
-async function onInsert() {
+async function onInsertMysql() {
   try {
     loading.value = true
     // 演示：随机值 0~100
@@ -65,7 +67,7 @@ async function onInsert() {
 }
 
 // The on query method to query for metrics
-async function onQuery() {
+async function onQueryMysql() {
   try {
     loading.value = true
     const res = await fetchCount()
@@ -77,6 +79,36 @@ async function onQuery() {
     loading.value = false
   }
 }
+
+// The on insert function to insert metric to the backend server
+async function onInsertNosql() {
+  try {
+    loading.value = true
+    const val = +(Math.random() * 100).toFixed(2)
+    await insertMetricNosql(val)
+    showToast(`Inserted value=${val}`)
+  } catch (e) {
+    showToast('Insert failed')
+  } finally {
+    loading.value = false
+  }
+}
+
+// The on query method to query for metrics
+async function onQueryNosql() {
+  try {
+    loading.value = true
+    const res = await fetchCountNosql()
+    const count = typeof res.data === 'number' ? res.data : res.data.count
+    showToast(`Fetched count = ${count}`)
+  } catch (e) {
+    showToast('Query failed')
+  } finally {
+    loading.value = false
+  }
+}
+
+
 
 function formatTs(ts) {
   try {

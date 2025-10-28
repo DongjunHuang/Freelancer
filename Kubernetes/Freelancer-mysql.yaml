@@ -24,7 +24,7 @@ spec:
             - { name: data, mountPath: /var/lib/mysql }
         resources:
           requests: { cpu: "250m", memory: "256Mi" }
-          limits:   { cpu: "500m", memory: "512Gi" }
+          limits:   { cpu: "500m", memory: "512Mi" }
         readinessProbe:
           tcpSocket:
             port: 3306
@@ -46,7 +46,7 @@ spec:
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
-          storage: 45Gi
+          storage: 5Gi
       storageClassName: local-path  
 ---          
 apiVersion: v1

@@ -1,12 +1,16 @@
 package com.example.controllers;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.models.MetricDTO;
+import com.example.requests.CreateMetricReq;
+import com.example.requests.MetricRequestNosql;
 import com.example.services.MetricService;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/metrics")
@@ -32,5 +36,15 @@ public class MetricController {
   @GetMapping("/getNumber")
   public long getNumber() {
       return svc.getNumber();
+  }
+
+  @PostMapping("/insertNosql")
+  public ResponseEntity<Map<String, Object>> insertNosql(@RequestBody MetricRequestNosql req) {
+      return ResponseEntity.ok(svc.insertNosqlMetric(req));
+  }
+
+  @GetMapping("/getNumberNosql")
+  public long getNumberNosql() {
+      return svc.getNumberNosql();
   }
 }

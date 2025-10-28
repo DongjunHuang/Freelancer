@@ -1,4 +1,4 @@
-package com.example.controllers;
+package com.example.requests;
 
 import lombok.Data;
 import java.time.Instant;

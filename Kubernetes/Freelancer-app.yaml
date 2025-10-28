@@ -39,7 +39,10 @@ spec:
                 secretKeyRef:
                   name: freelancer-secret
                   key: MYSQL_PASSWORD
-
+            - name: SPRING_DATA_MONGODB_URI 
+              value: "mongodb://${MONGO_INITDB_ROOT_USERNAME}:{MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/?authSource=admin"
+            - name: SPRING_DATA_MONGODB_DATABASE
+              value: freelancer
           envFrom:
             - configMapRef:
                 name: freelancer-cm         
