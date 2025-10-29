@@ -37,20 +37,26 @@ spec:
                 secretKeyRef:
                   name: freelancer-secret
                   key: MYSQL_PASSWORD
-            - name: MONGO_APP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: freelancer-secret
-                  key: MONGO_APP_PASSWORD
-            - name: MONGO_APP_USER
+            - name: SPRING_DATA_MONGODB_HOST
+              value: "mongodb-service"
+            - name: SPRING_DATA_MONGODB_PORT
+              value: "27017"
+            - name: SPRING_DATA_MONGODB_DATABASE
+              value: "freelancer"
+            - name: SPRING_DATA_MONGODB_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: freelancer-secret
                   key: MONGO_APP_USER
+            - name: SPRING_DATA_MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: freelancer-secret
+                  key: MONGO_APP_PASSWORD
+            - name: SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE
+              value: "admin"
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:mysql://db:3306/$(MYSQL_DATABASE)?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
-            - name: SPRING_DATA_MONGODB_URI
-              value: "mongodb://${MONGO_APP_USER}:${MONGO_APP_PASSWORD}@mongodb-service:27017/freelancer?authSource=admin"
           envFrom:
             - configMapRef:
                 name: freelancer-cm         
