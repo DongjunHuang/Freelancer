@@ -36,7 +36,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: freelancer-secret
-                    key: MYSQL_PASSWORD
+                  key: MYSQL_PASSWORD
             - name: MONGO_APP_PASSWORD
               valueFrom:
                 secretKeyRef:
