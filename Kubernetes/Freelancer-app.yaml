@@ -50,7 +50,7 @@ spec:
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:mysql://db:3306/$(MYSQL_DATABASE)?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
             - name: SPRING_DATA_MONGODB_URI
-              value: "mongodb://${MONGO_APP_USER}:$(MONGO_APP_PASSWORD)@mongodb-service:27017/freelancer?authSource=admin"
+              value: "mongodb://${MONGO_APP_USER}:${MONGO_APP_PASSWORD}@mongodb-service:27017/freelancer?authSource=admin"
           envFrom:
             - configMapRef:
                 name: freelancer-cm         
