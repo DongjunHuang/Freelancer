@@ -53,7 +53,10 @@ spec:
               valueFrom: { secretKeyRef: { name: freelancer-secret, key: MONGO_APP_USER } }
             - name: SPRING_DATA_MONGODB_PASSWORD
               valueFrom: { secretKeyRef: { name: freelancer-secret, key: MONGO_APP_PASSWORD } }
-
+            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CORE_ENV
+              value: TRACE
+            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_MONGODB
+              value: DEBUG
             # 打开 health probes 端点
             - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
               value: "true"
