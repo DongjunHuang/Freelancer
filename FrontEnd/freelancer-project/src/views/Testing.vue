@@ -57,7 +57,7 @@ async function onInsertMysql() {
     loading.value = true
     // 演示：随机值 0~100
     const val = +(Math.random() * 100).toFixed(2)
-    await insertMetric(val)
+    await insertMetricMysql(val)
     showToast(`Inserted value=${val}`)
   } catch (e) {
     showToast('Insert failed')
@@ -70,7 +70,7 @@ async function onInsertMysql() {
 async function onQueryMysql() {
   try {
     loading.value = true
-    const res = await fetchCount()
+    const res = await fetchCountMysql()
     const count = typeof res.data === 'number' ? res.data : res.data.count
     showToast(`Fetched count = ${count}`)
   } catch (e) {
