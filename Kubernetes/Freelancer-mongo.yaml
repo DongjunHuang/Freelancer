@@ -29,6 +29,7 @@ spec:
       containers:
         - name: mongodb
           image: mongo:6.0
+          args: ["--bind_ip_all"]
           ports:
             - name: mongo
               containerPort: 27017
