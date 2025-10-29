@@ -108,9 +108,7 @@ jobs:
             --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
             --from-literal=MONGO_INITDB_ROOT_USERNAME="${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" \
             --from-literal=MONGO_INITDB_ROOT_PASSWORD="${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}" \
-            --from-literal=MONGO_APP_USER="${{ secrets.MONGO_APP_USER }}" \
-            --from-literal=MONGO_APP_PASSWORD="${{ secrets.MONGO_APP_PASSWORD }}" \
-            --from-literal=MONGO_INITDB_DATABASE="${{ secrets.MONGO_INITDB_DATABASE }}" \
+            --from-literal=SPRING_DATA_MONGODB_URI="${{ secrets.SPRING_DATA_MONGODB_URI }}" \
             --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
       
       # 12. Start deployment
