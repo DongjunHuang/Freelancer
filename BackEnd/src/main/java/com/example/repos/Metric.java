@@ -2,6 +2,8 @@ package com.example.repos;
 
 import java.time.Instant;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,8 +20,10 @@ public class Metric {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false)
+  @CreationTimestamp
+  @Column(nullable = false, updatable = false)
   private Instant ts;
+
   @Column(nullable = false)
   private Double value;
 }

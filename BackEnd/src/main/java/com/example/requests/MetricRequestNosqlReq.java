@@ -5,7 +5,7 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class MetricRequestNosql {
+public class MetricRequestNosqlReq {
     private Long userId;                
     private Integer value;               
     private String kind;                 

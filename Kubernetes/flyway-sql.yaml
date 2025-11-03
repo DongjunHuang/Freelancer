@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flyway-sql
+data:
+  V1__create_users.sql: |
+    CREATE TABLE IF NOT EXISTS users (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      public_id VARCHAR(64) NOT NULL UNIQUE,
+      username VARCHAR(100) NOT NULL UNIQUE,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      status ENUM('PENDING', 'ACTIVE', 'SUSPENDED', 'DELETED') NOT NULL DEFAULT 'PENDING',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+  V2__create_email_token.sql: |
+    CREATE TABLE IF NOT EXISTS mail_tokens (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      token VARCHAR(128) NOT NULL UNIQUE,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      username VARCHAR(255) NOT NULL UNIQUE,
+      expires_at DATETIME NOT NULL,
+      used BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_mail_token_user (user_id),
+      INDEX idx_mail_token_token (token)
+    );
+  V3__refresh_tokens.sql: |
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      token VARCHAR(255) NOT NULL UNIQUE,
+      expiry_date DATETIME(3) NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_refresh_user (user_id),
+      INDEX idx_refresh_token (token)
+    );

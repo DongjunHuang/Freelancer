@@ -11,42 +11,18 @@
     </div>
 
     <p v-if="toast" class="toast">{{ toast }}</p>
-
-    <table v-if="rows.length" class="tbl">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Timestamp</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(r, i) in rows" :key="r.ts + '-' + i">
-          <td>{{ i + 1 }}</td>
-          <td>{{ formatTs(r.ts) }}</td>
-          <td>{{ r.value }}</td>
-        </tr>
-      </tbody>
-    </table>
-
     <p v-else class="empty">No data yet. Click “Query metrics”.</p>
   </section>
 </template>
 
-<script setup>
-
+<script setup lang="ts">
 import { ref } from 'vue'
-import { onMounted, onBeforeUnmount } from 'vue'
-import { insertMetricMysql, fetchCountMysql,  insertMetricNosql, fetchCountNosql} from '../api/metrics'
-import { isAxiosError } from 'axios'
+import { insertMetricMysql, fetchCountMysql,  insertMetricNosql, fetchCountNosql} from '@/api/metrics'
 
-onMounted(() => console.log('[Testing] mounted'))
-onBeforeUnmount(() => console.log('[Testing] unmounted'))
 const loading = ref(false)
 const toast = ref('')
-const rows = ref([])
 
-function showToast(msg, ms = 1800) {
+function showToast(msg: string, ms = 1800) {
   toast.value = msg
   setTimeout(() => (toast.value = ''), ms)
 }
@@ -55,7 +31,6 @@ function showToast(msg, ms = 1800) {
 async function onInsertMysql() {
   try {
     loading.value = true
-    // 演示：随机值 0~100
     const val = +(Math.random() * 100).toFixed(2)
     await insertMetricMysql(val)
     showToast(`Inserted value=${val}`)
@@ -105,16 +80,6 @@ async function onQueryNosql() {
     showToast('Query failed')
   } finally {
     loading.value = false
-  }
-}
-
-
-
-function formatTs(ts) {
-  try {
-    return new Date(ts).toLocaleString()
-  } catch {
-    return ts
   }
 }
 </script>

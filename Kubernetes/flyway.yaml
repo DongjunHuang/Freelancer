@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flyway-migrate
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: flyway
+        image: flyway/flyway:10
+        command:
+          - flyway
+          - -url=jdbc:mysql://db:3306/$(MYSQL_DATABASE)?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC&characterEncoding=utf8
+          - -user=$(MYSQL_USER)
+          - -password=$(MYSQL_PASSWORD)
+          - -locations=filesystem:/flyway/sql
+          - -baselineOnMigrate=true
+          - migrate
+        env:
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: freelancer-secret
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freelancer-secret
+              key: MYSQL_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: freelancer-secret
+              key: MYSQL_DATABASE
+        volumeMounts:
+        - name: migration-sql
+          mountPath: /flyway/sql
+      volumes:
+      - name: migration-sql
+        configMap:
+          name: flyway-sql

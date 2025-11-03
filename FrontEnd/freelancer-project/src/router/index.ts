@@ -1,21 +1,19 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import Testing from '../views/Testing.vue'
-import Data from '../views/Data.vue'
-import Login from '../views/Login.vue';
-import Signup from '../views/Signup.vue';
+import Testing from '@/views/Metrics.vue'
+import Signin from '@/views/Signin.vue';
+import Signup from '@/views/Signup.vue';
+import Dashboard from '@/views/Dashboard.vue';
 
 const BASE = import.meta.env.BASE_URL
 console.log('[Router BASE]', BASE)
-
-export default createRouter({
+const router =  createRouter({
   history: createWebHistory(BASE),
   routes: [
-    { path: '/', component: Home },
-    { path: '/testing', component: Testing },
-    { path: '/data', component: Data },
-    { path: "/login", component: Login },
+    { path: '/metrics', component: Testing },
+    { path: "/signin", component: Signin },
     { path: "/signup", component: Signup },
+    { path: "/dashboard", component: Dashboard }
   ],
 })
+export default router

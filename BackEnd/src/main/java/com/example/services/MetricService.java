@@ -22,22 +22,18 @@ import com.example.repos.MetricRepository;
 import com.example.repos.MongoMetric;
 import com.example.repos.MongoMetricRepository;
 import com.example.requests.CreateMetricReq;
-import com.example.requests.MetricRequestNosql;
+import com.example.requests.MetricRequestNosqlReq;
 
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class MetricService {
 
     private final MetricRepository metricRepository;
     private final MongoTemplate template;
     private final MongoMetricRepository mongoMetricRepository;
-    
-    public MetricService(MetricRepository metricRepository, MongoTemplate template, MongoMetricRepository mongoMetricRepository) {
-        this.metricRepository = metricRepository;
-        this.template = template;
-        this.mongoMetricRepository = mongoMetricRepository;
-    }
     
     @Transactional
     public MetricDTO insert(@NonNull CreateMetricReq req) {
@@ -64,7 +60,7 @@ public class MetricService {
         return metricRepository.count();
     }
 
-    public Map<String, Object> insertNosqlMetric(MetricRequestNosql req) {
+    public Map<String, Object> insertNosqlMetric(MetricRequestNosqlReq req) {
         MongoMetric saved = mongoMetricRepository.save(new MongoMetric(
                 req.getUserId(),
                 req.getValue(),
