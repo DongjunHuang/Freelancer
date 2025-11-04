@@ -1,6 +1,6 @@
 package com.example.repos;
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -36,12 +36,14 @@ public class User {
   private String password;
   
   @Enumerated(EnumType.STRING) 
-  @Column(nullable=false) 
+  @Column(nullable=false, length=32)
   private UserStatus status = UserStatus.PENDING;
   
   @CreationTimestamp 
+  @Column(name="created_at", updatable=false, nullable=false)
   private Timestamp createdAt;
   
   @UpdateTimestamp 
+  @Column(name="updated_at", nullable=false)
   private Timestamp updatedAt;
 }

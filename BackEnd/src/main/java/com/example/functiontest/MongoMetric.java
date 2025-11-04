@@ -1,4 +1,4 @@
-package com.example.repos;
+package com.example.functiontest;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;

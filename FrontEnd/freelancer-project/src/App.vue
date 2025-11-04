@@ -1,16 +1,17 @@
 <template>
   <div class="min-h-screen bg-gray-50 overflow-x-hidden">
-    <!-- 顶部导航栏 -->
+    <!-- The navigation bar -->
     <header class="w-full bg-white border-b flex items-center justify-between h-16 px-8">
-      <!-- 左侧 -->
+      <!-- The left part -->
       <div class="flex items-center space-x-8">
         <div class="text-xl font-bold text-blue-700">Data Reporter</div>
         <nav class="flex items-center space-x-6 text-sm text-gray-700">
-          <RouterLink to="/metrics" class="hover:text-blue-700">Testing</RouterLink>
+          <RouterLink to="/tests" class="hover:text-blue-700">Testing</RouterLink>
           <RouterLink to="/dashboard" class="hover:text-blue-700">Dashboard</RouterLink>
         </nav>
       </div>
 
+      <!-- The right part -->
       <div class="flex items-center space-x-4">
         <RouterLink to="/signin" class="px-5 py-1.5 border border-blue-800 text-blue-800 rounded-full hover:bg-blue-50">
           Log In

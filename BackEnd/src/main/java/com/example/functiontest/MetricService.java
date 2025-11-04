@@ -1,4 +1,4 @@
-package com.example.services;
+package com.example.functiontest;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -17,12 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.models.MetricDTO;
-import com.example.repos.Metric;
-import com.example.repos.MetricRepository;
-import com.example.repos.MongoMetric;
-import com.example.repos.MongoMetricRepository;
-import com.example.requests.CreateMetricReq;
-import com.example.requests.MetricRequestNosqlReq;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +27,7 @@ public class MetricService {
 
     private final MetricRepository metricRepository;
     private final MongoTemplate template;
-    private final MongoMetricRepository mongoMetricRepository;
+    private final TestMetricRepository mongoMetricRepository;
     
     @Transactional
     public MetricDTO insert(@NonNull CreateMetricReq req) {

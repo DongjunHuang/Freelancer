@@ -17,17 +17,17 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepo repo;
 
-    public RefreshToken createAndSaveRefreshToken(Long userId, String token, Instant expiryDate) {
+    public RefreshToken createAndSaveRefreshToken(String username, String token, Instant expiryDate) {
         RefreshToken entity = new RefreshToken();
-        entity.setUserId(userId);
+        entity.setUsername(username);
         entity.setToken(token);
-        entity.setExpiryDate(expiryDate);
+        entity.setExpireAt(expiryDate);
         return repo.save(entity);
     }
 
     public boolean validateRefreshToken(String token) {
         return repo.findByToken(token)
-            .filter(rt -> rt.getExpiryDate().isAfter(Instant.now()))
+            .filter(rt -> rt.getExpireAt().isAfter(Instant.now()))
             .isPresent();
     }
 
@@ -36,24 +36,16 @@ public class RefreshTokenService {
     }
 
     public boolean isExpired(RefreshToken rt) {
-        return rt.getExpiryDate().isBefore(Instant.now());
-    }
-
-    public void revokeRefreshToken(Long userId) {
-        repo.deleteByUserId(userId);
+        return rt.getExpireAt().isBefore(Instant.now());
     }
 
     @Transactional
     public RefreshToken rotate(RefreshToken oldRt, String newToken, Instant newExp) {
         repo.deleteByToken(oldRt.getToken());
         RefreshToken fresh = new RefreshToken();
-        fresh.setUserId(oldRt.getUserId());
+        fresh.setUsername(oldRt.getUsername());
         fresh.setToken(newToken);
-        fresh.setExpiryDate(newExp);
+        fresh.setExpireAt(newExp);
         return repo.save(fresh);
-    }
-
-    public void revokeByUser(Long userId) {
-        repo.deleteByUserId(userId);
     }
 }

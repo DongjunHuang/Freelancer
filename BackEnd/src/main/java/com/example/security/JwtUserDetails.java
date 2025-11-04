@@ -8,24 +8,15 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.example.repos.User;
-import com.example.repos.UserStatus;
 
 import lombok.Data;
 
 @Data
 public class JwtUserDetails implements UserDetails {
-    private final Long id;
-    private final String publicId;
-    private final String username;
-    private final String email;
-    private final UserStatus uStatus;
-    
+    private User user;
+
     public JwtUserDetails(User user) {
-        this.id = user.getUserId();
-        this.username = user.getUsername();
-        this.email = user.getEmail();
-        this.uStatus = user.getStatus();
-        this.publicId = user.getPublicId();
+        this.user = user;    
     }
 
     @Override
@@ -35,7 +26,19 @@ public class JwtUserDetails implements UserDetails {
 
     @Override
     public @Nullable String getPassword() {
-        // Keep empty, we do not want to expose password.
-        throw new UnsupportedOperationException("Unimplemented method 'getPassword'");
+        return user.getPassword();
+    }
+
+    @Override
+    public String getUsername() {
+       return user.getUsername();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
+    }
+
+    public Long getId() {
+        return user.getUserId();
     }
 }

@@ -2,7 +2,7 @@ package com.example.models;
 
 import java.time.Instant;
 
-import com.example.repos.Metric;
+import com.example.functiontest.Metric;
 
 
 public record MetricDTO(Instant ts, Double value) {

@@ -6,7 +6,7 @@
           <form class="space-y-4" @submit.prevent="submit">
             <input v-model.trim="f.username" type="text" placeholder="Username" class="w-full border rounded-lg px-3 py-2" required />
             <input v-model="f.password" type="password" placeholder="Password" class="w-full border rounded-lg px-3 py-2" required />
-            <button class="w-full rounded-full bg-slate-900 text-white py-2.5 hover:opacity-90">Create account</button>
+            <button class="w-full rounded-full bg-slate-900 text-white py-2.5 hover:opacity-90">Submit</button>
             <p class="text-xs text-slate-500">
               By signing up you agree to our Terms and Privacy Policy.
             </p>
@@ -21,6 +21,7 @@
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { signin } from '@/api/auth'  
+import { Console } from 'console';
   
   const router = useRouter()
   const f = ref({ username: '', password: '' })
@@ -33,10 +34,12 @@
     loading.value = true
     try {
       const res = await signin({ username: f.value.username, password: f.value.password })
-      
-      const access = res.data?.access_token
-      if (access) {
-        localStorage.setItem('access_token', access)
+
+      const accessToken = res.data?.accessToken
+      console.log(accessToken)
+
+      if (accessToken) {
+        localStorage.setItem('access_token', accessToken)
         router.push('/dashboard')
       } else {
         throw new Error('No access token in response')

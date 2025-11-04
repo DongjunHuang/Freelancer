@@ -1,4 +1,4 @@
-package com.example.requests;
+package com.example.functiontest;
 
 import lombok.Data;
 import java.time.Instant;

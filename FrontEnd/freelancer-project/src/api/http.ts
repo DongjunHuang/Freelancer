@@ -16,7 +16,7 @@ const http: AxiosInstance = axios.create({
 
 http.interceptors.request.use((config) => {
     const url = config.url || ''
-    const isNotAuth = url.startsWith('/auth') || url.startsWith('/api/metrics')
+    const isNotAuth = url.startsWith('/auth') || url.startsWith('/api/tests')
     if (!isNotAuth) {
       const token = localStorage.getItem('access_token')
       if (token) {
@@ -55,11 +55,9 @@ http.interceptors.response.use(
         localStorage.setItem('access_token', newToken)
         refreshing = false
 
-        // 唤醒队列中的请求
         pendingQueue.forEach(cb => cb(newToken))
         pendingQueue = []
 
-        // 🔁 重发原请求
         original.headers = original.headers || {}
         original.headers.Authorization = `Bearer ${newToken}`
         return http(original)

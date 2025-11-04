@@ -7,7 +7,19 @@
             <input v-model.trim="f.username" type="text" placeholder="Username" class="w-full border rounded-lg px-3 py-2" required />
             <input v-model.trim="f.email" type="email" placeholder="Email" class="w-full border rounded-lg px-3 py-2" required />
             <input v-model="f.password" type="password" placeholder="Password" class="w-full border rounded-lg px-3 py-2" required />
-            <button class="w-full rounded-full bg-slate-900 text-white py-2.5 hover:opacity-90">Create account</button>
+            
+            <button :disabled="!isFormValid || loading"
+                    @click="submit"
+                    class="w-full rounded-full bg-slate-900 text-white py-2.5 disabled:opacity-40 hover:opacity-90 flex items-center justify-center">
+              <span v-if="!loading">Create account</span>
+              <span v-else class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                Processing...
+              </span>
+            </button>
             <p class="text-xs text-slate-500">
               By signing up you agree to our Terms and Privacy Policy.
             </p>
@@ -18,17 +30,22 @@
   </template>
   
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed} from 'vue'
 import { useRouter } from 'vue-router'
 import { signup } from '@/api/auth'  
+
 
 const router = useRouter()
 const f = ref({ username: '', password: '', email: '' })
 const loading = ref(false)
 const error = ref('')
 const success = ref('');
+const isFormValid = computed(() => {
+  return f.value.username.trim() && f.value.email.trim() && f.value.password.trim()
+})
 
 async function submit() {
+  if (!isFormValid.value || loading.value) return
   error.value = ''
   success.value = ''
   loading.value = true
@@ -37,7 +54,7 @@ async function submit() {
     const res = await signup({ username: f.value.username, password: f.value.password, email: f.value.email })
     
     success.value = res.data?.message || 'Registration successful. Please check your email the link to verify.'
-    setTimeout(() => router.push('/login'), 1200)
+    setTimeout(() => router.push('/signin'), 1200)
   } catch (e: any) {
     if (e.response?.data?.detail) 
       error.value = e.response.data.detail
@@ -49,4 +66,4 @@ async function submit() {
     loading.value = false
   }
 }
-  </script>∏
+</script>

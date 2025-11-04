@@ -1,6 +1,7 @@
 package com.example.repos;
 
-import java.security.Timestamp;
+
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -27,17 +28,17 @@ public class MailToken {
   @Column(nullable=false, unique=true, length=128) 
   private String token;
   
-  @Column(nullable=false, unique=true) 
+  @Column(nullable=false) 
   private String email;
 
-  @Column(nullable=false, unique=true) 
+  @Column(nullable=false) 
   private String username;
 
   @Column(nullable=false) 
-  private LocalDateTime expiresAt;
-  
-  @Column(nullable=false) 
   private boolean used=false;
+
+  @Column(nullable=false) 
+  private LocalDateTime expiresAt;  
   
   @CreationTimestamp 
   private Timestamp createdAt;

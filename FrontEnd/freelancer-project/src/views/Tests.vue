@@ -7,7 +7,7 @@
       <button :disabled="loading" @click="onQueryMysql">🔍 Query metrics</button>
       <button :disabled="loading" @click="onInsertNosql">➕ Insert one metric to MongoDB</button>
       <button :disabled="loading" @click="onQueryNosql">🔍 Query metrics from MongoDB</button>
-    
+      <button :disabled="loading" @click="onSendEmailTest">🔍 Test Send Email</button>
     </div>
 
     <p v-if="toast" class="toast">{{ toast }}</p>
@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { insertMetricMysql, fetchCountMysql,  insertMetricNosql, fetchCountNosql} from '@/api/metrics'
+import * as tests from '@/api/tests'
 
 const loading = ref(false)
 const toast = ref('')
@@ -27,12 +27,22 @@ function showToast(msg: string, ms = 1800) {
   setTimeout(() => (toast.value = ''), ms)
 }
 
+async function onSendEmailTest() {
+  try {
+    await tests.sendEmailTest()
+  } catch (e) {
+    showToast('Insert failed')
+  } finally {
+    loading.value = false
+  }
+}
+
 // The on insert function to insert metric to the backend server
 async function onInsertMysql() {
   try {
     loading.value = true
     const val = +(Math.random() * 100).toFixed(2)
-    await insertMetricMysql(val)
+    await tests.insertMetricMysql(val)
     showToast(`Inserted value=${val}`)
   } catch (e) {
     showToast('Insert failed')
@@ -45,7 +55,7 @@ async function onInsertMysql() {
 async function onQueryMysql() {
   try {
     loading.value = true
-    const res = await fetchCountMysql()
+    const res = await tests.fetchCountMysql()
     const count = typeof res.data === 'number' ? res.data : res.data.count
     showToast(`Fetched count = ${count}`)
   } catch (e) {
@@ -60,7 +70,7 @@ async function onInsertNosql() {
   try {
     loading.value = true
     const val = +(Math.random() * 100).toFixed(2)
-    await insertMetricNosql(val)
+    await tests.insertMetricNosql(val)
     showToast(`Inserted value=${val}`)
   } catch (e) {
     showToast('Insert failed')
@@ -73,7 +83,7 @@ async function onInsertNosql() {
 async function onQueryNosql() {
   try {
     loading.value = true
-    const res = await fetchCountNosql()
+    const res = await tests.fetchCountNosql()
     const count = typeof res.data === 'number' ? res.data : res.data.count
     showToast(`Fetched count = ${count}`)
   } catch (e) {

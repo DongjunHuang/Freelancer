@@ -1,4 +1,4 @@
-package com.example.controllers;
+package com.example.functiontest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,9 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.models.MetricDTO;
-import com.example.requests.CreateMetricReq;
-import com.example.requests.MetricRequestNosqlReq;
-import com.example.services.MetricService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,12 +14,13 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/metrics")
+@RequestMapping("/tests")
 @RequiredArgsConstructor
-public class MetricController {
-    private static final Logger logger = LoggerFactory.getLogger(MetricController.class);
+public class TestsController {
+    private static final Logger logger = LoggerFactory.getLogger(TestsController.class);
 
     private final MetricService svc;
+    private final TestEmailService testEmailService;
 
     @PostMapping("/insert")
     public MetricDTO insert(@RequestBody CreateMetricReq req){
@@ -50,5 +48,11 @@ public class MetricController {
     @GetMapping("/getNumberNosql")
     public long getNumberNosql() {
         return svc.getNumberNosql();
+    }
+
+    @GetMapping("/sendEmailTest")
+    public void sendEmailTest() {
+        logger.info("Received the sending email tests");
+        testEmailService.sendVerificationMail("12345");
     }
 }

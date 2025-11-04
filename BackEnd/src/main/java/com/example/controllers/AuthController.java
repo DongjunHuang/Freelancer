@@ -14,6 +14,9 @@ import lombok.RequiredArgsConstructor;
 
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +33,14 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
-@RestController("/auth")
+@RestController
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
     /**
@@ -60,6 +65,7 @@ public class AuthController {
 
     @GetMapping("/verify")
     public ResponseEntity<?> verify(@RequestParam String token) {
+        logger.info("Start verifying the token: " + token);
         userService.validateEmail(token);
         return ResponseEntity.ok(Map.of("message","verified"));
     }
@@ -80,15 +86,19 @@ public class AuthController {
             JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();
             String accessToken = jwtService.generateAccessToken(principal.getUsername(), principal.getEmail());
             String refreshToken = jwtService.generateRefreshToken(principal.getUsername(), principal.getEmail());
-            refreshTokenService.createAndSaveRefreshToken(null, refreshToken, null);
+            logger.info("username: " + principal.getUsername() + ", email: " + principal.getEmail());
+
+            Instant instant = LocalDateTime.now().plusDays(7).atZone(ZoneId.systemDefault()).toInstant();
+            refreshTokenService.createAndSaveRefreshToken(principal.getUsername(), refreshToken, instant);
+
             ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(List.of(env.getActiveProfiles()).contains("prod"))        
-                .path("/auth/refresh")
+                .path("/auth/refresh") // The only api direction should contain the cookie
                 .maxAge(Duration.ofDays(7))
                 .sameSite("Strict")
                 .build();
-
+            logger.info("The access token is " + accessToken);    
             return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(Map.of(
@@ -101,6 +111,13 @@ public class AuthController {
         }
     }
 
+    // TODO: implement
+    @PostMapping("/signout")
+    public ResponseEntity<?> logout() {
+        return null;
+    }
+
+    //TODO: test
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@CookieValue("refreshToken") String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {

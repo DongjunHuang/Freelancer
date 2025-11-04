@@ -1,5 +1,5 @@
 // src/main/java/com/example/metrics/dto/MetricRequest.java
-package com.example.requests;
+package com.example.functiontest;
 
 import java.util.Map;
 import lombok.Data;

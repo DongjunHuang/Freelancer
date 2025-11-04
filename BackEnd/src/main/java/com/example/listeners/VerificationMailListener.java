@@ -3,6 +3,8 @@ package com.example.listeners;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -15,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class VerificationMailListener {
+    private static final Logger logger = LoggerFactory.getLogger(VerificationMailListener.class);
+
     @Value("${app.frontendBaseUrl}") 
     private String feBaseUrl;
 
@@ -25,6 +29,7 @@ public class VerificationMailListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(VerificationCreatedEvent event) {
+        logger.info("Sending email for verification to user.");
         this.sendVerificationMail(event.email(), event.token());
     }
 
@@ -35,9 +40,9 @@ public class VerificationMailListener {
         msg.setTo(email);
         msg.setSubject("Verify your email");
         msg.setText("""
-        Welcome to YourBrand!
+        Welcome to Data Report Freelancer!
 
-        Please verify your email by clicking the link below (valid for 1 hours):
+        Please verify your email by clicking the link below (valid for 2 hours):
         %s
 
         If you did not sign up, please ignore this email.

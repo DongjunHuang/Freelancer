@@ -1,6 +1,6 @@
-package com.example.repos;
+package com.example.functiontest;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MongoMetricRepository extends MongoRepository<MongoMetric, String> {}
+public interface TestMetricRepository extends MongoRepository<MongoMetric, String> {}

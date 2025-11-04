@@ -35,37 +35,42 @@ public class UserService {
     public void signup(SignupReq req) {
         userRepo.findByEmail(req.getEmail()).ifPresent(u -> { throw new IllegalArgumentException("Email taken"); });
         userRepo.findByUsername(req.getUsername()).ifPresent(u -> { throw new IllegalArgumentException("Account taken"); });
-
+        
+        // Pending waiting for user to verify the email
         User user = new User();
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
         user.setPassword(encoder.encode(req.getPassword()));
         user.setStatus(UserStatus.PENDING);
+        user.setPublicId(UUID.randomUUID().toString());
         userRepo.save(user);
-
+        // Prepare the mail token to the user
+        
         MailToken token = new MailToken();
         token.setUserId(user.getUserId());
         token.setEmail(user.getEmail());
         token.setUsername(user.getUsername());
-        
         token.setToken(UUID.randomUUID().toString().replace("-", "") + RandomStringUtils.randomAlphanumeric(32));
         token.setExpiresAt(LocalDateTime.now().plusHours(TTL_Hours));
         mailTokenRepo.save(token);  
+        
+        // Publish the event for email verification
         publisher.publishEvent(new VerificationCreatedEvent(user.getUserId(), user.getEmail(), token.getToken()));
     }
 
  
     @Transactional
     public void validateEmail(String token) {
-        var tok = mailTokenRepo.findByToken(token).orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+        MailToken tok = mailTokenRepo.findByToken(token).orElseThrow(() -> new IllegalArgumentException("Invalid token"));
         if (tok.isUsed() || tok.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Token expired/used");
         }
         
-        User user = userRepo.findById(tok.getUserId())
-        .orElseThrow(() -> new RuntimeException("User not found"));
-    
+        User user = userRepo.findById(tok.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
         user.setStatus(UserStatus.ACTIVE);
         userRepo.save(user);
+        
+        tok.setUsed(true);
+        mailTokenRepo.save(tok);
     }
 }
