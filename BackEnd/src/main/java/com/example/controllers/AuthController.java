@@ -111,13 +111,6 @@ public class AuthController {
         }
     }
 
-    // TODO: implement
-    @PostMapping("/signout")
-    public ResponseEntity<?> logout() {
-        return null;
-    }
-
-    //TODO: test
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@CookieValue("refreshToken") String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
@@ -127,9 +120,16 @@ public class AuthController {
         if (!jwtService.isValid(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
         }
+
         TokenInfo info = jwtService.parse(refreshToken);
 
         String newAccessToken = jwtService.generateAccessToken(info.getUsername(), info.getEmail());
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+    }
+
+    // TODO: implement
+    @PostMapping("/signout")
+    public ResponseEntity<?> logout() {
+        return null;
     }
 }

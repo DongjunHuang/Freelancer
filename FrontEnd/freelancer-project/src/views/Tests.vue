@@ -3,11 +3,12 @@
     <h2>Testing Page</h2>
 
     <div class="actions">
-      <button :disabled="loading" @click="onInsertMysql">➕ Insert one metric</button>
-      <button :disabled="loading" @click="onQueryMysql">🔍 Query metrics</button>
-      <button :disabled="loading" @click="onInsertNosql">➕ Insert one metric to MongoDB</button>
-      <button :disabled="loading" @click="onQueryNosql">🔍 Query metrics from MongoDB</button>
+      <button :disabled="loading" @click="onInsertMysql">➕ Test Insert to Mysql</button>
+      <button :disabled="loading" @click="onQueryMysql">🔍 Test Query from Mysql</button>
+      <button :disabled="loading" @click="onInsertNosql">➕ Test Insert to MongoDB</button>
+      <button :disabled="loading" @click="onQueryNosql">🔍 Test Query from MongoDB</button>
       <button :disabled="loading" @click="onSendEmailTest">🔍 Test Send Email</button>
+      <button :disabled="loading" @click="onRefreshAccessTokenRequest">🔍 Test Refresh Token API</button>
     </div>
 
     <p v-if="toast" class="toast">{{ toast }}</p>
@@ -18,6 +19,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import * as tests from '@/api/tests'
+import * as dashboard from '@/api/dashboard'
 
 const loading = ref(false)
 const toast = ref('')
@@ -84,6 +86,20 @@ async function onQueryNosql() {
   try {
     loading.value = true
     const res = await tests.fetchCountNosql()
+    const count = typeof res.data === 'number' ? res.data : res.data.count
+    showToast(`Fetched count = ${count}`)
+  } catch (e) {
+    showToast('Query failed')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Test refresh token, this should be called only when you have already logged in
+async function onRefreshAccessTokenRequest() {
+  try {
+    localStorage.removeItem('access_token')
+    const res = await dashboard.refreshAccessTokenRequest()
     const count = typeof res.data === 'number' ? res.data : res.data.count
     showToast(`Fetched count = ${count}`)
   } catch (e) {

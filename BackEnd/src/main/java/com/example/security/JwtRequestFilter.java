@@ -41,7 +41,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                                     HttpServletResponse res,
                                     FilterChain chain) throws IOException, ServletException {
         String header = req.getHeader(AUTH_HEADER);
-
         if (header == null || !header.startsWith(BEARER)) {
             chain.doFilter(req, res);
             return;
