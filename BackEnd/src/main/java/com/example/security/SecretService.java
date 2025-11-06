@@ -13,11 +13,16 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import java.security.Key;
 import java.util.Base64;
 
 @Service
-public class JwtService {
+public class SecretService {
     private final JwtParser parser;
     
     // Access Token TTL    
@@ -27,11 +32,15 @@ public class JwtService {
     private final long REFRESH_EXPIRATION = 1000L * 60 * 60 * 24 * 7;
 
     // The generated key according to private key string
+    private String privateKeyBase64;
     private Key key;
-
-    public JwtService(@Value("${jwt.private-key}") String privateKeyBase64) {
+    public SecretService(@Value("${jwt.private-key}") String privateKeyBase64) {
+        this.privateKeyBase64 = privateKeyBase64;
         this.key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(privateKeyBase64));
-        this.parser = Jwts.parserBuilder().setSigningKey(key).setAllowedClockSkewSeconds(60).build();
+        this.parser = Jwts.parserBuilder()
+                                .setSigningKey(this.key)
+                                .setAllowedClockSkewSeconds(60)
+                                .build();
     }
 
     /**
@@ -52,7 +61,8 @@ public class JwtService {
      * @param username
      * @return
      */
-    public String generateAccessToken(String username, String email) {
+    public String generateAccessToken(String username, 
+                                        String email) {
         Map<String, String> map = new HashMap<String, String>();
         map.put("username", username);
         map.put("email", email);
@@ -94,5 +104,36 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(this.key)
                 .compact();
+    }
+
+    private String hmacSha256Base64Url(String message) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(this.privateKeyBase64.getBytes(), "HmacSHA256"));
+            byte[] sig = mac.doFinal(message.getBytes());
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(sig);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String generateSignedDeviceId() {
+        String deviceId = UUID.randomUUID().toString();
+
+        String sig = hmacSha256Base64Url(deviceId);
+        String value = deviceId + "." + sig;
+        return value;
+    }
+
+    public boolean validateSignedDeviceId(String signedDeviceId) {
+        String[] parts = signedDeviceId.split("\\.");
+        String id = parts[0];
+        String sig = parts[1];
+
+        String expected = hmacSha256Base64Url(id);
+        if (!expected.equals(sig)) {
+            return false;
+        }
+        return true;
     }
 }

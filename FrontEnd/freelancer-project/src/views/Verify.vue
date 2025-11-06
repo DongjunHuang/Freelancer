@@ -1,5 +1,36 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { verifyEmail } from '@/api/auth'
+
+const route = useRoute()
+const router = useRouter()
+
+const state = ref<'loading' | 'ok' | 'error'>('loading')
+const errorMsg = ref<string>('')
+
+onMounted(async () => {
+  const token = String(route.query.token || '')
+  if (!token) {
+    state.value = 'error'
+    errorMsg.value = 'need token parameter'
+    return
+  }
+
+  try {
+    await verifyEmail(token)
+    state.value = 'ok'
+    // Move to sign in page
+    setTimeout(() => router.push('/signin'), 2000) 
+  } catch (err: any) {
+    state.value = 'error'
+    errorMsg.value = err?.response?.data?.message || err?.message || 'Error'
+  }
+})
+</script>
+
 <template>
-    <div class="min-h-screen flex justify-center items-start bg-gray-50 px-4 pt-20">
+  <div class="min-h-screen flex justify-center items-start bg-gray-50 px-4 pt-20">
       <div class="w-full max-w-md bg-white rounded-2xl shadow p-8 text-center flex flex-col items-center space-y-3">
   
         <!-- Loading -->
@@ -40,35 +71,4 @@
         </template>
       </div>
     </div>
-  </template>
-  
-  <script setup lang="ts">
-  import { onMounted, ref } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-  import { verifyEmail } from '@/api/auth'
-  
-  const route = useRoute()
-  const router = useRouter()
-  
-  const state = ref<'loading' | 'ok' | 'error'>('loading')
-  const errorMsg = ref<string>('')
-  
-  onMounted(async () => {
-    const token = String(route.query.token || '')
-    if (!token) {
-      state.value = 'error'
-      errorMsg.value = 'need token parameter'
-      return
-    }
-  
-    try {
-      await verifyEmail(token)
-      state.value = 'ok'
-      // Move to sign in page
-      setTimeout(() => router.push('/signin'), 2000)
-    } catch (err: any) {
-      state.value = 'error'
-      errorMsg.value = err?.response?.data?.message || err?.message || 'Error'
-    }
-  })
-  </script>
+</template>

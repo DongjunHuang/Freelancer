@@ -1,6 +1,6 @@
 package com.example.services;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -17,35 +17,40 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepo repo;
 
-    public RefreshToken createAndSaveRefreshToken(String username, String token, Instant expiryDate) {
+    @Transactional
+    public RefreshToken createAndSaveRefreshToken(Long userId, 
+                                            String username, 
+                                            String token, 
+                                            String deviceId,
+                                            String ipAddress,
+                                            LocalDateTime expiryDate) {
+        repo.deleteByUserIdAndDeviceId(userId, deviceId);
+        
         RefreshToken entity = new RefreshToken();
         entity.setUsername(username);
         entity.setToken(token);
-        entity.setExpireAt(expiryDate);
+        entity.setExpiresAt(expiryDate);
+        entity.setIpAddress(ipAddress);
+        entity.setUserId(userId);
+        entity.setDeviceId(deviceId);
         return repo.save(entity);
-    }
-
-    public boolean validateRefreshToken(String token) {
-        return repo.findByToken(token)
-            .filter(rt -> rt.getExpireAt().isAfter(Instant.now()))
-            .isPresent();
     }
 
     public Optional<RefreshToken> find(String token) {
         return repo.findByToken(token);
     }
 
-    public boolean isExpired(RefreshToken rt) {
-        return rt.getExpireAt().isBefore(Instant.now());
+    public boolean validateRefreshToken(String token) {
+        return repo.findByToken(token)
+            .filter(rt -> rt.getExpiresAt().isAfter(LocalDateTime.now()))
+            .isPresent();
+    }
+ 
+    public void revokeByUserAndDevice(Long userId, String deviceId) {
+        repo.deleteByUserIdAndDeviceId(userId, deviceId);
     }
 
-    @Transactional
-    public RefreshToken rotate(RefreshToken oldRt, String newToken, Instant newExp) {
-        repo.deleteByToken(oldRt.getToken());
-        RefreshToken fresh = new RefreshToken();
-        fresh.setUsername(oldRt.getUsername());
-        fresh.setToken(newToken);
-        fresh.setExpireAt(newExp);
-        return repo.save(fresh);
+    public boolean isExpired(RefreshToken rt) {
+        return rt.getExpiresAt().isBefore(LocalDateTime.now());
     }
 }

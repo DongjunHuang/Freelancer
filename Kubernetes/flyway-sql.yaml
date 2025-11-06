@@ -18,22 +18,27 @@ data:
     CREATE TABLE IF NOT EXISTS mail_tokens (
       id         BIGINT PRIMARY KEY AUTO_INCREMENT,
       user_id    BIGINT       NOT NULL,
-      token      VARCHAR(128) NOT NULL UNIQUE,                 -- 只保证 token 唯一
-      email      VARCHAR(255) NOT NULL,
+      token      VARCHAR(128) NOT NULL UNIQUE,                 
+      email      VARCHAR(255) NOT NULL UNIQUE,
       username   VARCHAR(255) NOT NULL,
       expires_at DATETIME(6)  NOT NULL,
       used       BOOLEAN      NOT NULL DEFAULT FALSE,
       created_at DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
       INDEX idx_mail_token_user      (user_id),
-      INDEX idx_mail_token_expires   (expires_at)
+      INDEX idx_mail_token_email   (email)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   V3__refresh_tokens.sql: |
     CREATE TABLE IF NOT EXISTS refresh_tokens (
-      id          BIGINT PRIMARY KEY AUTO_INCREMENT,                
-      username    VARCHAR(255) NOT NULL,                       
-      token       VARCHAR(255) NOT NULL UNIQUE,                  
-      expire_at   DATETIME(6) NOT NULL,                    
-      created_at  TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), 
-      INDEX idx_refresh_user (username),                   
-      INDEX idx_refresh_token (token)                    
+      id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id       BIGINT NOT NULL,
+      username      VARCHAR(255) NOT NULL,
+      token         VARCHAR(255) NOT NULL,              
+      device_id     VARCHAR(128) NOT NULL,                
+      ip_address    VARCHAR(45) NULL,                    
+      created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      expires_at    DATETIME NOT NULL,
+      revoked       BOOLEAN NOT NULL DEFAULT FALSE,
+      UNIQUE KEY uk_user_device (user_id, device_id),
+      KEY idx_token (token),
+      KEY idx_user (user_id)
     );

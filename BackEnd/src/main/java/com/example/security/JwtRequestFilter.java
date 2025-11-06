@@ -27,11 +27,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private static final String AUTH_HEADER = "Authorization";
     private static final String BEARER = "Bearer ";
 
-    private final JwtService jwtService;
+    private final SecretService jwtService;
     private final UserDetailsService userDetailsService;
     
 
-    public JwtRequestFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+    public JwtRequestFilter(SecretService jwtService, UserDetailsService userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }

@@ -1,28 +1,5 @@
 <template>
     <div class="min-h-screen bg-gray-50 text-slate-900">
-      <!-- 顶部深色导航 -->
-      <header class="sticky top-0 z-40 bg-[#0B2E78] text-white">
-        <div class="max-w-7xl mx-auto h-14 px-4 flex items-center justify-between">
-          <div class="flex items-center gap-6">
-            <div class="font-extrabold tracking-wide">P</div>
-            <nav class="hidden md:flex items-center gap-4 text-sm">
-              <RouterLink v-for="item in topNav" :key="item.to" :to="item.to"
-                class="px-3 py-1.5 rounded-full/80 hover:bg-white/10"
-                active-class="bg-white/20">
-                {{ item.label }}
-              </RouterLink>
-            </nav>
-          </div>
-  
-          <div class="flex items-center gap-3 text-sm">
-            <button class="rounded-full w-8 h-8 grid place-items-center hover:bg-white/10">🔔</button>
-            <RouterLink to="/logout" class="px-3 py-1.5 rounded-full bg-white text-[#0B2E78] font-semibold hover:opacity-90">
-              LOG OUT
-            </RouterLink>
-          </div>
-        </div>
-      </header>
-  
       <!-- 内容区 -->
       <main class="max-w-7xl mx-auto px-4 py-6 grid gap-6 lg:grid-cols-3">
         <!-- 左列（主内容） -->
@@ -88,9 +65,7 @@
           </div>
         </section>
   
-        <!-- 右列（侧栏） -->
         <aside class="space-y-6">
-          <!-- 快捷操作 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="grid grid-cols-4 gap-3 text-center">
               <button v-for="q in quickActions" :key="q.label"
@@ -101,7 +76,6 @@
             </div>
           </div>
   
-          <!-- 再次发送 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="font-semibold mb-3">Send again</div>
             <button class="w-full flex items-center gap-3 px-3 py-2 rounded-xl border hover:bg-slate-50">
@@ -110,7 +84,6 @@
             </button>
           </div>
   
-          <!-- 银行与卡片 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="font-semibold mb-3">Banks and cards</div>
             <ul class="space-y-3">
@@ -128,7 +101,6 @@
             <button class="mt-4 text-[#0B2E78] font-semibold hover:underline">Link a Card or Bank</button>
           </div>
   
-          <!-- 慈善 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="font-semibold mb-2">Your favorite charities</div>
             <p class="text-sm text-slate-600">Make giving simple.</p>

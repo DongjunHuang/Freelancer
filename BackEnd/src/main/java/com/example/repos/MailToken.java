@@ -28,7 +28,7 @@ public class MailToken {
   @Column(nullable=false, unique=true, length=128) 
   private String token;
   
-  @Column(nullable=false) 
+  @Column(nullable=false, unique=true) 
   private String email;
 
   @Column(nullable=false) 

@@ -1,21 +1,3 @@
-<template>
-  <section class="wrap">
-    <h2>Testing Page</h2>
-
-    <div class="actions">
-      <button :disabled="loading" @click="onInsertMysql">➕ Test Insert to Mysql</button>
-      <button :disabled="loading" @click="onQueryMysql">🔍 Test Query from Mysql</button>
-      <button :disabled="loading" @click="onInsertNosql">➕ Test Insert to MongoDB</button>
-      <button :disabled="loading" @click="onQueryNosql">🔍 Test Query from MongoDB</button>
-      <button :disabled="loading" @click="onSendEmailTest">🔍 Test Send Email</button>
-      <button :disabled="loading" @click="onRefreshAccessTokenRequest">🔍 Test Refresh Token API</button>
-    </div>
-
-    <p v-if="toast" class="toast">{{ toast }}</p>
-    <p v-else class="empty">No data yet. Click “Query metrics”.</p>
-  </section>
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue'
 import * as tests from '@/api/tests'
@@ -109,6 +91,24 @@ async function onRefreshAccessTokenRequest() {
   }
 }
 </script>
+
+<template>
+  <section class="wrap">
+    <h2>Testing Page</h2>
+
+    <div class="actions">
+      <button :disabled="loading" @click="onInsertMysql">➕ Test Insert to Mysql</button>
+      <button :disabled="loading" @click="onQueryMysql">🔍 Test Query from Mysql</button>
+      <button :disabled="loading" @click="onInsertNosql">➕ Test Insert to MongoDB</button>
+      <button :disabled="loading" @click="onQueryNosql">🔍 Test Query from MongoDB</button>
+      <button :disabled="loading" @click="onSendEmailTest">🔍 Test Send Email</button>
+      <button :disabled="loading" @click="onRefreshAccessTokenRequest">🔍 Test Refresh Token API</button>
+    </div>
+
+    <p v-if="toast" class="toast">{{ toast }}</p>
+    <p v-else class="empty">No data yet. Click “Query metrics”.</p>
+  </section>
+</template>
 
 <style scoped>
 .wrap { max-width: 840px; margin: 32px auto; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }

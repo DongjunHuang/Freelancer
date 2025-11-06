@@ -8,3 +8,6 @@ export const signup = (data: { username: string; password: string; email: string
 
 // The verify email api
 export const verifyEmail = (token: string) => http.get(`/auth/verify?token=${encodeURIComponent(token)}`)
+
+// To resend email
+export const resendEmail = (data: {email: string}) => http.post(`/auth/resendEmail`, data)
