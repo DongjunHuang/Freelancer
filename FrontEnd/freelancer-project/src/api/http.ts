@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
+import { useAuth } from '@/stores/auth'
 
 const http: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
@@ -10,10 +11,9 @@ http.interceptors.request.use((config) => {
     const url = config.url || ''
     const isNotAuth = url.startsWith('/auth') || url.startsWith('/api/tests')
     if (!isNotAuth) {
-      const token = localStorage.getItem('access_token')
-      if (token) {
-        config.headers = config.headers || {}
-        config.headers.Authorization = `Bearer ${token}`
+      const auth = useAuth()
+      if (auth.accessToken) {
+        config.headers.Authorization = `Bearer ${auth.accessToken}`
       }
     }
     return config
@@ -55,7 +55,6 @@ http.interceptors.response.use(
     original._retry = true
 
     try {
-      // 如果已有刷新在进行，等它；否则创建一个
       if (!refreshPromise) {
         refreshPromise = getNewToken().finally(() => { refreshPromise = null })
       }
@@ -66,8 +65,6 @@ http.interceptors.response.use(
       console.log(newToken)
       return http(original)
     } catch (e) {
-      // 刷新失败——可在这里统一跳登录
-      // router.push('/signin')
       return Promise.reject(e)
     }
   }

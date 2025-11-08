@@ -14,14 +14,16 @@ import lombok.Data;
 @Data
 public class JwtUserDetails implements UserDetails {
     private User user;
+    Collection<GrantedAuthority> authorities;
 
-    public JwtUserDetails(User user) {
-        this.user = user;    
+    public JwtUserDetails(User user, Collection<GrantedAuthority> authorities) {
+        this.user = user;
+        this.authorities = authorities;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return this.authorities;
     }
 
     @Override

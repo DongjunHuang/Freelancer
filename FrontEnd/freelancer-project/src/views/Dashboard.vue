@@ -65,7 +65,9 @@
           </div>
         </section>
   
+        <!-- 右列（侧栏） -->
         <aside class="space-y-6">
+          <!-- 快捷操作 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="grid grid-cols-4 gap-3 text-center">
               <button v-for="q in quickActions" :key="q.label"
@@ -76,6 +78,7 @@
             </div>
           </div>
   
+          <!-- 再次发送 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="font-semibold mb-3">Send again</div>
             <button class="w-full flex items-center gap-3 px-3 py-2 rounded-xl border hover:bg-slate-50">
@@ -84,6 +87,7 @@
             </button>
           </div>
   
+          <!-- 银行与卡片 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="font-semibold mb-3">Banks and cards</div>
             <ul class="space-y-3">
@@ -101,6 +105,7 @@
             <button class="mt-4 text-[#0B2E78] font-semibold hover:underline">Link a Card or Bank</button>
           </div>
   
+          <!-- 慈善 -->
           <div class="rounded-2xl border bg-white p-5">
             <div class="font-semibold mb-2">Your favorite charities</div>
             <p class="text-sm text-slate-600">Make giving simple.</p>

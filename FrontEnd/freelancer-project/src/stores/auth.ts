@@ -1,25 +1,23 @@
-import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+import axios from 'axios'
 
-const tokenRef = ref<string | null>(localStorage.getItem('access_token') || null)
+type User = { username: string; email: string }
 
-export function useAuth() {
-  // 计算属性：当前是否登录
-  const isLoggedIn = computed(() => !!tokenRef.value)
-
-  // ✅ 设置 token（登录时用这个）
-  function setToken(t: string | null) {
-    tokenRef.value = t
-    if (t) {
-      localStorage.setItem('access_token', t)
-    } else {
-      localStorage.removeItem('access_token')
+export const useAuth = defineStore('auth', {
+  state: () => ({
+    accessToken: '' as string,
+    user: null as User | null,
+  }),
+  getters: {
+    isLoggedIn: (s) => !!s.accessToken,
+  },
+  actions: {
+    setToken(token: string) { this.accessToken = token },
+    setUser(u: User | null) { this.user = u },
+    logout() {
+      this.accessToken = ''
+      this.user = null
     }
-  }
-
-  // 可选：读取当前 token
-  function getToken() {
-    return tokenRef.value
-  }
-
-  return { isLoggedIn, setToken, getToken }
-}
+  },
+  persist: true,
+})

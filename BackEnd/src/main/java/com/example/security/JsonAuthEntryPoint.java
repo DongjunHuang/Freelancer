@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JsonAuthEntryPoint implements AuthenticationEntryPoint {
   @Override
   public void commence(HttpServletRequest req, HttpServletResponse res, AuthenticationException ex) throws IOException {
-    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     res.setContentType("application/json;charset=UTF-8");
     res.getWriter().write("""
       {"code":401,"message":"Unauthorized or token invalid"}

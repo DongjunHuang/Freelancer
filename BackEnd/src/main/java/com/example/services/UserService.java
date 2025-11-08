@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    private static final String DEFAULT_ROLE = "USER";
     private final int TTL_Hours = 1;
 
     // The user repo in charge of user database
@@ -49,6 +50,7 @@ public class UserService {
         user.setPassword(encoder.encode(req.getPassword()));
         user.setStatus(UserStatus.PENDING);
         user.setPublicId(UUID.randomUUID().toString());
+        user.setRoles(DEFAULT_ROLE);
         userRepo.save(user);
         // Prepare the mail token to the user
         

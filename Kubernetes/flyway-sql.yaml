@@ -11,6 +11,7 @@ data:
       email       VARCHAR(255)  NOT NULL UNIQUE,
       password    VARCHAR(255)  NOT NULL,
       status      VARCHAR(32)   NOT NULL,
+      roles       VARCHAR(128)   NOT NULL,
       created_at  TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
       updated_at  TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

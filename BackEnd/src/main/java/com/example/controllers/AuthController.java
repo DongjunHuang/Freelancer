@@ -86,7 +86,6 @@ public class AuthController {
             
             String deviceId = jwtService.generateSignedDeviceId();
             String ipAddress = getClientIp(request);
-            logger.info("ipaddress: " + ipAddress + " deviceId: ");
             refreshTokenService.createAndSaveRefreshToken(principal.getId(),
                                                             principal.getUsername(), 
                                                             refreshToken, 
@@ -111,11 +110,17 @@ public class AuthController {
                 .path("/")                    
                 .maxAge(Duration.ofDays(400)) 
                 .build();
-
+            
+            var accessToken = jwtService.generateAccessToken(principal.getUsername(), principal.getEmail());
             return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString(), did.toString())
                 .body(Map.of(
-                "accessToken", jwtService.generateAccessToken(principal.getUsername(), principal.getEmail())));
+                    "accessToken", accessToken,
+                    "user", Map.of(
+                        "username", principal.getUsername(),
+                        "email",    principal.getEmail()
+                    )
+                ));
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid credentials"));

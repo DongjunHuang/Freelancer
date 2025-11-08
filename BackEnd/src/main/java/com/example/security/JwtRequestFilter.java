@@ -48,19 +48,24 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         // Verify the token, if not valid, do not fill the security context let security config handles invalid token.
         String token = header.substring(BEARER.length()).trim();
+        
         if (!jwtService.isValid(token)) {
             chain.doFilter(req, res);
             return;
         }
-
+        
         // Fill the context to pass the later security check
         TokenInfo accessToken = jwtService.parse(token);
+        
         if (accessToken.getUsername() != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails ud = userDetailsService.loadUserByUsername(accessToken.getUsername());
-            UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities());
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities());
+            var a = auth.getAuthorities();
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            
+            var context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);        
+            SecurityContextHolder.setContext(context);
         }
 
         chain.doFilter(req, res);

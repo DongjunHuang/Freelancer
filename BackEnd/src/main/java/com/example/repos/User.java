@@ -35,6 +35,9 @@ public class User {
   @Column(nullable=false) 
   private String password;
   
+  @Column(nullable=false) 
+  private String roles;
+  
   @Enumerated(EnumType.STRING) 
   @Column(nullable=false, length=32)
   private UserStatus status = UserStatus.PENDING;
@@ -46,4 +49,6 @@ public class User {
   @UpdateTimestamp 
   @Column(name="updated_at", nullable=false)
   private Timestamp updatedAt;
+
+
 }

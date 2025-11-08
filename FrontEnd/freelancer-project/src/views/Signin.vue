@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { signin } from '@/api/auth'  
 import { useAuth } from '@/stores/auth'
-const { setToken } = useAuth()
+const { setToken, setUser } = useAuth()
 
 const router = useRouter()
 const f = ref({ username: '', password: '' })
@@ -22,9 +22,10 @@ async function submit() {
 
 
     const accessToken = res.data?.accessToken
-    
+    const user = res.data?.user
     if (accessToken) {
-      setToken(accessToken)        
+      setToken(accessToken)   
+      setUser(user)     
       router.push('/dashboard')
     } else {
       throw new Error('No access token in response')
