@@ -43,7 +43,8 @@ public class RefreshTokenService {
             .filter(rt -> rt.getExpiresAt().isAfter(LocalDateTime.now()))
             .isPresent();
     }
- 
+    
+    @Transactional
     public void revokeByUsernameAndDeviceId(String username, String deviceId) {
         repo.deleteByUsernameAndDeviceId(username, deviceId);
     }

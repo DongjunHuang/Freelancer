@@ -170,7 +170,7 @@ public class AuthController {
         if (username == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+        logger.info("Username is " + username + "device Id is " + deviceId);
         refreshTokenService.revokeByUsernameAndDeviceId(username, deviceId);
 
         ResponseCookie clearRT = ResponseCookie.from("refreshToken", "")
