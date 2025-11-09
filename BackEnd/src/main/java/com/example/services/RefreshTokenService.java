@@ -18,25 +18,23 @@ public class RefreshTokenService {
     private final RefreshTokenRepo repo;
 
     @Transactional
-    public RefreshToken createAndSaveRefreshToken(Long userId, 
-                                            String username, 
+    public RefreshToken createAndSaveRefreshToken(String username, 
                                             String token, 
                                             String deviceId,
                                             String ipAddress,
                                             LocalDateTime expiryDate) {
-        repo.deleteByUserIdAndDeviceId(userId, deviceId);
+        repo.deleteByUsernameAndDeviceId(username, deviceId);
         
         RefreshToken entity = new RefreshToken();
         entity.setUsername(username);
         entity.setToken(token);
         entity.setExpiresAt(expiryDate);
         entity.setIpAddress(ipAddress);
-        entity.setUserId(userId);
         entity.setDeviceId(deviceId);
         return repo.save(entity);
     }
 
-    public Optional<RefreshToken> find(String token) {
+    public Optional<RefreshToken> findByToken(String token) {
         return repo.findByToken(token);
     }
 
@@ -46,8 +44,8 @@ public class RefreshTokenService {
             .isPresent();
     }
  
-    public void revokeByUserAndDevice(Long userId, String deviceId) {
-        repo.deleteByUserIdAndDeviceId(userId, deviceId);
+    public void revokeByUsernameAndDeviceId(String username, String deviceId) {
+        repo.deleteByUsernameAndDeviceId(username, deviceId);
     }
 
     public boolean isExpired(RefreshToken rt) {

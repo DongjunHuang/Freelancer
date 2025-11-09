@@ -1,21 +1,33 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 import { useAuth } from '@/stores/auth'
 
+const whiteList = [
+  '/auth/signin',       
+  '/auth/signup',       
+  '/auth/verify',       
+  '/auth/refresh',       
+  '/auth/resendEmail',       
+  '/tests'
+]
+
 const http: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
   timeout: 10000,
   withCredentials: true,
 })
 
-http.interceptors.request.use((config) => {
+http.interceptors.request.use(
+  (config) => {
     const url = config.url || ''
-    const isNotAuth = url.startsWith('/auth') || url.startsWith('/api/tests')
+    const isNotAuth = whiteList.some(path => url.startsWith(path))
+
     if (!isNotAuth) {
       const auth = useAuth()
       if (auth.accessToken) {
         config.headers.Authorization = `Bearer ${auth.accessToken}`
       }
     }
+
     return config
   },
   async (error: AxiosError) => {
@@ -49,7 +61,7 @@ http.interceptors.response.use(
       return Promise.reject(error)
 
     // Reject response from refresh
-    if (original.url?.includes('/auth/refresh')) 
+    if (original.url?.includes('/auth')) 
       return Promise.reject(error)
 
     original._retry = true

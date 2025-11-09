@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 
 type User = { username: string; email: string }
-
 export const useAuth = defineStore('auth', {
   state: () => ({
     accessToken: '' as string,
@@ -14,10 +13,9 @@ export const useAuth = defineStore('auth', {
   actions: {
     setToken(token: string) { this.accessToken = token },
     setUser(u: User | null) { this.user = u },
-    logout() {
-      this.accessToken = ''
-      this.user = null
-    }
+    clear() { this.$reset() },  
   },
-  persist: true,
+  persist: {
+    key: 'auth'
+  },
 })

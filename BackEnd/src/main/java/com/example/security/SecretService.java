@@ -50,7 +50,6 @@ public class SecretService {
      */
     public String generateRefreshToken(String username, String email) {
         Map<String, String> map = new HashMap<String, String>();
-        map.put("username", username);
         map.put("email", email);
         return generateToken(map, username, REFRESH_EXPIRATION);
     }
@@ -64,7 +63,6 @@ public class SecretService {
     public String generateAccessToken(String username, 
                                         String email) {
         Map<String, String> map = new HashMap<String, String>();
-        map.put("username", username);
         map.put("email", email);
         return generateToken(map, username, ACCESS_EXPIRATION);
     }
@@ -82,9 +80,8 @@ public class SecretService {
     public TokenInfo parse(String jwt) {
         TokenInfo jwtToken = new TokenInfo();
         Jws<Claims> jws = parser.parseClaimsJws(jwt);
-        jwtToken.setUsername((String)jws.getBody().get("username"));
         jwtToken.setEmail((String)jws.getBody().get("email"));
-        jwtToken.setUserId(jws.getBody().getSubject());
+        jwtToken.setUsername(jws.getBody().getSubject());
         return jwtToken;
     }
 

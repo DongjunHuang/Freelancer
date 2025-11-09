@@ -31,12 +31,12 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/auth")
@@ -86,18 +86,19 @@ public class AuthController {
             
             String deviceId = jwtService.generateSignedDeviceId();
             String ipAddress = getClientIp(request);
-            refreshTokenService.createAndSaveRefreshToken(principal.getId(),
-                                                            principal.getUsername(), 
+            refreshTokenService.createAndSaveRefreshToken(principal.getUsername(), 
                                                             refreshToken, 
                                                             deviceId,
                                                             ipAddress,
                                                             LocalDateTime.now().plusDays(7));
             
+            boolean isProd = List.of(env.getActiveProfiles()).contains("prod");
+
             // Generate cookie sending back to the client.
             ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .secure(List.of(env.getActiveProfiles()).contains("prod"))        
-                .path("/auth/refresh")
+                .secure(isProd)        
+                .path("/auth")
                 .maxAge(Duration.ofDays(7))
                 .sameSite("Strict")
                 .build();
@@ -105,7 +106,7 @@ public class AuthController {
 
             ResponseCookie did = ResponseCookie.from("deviceid", deviceId)
                 .httpOnly(true)
-                .secure(List.of(env.getActiveProfiles()).contains("prod"))   
+                .secure(isProd)   
                 .sameSite("Strict")             
                 .path("/")                    
                 .maxAge(Duration.ofDays(400)) 
@@ -145,25 +146,42 @@ public class AuthController {
 
     @PostMapping("/signout")
     public ResponseEntity<Void> signout(
-            @AuthenticationPrincipal JwtUserDetails principal,
-            @CookieValue(value = "refreshToken", required = false) String refreshToken,
-            @CookieValue(value = "deviceid", required = false) String deviceId) {
+        @RequestHeader(value="Authorization", required=false) String authHeader,
+        @CookieValue(value="refreshToken", required=false) String refreshCookie,
+        @CookieValue(value="deviceid", required=false) String deviceId) {
+        String username = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String access = authHeader.substring(7);
+            if (jwtService.isValid(access)) {
+                username = jwtService.parse(access).getUsername();
+            }
+        }
         
-        // Remove the refresh token in backend database
-        refreshTokenService.revokeByUserAndDevice(principal.getId(), deviceId);
+        if (username == null && refreshCookie != null && deviceId != null) {
+            if (jwtService.isValid(refreshCookie)) {
+                var rt = refreshTokenService.findByToken(refreshCookie).orElse(null);
+                if (rt != null && rt.getExpiresAt().isAfter(LocalDateTime.now())) {
+                    username = rt.getUsername();
+                }
+            }
+        }
+        
+        if (username == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        refreshTokenService.revokeByUsernameAndDeviceId(username, deviceId);
 
-        // clear refresh token.
-        ResponseCookie clearRt = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(List.of(env.getActiveProfiles()).contains("prod"))
-                .sameSite("Strict")
-                .path("/auth/refresh")
-                .maxAge(0)
-                .build();
+        ResponseCookie clearRT = ResponseCookie.from("refreshToken", "")
+            .path("/auth")
+            .httpOnly(true)
+            .maxAge(0)
+            .build();
 
-        return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, clearRt.toString())
-                .build();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, clearRT.toString())
+            .build();
     }
 
     @PostMapping("/resendEmail")

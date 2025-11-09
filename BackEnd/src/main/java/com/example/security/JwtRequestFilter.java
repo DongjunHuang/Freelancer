@@ -56,11 +56,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         
         // Fill the context to pass the later security check
         TokenInfo accessToken = jwtService.parse(token);
-        
+        logger.info("User name is " + accessToken.getUsername());
         if (accessToken.getUsername() != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails ud = userDetailsService.loadUserByUsername(accessToken.getUsername());
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities());
-            var a = auth.getAuthorities();
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             
             var context = SecurityContextHolder.createEmptyContext();

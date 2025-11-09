@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuth } from '@/stores/auth'
+import { signout } from '@/api/auth'  
 
 // The imported function
 const router = useRouter()
-const { isLoggedIn, logout } = useAuth()
+const auth = useAuth()
 
-const signOut = () => {
-    logout()
+
+async function signOut () {
+  try {
+    await signout()    
+  } finally {
+    auth.clear()       
     router.push('/signin')
+  }
 }
 </script>
 
@@ -17,7 +23,7 @@ const signOut = () => {
         <!-- The left part -->
         <div class="flex items-center space-x-8">
             <div class="text-xl font-bold text-blue-700">Data Reporter</div>
-            <nav v-if="isLoggedIn" class="flex items-center space-x-6 text-gray-700">
+            <nav v-if="auth.isLoggedIn" class="flex items-center space-x-6 text-gray-700">
                 <RouterLink
                 to="/upload"
                 class="hover:text-blue-700 transition-colors"
@@ -36,7 +42,7 @@ const signOut = () => {
         </div>
 
         <!-- The right part: signin & sign up buttons avialable -->
-        <div v-if="!isLoggedIn" class="flex items-center space-x-4">
+        <div v-if="!auth.isLoggedIn" class="flex items-center space-x-4">
             <RouterLink
             to="/signin"
             class="px-5 py-1.5 border border-blue-800 text-blue-800 rounded-full hover:bg-blue-50">Log In
