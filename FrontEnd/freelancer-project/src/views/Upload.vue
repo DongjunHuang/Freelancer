@@ -1,15 +1,41 @@
 <!-- Upload.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
-import { uploadCsv } from '@/api/upload'  
-import type { AxiosError } from 'axios' 
+import { computed, ref,reactive } from 'vue'
+import DateConfig from '@/Components/DateConfig.vue';
+import UploadTray from '@/Components/UploadTray.vue';
+
+import type { DatasetReq } from '@/api/types';
+import { uploadCsv, uploadCsvSimulate } from '@/api/upload'  
+import axios from 'axios'
+
+const tables = ref<{ id: string; name: string; rowCount: number }[]>([])
+const selectedMode = ref<'existing' | 'new'>('existing')
+const selectedTable = ref('')
+const status = ref<'idle' | 'uploading' | 'done' | 'error' | 'cancelled'>('idle')
+const headers = ref<string[]>([])
+
+// Confirmed 
+const recordDateColumn = ref('');
+const recordDateFormat = ref('');
 
 const file = ref<File | null>(null)
 const error = ref('')
+const newTable = ref('')
+  
 const successMsg = ref('')
 const uploading = ref(false)
-const isDragging = ref(false)
+const isDragging = ref(false)  
 
+// UploadTray related properties
+const tray = reactive({
+  visible: false,
+  filename: '',
+  progress: 0,
+  status: 'idle' as 'idle' | 'uploading' | 'done' | 'error',
+});
+let abortCtrl: AbortController | null = null;
+
+// The action to upload files
 function onDragOver() { isDragging.value = true }
 function onDragLeave() { isDragging.value = false }
 function onDrop(e: DragEvent) {
@@ -18,55 +44,142 @@ function onDrop(e: DragEvent) {
   if (f) handleFile(f)
 }
 
+// The file input field
+const fileInput = ref<HTMLInputElement | null>(null)
 function onFileChange(e: Event) {
   const target = e.target as HTMLInputElement  
-  const file = target.files?.[0]
-  if (file) handleFile(file)
+  const f = target.files?.[0]
+  if (f) {
+    handleFile(f)
+  }
 }
 
-function handleFile(f: File) {
+async function handleFile(f: File) {
   if (!f.name.endsWith('.csv')) {
     error.value = 'Please select a CSV file'
     file.value = null
+    headers.value = []
     return
   }
+
   if (f.size > 5 * 1024 * 1024) {
     error.value = 'File too large (max 5MB)'
     file.value = null
+    headers.value = []
     return
   }
+
   error.value = ''
   file.value = f
+  headers.value = await extractHeaders(f)
+
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
 }
 
 function clearFile() {
   file.value = null
   error.value = ''
   successMsg.value = ''
+  headers.value = []
+
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
 }
 
+
+// Check any thing wrong in the uploading area
+const canUpload = computed(() => {
+  const tableOk = selectedMode.value === 'existing'
+      ? !!selectedTable.value
+      : !!newTable.value
+  return tableOk && !!file.value
+})
+
+// Upload action
 async function upload() {
-  if (!file.value) 
+  if (!canUpload.value) 
     return
+
+  tray.visible = true;
+  tray.progress = 0;
+  tray.status = 'uploading';
+
   error.value = ''
   successMsg.value = ''
   uploading.value = true
-    
-  try {
-    const fd = new FormData()
+  abortCtrl = new AbortController();
+
+  // Create form data
+  const fd = new FormData();
+  if (file.value) {
     fd.append('file', file.value)
-    const { data } = await uploadCsv(fd)
-    successMsg.value = data?.message ?? 'Upload successfully.'
-  } catch (e) {
-    const err = e as AxiosError<any>
-    error.value =
-      err.response?.data?.error ||
-      err.response?.data?.message ||
-      err.message ||
-      'Upload failed.'
-  } finally {
-    uploading.value = false
+  } else {
+    alert('Please upload file first')
+    return
   }
+  const tableName =
+    selectedMode.value === 'existing'
+      ? selectedTable.value
+      : newTable.value.trim()
+
+  const dataset: DatasetReq = {
+    datasetName: tableName,
+    recordDateColumnName: recordDateColumn.value,
+    recordDateColumnFormat: recordDateFormat.value,
+    newDataset: selectedMode.value === 'new', 
+  };
+  console.log("datesetName {}, recordDateColumnName name {}, recordDateColumnFormat name {}, is new {}", tableName, recordDateColumn.value, recordDateFormat.value, dataset.isNew)
+  try {
+    await uploadCsv(file.value, dataset, {
+      onProgress: (pct) => {
+        tray.progress = pct;
+      },
+        signal: abortCtrl.signal,
+    });
+    /*
+    await uploadCsvSimulate(fd, {
+      signal: abortCtrl.signal,
+      onProgress: (pct) => (tray.progress = pct),
+    })*/
+
+    tray.status = 'done'
+  } catch (e) {
+    if (axios.isCancel(e)) 
+      status.value = 'cancelled'
+    else 
+      status.value = 'error'
+  } finally {
+    abortCtrl = null
+  }
+}
+
+function onCancelUpload() {
+  if (abortCtrl) {
+    abortCtrl.abort();
+    abortCtrl = null;
+  }
+  tray.status = 'idle';
+  tray.visible = false;
+  tray.progress = 0;
+}
+
+function onCloseTray() {
+  tray.visible = false;
+}
+
+async function extractHeaders(file: File): Promise<string[]> {
+  const text = await file.text();
+
+  const firstLine = text.split(/\r?\n/)[0];
+
+  const headers = firstLine
+    .split(',')
+    .map(h => h.trim())
+    .filter(h => h.length > 0);
+    return ['N/A', ...headers];
 }
 </script>
 
@@ -124,14 +237,8 @@ async function upload() {
 
     <p v-if="error" class="mt-2 text-sm text-red-600">{{ error }}</p>
 
+    <!-- The uploading progress bar-->
     <div class="mt-4 flex items-center gap-3">
-      <button
-        class="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-50"
-        :disabled="!file || !!error || uploading"
-        @click="upload">
-        {{ uploading ? 'Uploading...' : 'Upload' }}
-      </button>
-
       <button
         class="px-3 py-2 rounded-xl border"
         :disabled="uploading"
@@ -140,12 +247,61 @@ async function upload() {
       </button>
     </div>
 
+    <!-- Select or add table name-->
+    <div class="pt-4 grid gap-4 sm:grid-cols-2">
+      <!-- 左边：选择 existing/new -->
+      <div>
+        <select v-model="selectedMode" class="w-full border rounded-lg p-2">
+          <option value="existing">Select from existing table.</option>
+          <option value="new">Create new table.</option>
+        </select>
+      </div>
+
+      <!-- Select table or add new table field -->
+      <div>
+        <!-- Select existing table -->
+        <select
+          v-if="selectedMode === 'existing'"
+          v-model="selectedTable"
+          class="w-full border rounded-lg p-2">
+
+          <option disabled value="">Select</option>
+          <option v-for="t in tables" :key="t.id" :value="t.name">
+            {{ t.name }} ({{ t.rowCount }} rows)
+          </option>
+        </select>
+
+        <!-- Create new table -->
+        <input
+          v-else
+          v-model.trim="newTable"
+          placeholder="eg: sales_2025_q4"
+          class="w-full border rounded-lg p-2"
+        />
+      </div>
+    </div>
+    
+    <!--Select required time info--> 
+    <DateConfig :headers="headers"
+      v-model:column="recordDateColumn"
+      v-model:format="recordDateFormat"  /> 
+    
+    <!--Submit button--> 
+    <div class="flex items-center gap-3">
+        <button :disabled="!canUpload" @click="upload"
+              class="px-4 py-2 rounded-lg bg-black text-white disabled:opacity-50">
+        Upload
+        </button>
+    </div>
     <p v-if="successMsg" class="mt-3 text-sm text-green-600">{{ successMsg }}</p>
+    <!--Uploading progress bar--> 
+    <UploadTray
+      :visible="tray.visible"
+      :filename="tray.filename"
+      :progress="tray.progress"
+      :status="tray.status"
+      @cancel="onCancelUpload"
+      @close="onCloseTray"
+    />
   </div>
 </template>
-
-<!--
-<div v-if="uploading" class="mt-3 w-full bg-gray-200 rounded-full h-2">
-  <div class="h-2 rounded-full bg-blue-600" :style="{ width: progress + '%' }"></div>
-</div>
--->

@@ -1,18 +1,25 @@
 package com.example.controllers;
 
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.repos.DatasetMetadata;
+import com.example.requests.DatasetReq;
+import com.example.security.JwtUserDetails;
+import com.example.services.MetadataService;
 import com.example.services.UploadService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,16 +29,47 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UploadController {
     private static final Logger logger = LoggerFactory.getLogger(UploadController.class);
+    
     private final UploadService uploadService;
+    private final MetadataService dashboardService;
 
-    @PostMapping("/uploadCSV")
-    public ResponseEntity<?> upload(@RequestParam MultipartFile file) {
-        try {
-            uploadService.uploadCSV(file);
-            return ResponseEntity.ok("Upload successuly.");
-        } catch (Exception ex) {
-            logger.info(ex.toString());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Upload failed"));
+    @PostMapping(value = "/uploadCsv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadWithNewDataset(
+        @RequestParam("file") MultipartFile file,
+        @RequestPart("dataset") DatasetReq req,
+        Authentication auth) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "The file is empty"));
         }
+        if (req == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "table name is empty."));
+        }
+
+        // First create or update table metadata
+        JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
+        Long userId = user.getId();
+        
+        logger.info("The user id is {}, passed params is {}", userId, req);
+        // Create metadata
+        try {
+            // Step 1
+            DatasetMetadata metadata = req.isNewDataset() ? uploadService.createDatasetMetadata(req, userId) : uploadService.updateDatasetMetadata(req.getDatasetName(), userId); 
+
+            // Step 2
+            uploadService.importingRecords(file, metadata);
+
+        } catch (Exception ex) {
+            // Todo: roll back and return error to users
+        }
+                
+        return ResponseEntity.ok().body(Map.of("Result", "Success"));
+    }
+
+    @GetMapping("/fetchDatasets")
+    public ResponseEntity<List<DatasetMetadata>> myDatasets(Authentication auth) {
+        JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
+        Long userId = user.getId();
+        return ResponseEntity.ok(dashboardService.getUserDatasets(userId));
     }
 }
+

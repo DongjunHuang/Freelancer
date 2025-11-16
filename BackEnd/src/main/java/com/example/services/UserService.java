@@ -1,6 +1,5 @@
 package com.example.services;
 
-import java.lang.foreign.Linker.Option;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -118,10 +117,9 @@ public class UserService {
         for (String h : headers) {
             String v = req.getHeader(h);
             if (v != null && !v.isBlank()) {
-                // X-Forwarded-For 可能是多段，取第一个
                 return v.split(",")[0].trim();
             }
         }
-    return req.getRemoteAddr();
-}
+        return req.getRemoteAddr();
+    }
 }
