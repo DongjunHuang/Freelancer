@@ -7,7 +7,6 @@ const whiteList = [
   '/auth/verify',       
   '/auth/refresh',       
   '/auth/resendEmail',       
-  '/tests'
 ]
 
 const http: AxiosInstance = axios.create({
@@ -74,7 +73,6 @@ http.interceptors.response.use(
 
       original.headers = original.headers || {}
       original.headers.Authorization = `Bearer ${newToken}`
-      console.log(newToken)
       return http(original)
     } catch (e) {
       return Promise.reject(e)

@@ -52,11 +52,14 @@ public class UploadController {
         logger.info("The user id is {}, passed params is {}", userId, req);
         // Create metadata
         try {
-            // Step 1
+            // Step 1: update metadata
             DatasetMetadata metadata = req.isNewDataset() ? uploadService.createDatasetMetadata(req, userId) : uploadService.updateDatasetMetadata(req.getDatasetName(), userId); 
 
-            // Step 2
-            uploadService.importingRecords(file, metadata);
+            // Step 2: insert records to the document
+            long rowCount = uploadService.importingRecords(file, metadata);
+
+            // Step 3: update metadata
+            uploadService.promoteStagedToCurrent(req.getDatasetName(), userId, rowCount);
 
         } catch (Exception ex) {
             // Todo: roll back and return error to users

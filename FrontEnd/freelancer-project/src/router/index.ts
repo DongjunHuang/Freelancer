@@ -16,11 +16,11 @@ const router =  createRouter({
     { path: "/signin", component: Signin, meta: { guestOnly: true } },
     { path: "/signup", component: Signup, meta: { guestOnly: true } },
     { path: "/verify", component: Verify, meta: { guestOnly: true }},
-    { path: '/tests', component: Tests, meta: { guestOnly: true } },
     
     // require loggin first
     { path: "/dashboard", component: Dashboard},
     { path: '/upload', component: Upload },
+    { path: '/tests', component: Tests},
   ],
 })
 

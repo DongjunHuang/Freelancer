@@ -22,8 +22,8 @@ public class TestEmailService {
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setFrom(fromAddress);
         msg.setTo(toAddress);
-        msg.setSubject("请验证你的邮件");
-        msg.setText("请点击以下链接验证: https://your-frontend/verify?token=" + token);
+        msg.setSubject("Please verify your email");
+        msg.setText("Please click below to verify: https://your-frontend/verify?token=" + token);
 
         mailSender.send(msg);
     }
