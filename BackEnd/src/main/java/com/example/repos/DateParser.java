@@ -26,10 +26,9 @@ public class DateParser {
 
         String s = raw.trim();
 
-        // 1. 尝试所有格式
         for (DateTimeFormatter fmt : DATE_FORMATTERS) {
             try {
-                // 如果格式中包含时间部分，用 LocalDateTime 解析后转 LocalDate
+                
                 if (fmt == DateTimeFormatter.ISO_LOCAL_DATE_TIME ||
                     fmt == DateTimeFormatter.ISO_OFFSET_DATE_TIME ||
                     fmt.toString().contains("HH")) {
@@ -42,14 +41,11 @@ public class DateParser {
             } catch (Exception ignored) { }
         }
 
-        // 2. Excel 序列号（比如 44803 → 2022-09-01）
         if (s.matches("\\d+")) {
             long serial = Long.parseLong(s);
-            // Excel 从 1899-12-30 开始算
             return LocalDate.of(1899, 12, 30).plusDays(serial);
         }
 
-        // 3. 全都解析不了（开发模式可以抛错，生产建议记录日志）
         throw new IllegalArgumentException("Unrecognized date format: " + raw);
     }
 }

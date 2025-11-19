@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Repository;
 
-import com.example.controllers.AuthController;
 import com.example.repos.DatasetMetadata.VersionControl;
 import com.mongodb.client.result.UpdateResult;
 

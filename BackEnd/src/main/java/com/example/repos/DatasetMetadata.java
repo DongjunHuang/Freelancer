@@ -63,8 +63,17 @@ public class DatasetMetadata {
     @Data
     public static class VersionControl {
         private Integer version;   
-        private List<String> headers;
+        private List<ColumnMeta> headers;
         private long rowCount;     
+    }
+
+    @Builder
+    @Data
+    public static class ColumnMeta {
+        private String columnName;
+        private ColumnType dataType;
+        // TODO: change to column role
+        private boolean isMetric;      
     }
 }
 

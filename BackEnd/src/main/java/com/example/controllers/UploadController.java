@@ -2,6 +2,7 @@ package com.example.controllers;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.models.DataProps;
 import com.example.repos.DatasetMetadata;
 import com.example.requests.DatasetReq;
 import com.example.security.JwtUserDetails;
@@ -49,14 +51,22 @@ public class UploadController {
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
         Long userId = user.getId();
         
+        // create props for dataset and record
+        DataProps props = DataProps.builder()
+                            .batchId(UUID.randomUUID().toString())
+                            .userId(userId)
+                            .datasetName(req.getDatasetName())
+                            .recordDateColumnFormat(req.getRecordDateColumnFormat())
+                            .recordDateColumnName(req.getRecordDateColumnName())
+                            .build();
+
         logger.info("The user id is {}, passed params is {}", userId, req);
+        
         // Create metadata
         try {
-            // Step 1: update metadata
-            DatasetMetadata metadata = req.isNewDataset() ? uploadService.createDatasetMetadata(req, userId) : uploadService.updateDatasetMetadata(req.getDatasetName(), userId); 
 
             // Step 2: insert records to the document
-            long rowCount = uploadService.importingRecords(file, metadata);
+            long rowCount = uploadService.appendRecords(file, props);
 
             // Step 3: update metadata
             uploadService.promoteStagedToCurrent(req.getDatasetName(), userId, rowCount);

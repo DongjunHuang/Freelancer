@@ -1,8 +1,9 @@
 package com.example.repos;
-
 import java.util.List;
 import java.util.Map;
 
+import com.example.models.DataProps;
+
 public interface DatasetRecordRepoCustom {
-    public void bulkInsertRecords(DatasetMetadata data, List<Map<String, Object>> rows, String batchId, String timeColumn);
+    public void bulkInsertRecords(List<Map<String, String>> rows, DataProps dataRecordProps);
 }

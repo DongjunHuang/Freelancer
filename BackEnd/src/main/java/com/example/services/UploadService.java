@@ -3,17 +3,14 @@ package com.example.services;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import java.util.LinkedHashSet;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import java.util.Optional;
-
-import java.util.UUID;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -24,11 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.repos.DatasetRecordRepo;
+import com.example.models.DataProps;
 import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadata.VersionControl;
 import com.example.repos.DatasetMetadataRepo;
 import com.example.repos.MetadataStatus;
-import com.example.requests.DatasetReq;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -39,117 +35,64 @@ public class UploadService {
     private static final Logger logger = LoggerFactory.getLogger(UploadService.class);
     private final DatasetMetadataRepo metadataRepo;
     private final DatasetRecordRepo recordRepo;
+    private final DatasetBuilder builder;
 
-    // Step1-2: create and save the metadata
-    public DatasetMetadata updateDatasetMetadata(String datasetName, Long userId) throws Exception {
-        Optional<DatasetMetadata> meta = metadataRepo.findByUserIdAndDatasetName(userId, datasetName);
-        if (!meta.isPresent()) {
-            throw new Exception();
-        }
+    private final static  int BATCH_NUM = 300;
+    private final static  int INFER_NUM = 30;
 
-        Instant now = Instant.now();
-        meta.get().setUpdatedAt(now);    
-        
-        // TODO: update staged information
-        return meta.get();
-    }
-
-
-    // Step1-1: create and save the metadata
-    public DatasetMetadata createDatasetMetadata(DatasetReq req, Long userId) throws Exception {
-        Optional<DatasetMetadata> meta = metadataRepo.findByUserIdAndDatasetName(userId, req.getDatasetName());
-        if (meta.isPresent()) {
-            logger.error("The dateset {} exists, can not be created twice.", req.getDatasetName());
-            //TODO: add specific exception 
-            throw new Exception();
-        }
-
-        Instant now = Instant.now();
-
-        // Newly created metadata
-        VersionControl current = VersionControl.builder()
-                                    .version(0)
-                                    .headers(null)
-                                    .rowCount(0)
-                                    .build();
-
-        // Receive indexes
-        DatasetMetadata newDataset = DatasetMetadata.builder()
-            .id(UUID.randomUUID().toString())
-            .userId(userId)
-            .datasetName(req.getDatasetName())
-            .status(MetadataStatus.READY)
-            .createdAt(now)
-            .updatedAt(now)
-            .current(current)
-            .staged(null)
-            .recordDateColumnName(req.getRecordDateColumnName())
-            .build();
-        return newDataset;
-    }
-
-    // step 2: update headers
-    // TODO: key might be modified in the future
-    private void updateHeaders(DatasetMetadata data, List<String> headers) {
-        LinkedHashSet<String> mergedHeaders = null;
-        if (data.getCurrent().getHeaders() == null) {
-            mergedHeaders = new LinkedHashSet<>();
-        } else {
-            mergedHeaders = new LinkedHashSet<>(data.getCurrent().getHeaders());
-        }
-        mergedHeaders.addAll(headers);
-
-        VersionControl staged = VersionControl.builder()
-                                    .version(data.getCurrent() == null ? 1 : data.getCurrent().getVersion() + 1)
-                                    .headers(new ArrayList<>(mergedHeaders))
-                                    .build();
-        
-        data.setStaged(staged);
-        data.setStatus(MetadataStatus.IMPORTING);
-        data.setUpdatedAt(Instant.now());
-        logger.info("Save data {} to the datasets", data);
-        
-        metadataRepo.save(data);
-    }
-
-    public long importingRecords(MultipartFile file, DatasetMetadata data) throws Exception {
+    public long appendRecords(MultipartFile file, DataProps dataRecordProps) throws Exception {
         try (var parser = new CSVParser(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8),
                 CSVFormat.DEFAULT.withFirstRecordAsHeader().withTrim().withIgnoreEmptyLines())) {
             List<String> headers = new ArrayList<>(parser.getHeaderMap().keySet());
             logger.info("Insert into data record with headers {}", headers);
+            DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(dataRecordProps.getUserId(),
+                                                        dataRecordProps.getDatasetName());
+            if (dataset == null) {
+                // Step1
+                dataset = builder.createIfNotPresentDatasetMetadata(dataRecordProps, metadataRepo);
+            }
 
-            // Update headers and save the data into metadata
-            updateHeaders(data, headers);
+            Set<String> columnsNeedsInfer = new HashSet<>();
             
-            // This is customized index that can shorten the time of range searching
-            String dateRecordColumnName = data.getRecordDateColumnName();
+            // Step2
+            builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, headers);
 
-            // batch of rows to import
-            long count = 0;
-            String batchId = UUID.randomUUID().toString();
-            List<Map<String, Object>> batch_segment = new ArrayList<>();
-
-            // go through all lines to put data to mongodb db by batches
-            for (CSVRecord record : parser) {
-                Map<String, Object> row = new HashMap<>();
+            dataRecordProps.setStagedVersion(dataset.getCurrent().getVersion() + 1);
+            dataRecordProps.setDatasetId(dataset.getId());
+            
+            int batch_count = 1;
+            Iterator<CSVRecord> it = parser.iterator();
+            List<Map<String, String>> rows = new ArrayList<>();
+            List<Map<String, String>> inferRows = new ArrayList<>();
+                
+            while (it.hasNext()) {
+                CSVRecord record = it.next();
+                Map<String, String> row = new HashMap<>();
                 for (String header : parser.getHeaderNames()) {
                     row.put(header, record.get(header));
                 }
-
-                batch_segment.add(row);
-                count++;
-               
-                if (count % 300 == 0) {
-                    recordRepo.bulkInsertRecords(data, batch_segment, batchId, dateRecordColumnName);
-                    batch_segment.clear();
+                
+                
+                rows.add(row);
+                if (batch_count < INFER_NUM) {
+                    inferRows.add(row);
+                } else if (batch_count == INFER_NUM) {
+                    // Step3: save the metadata
+                    builder.inferAndfillStagedColumns(dataset, inferRows, columnsNeedsInfer);
+                    
+                    // Step4: save the metadata
+                    builder.saveDataset(dataset, metadataRepo);
                 }
-            }
             
-            if (!batch_segment.isEmpty()) {
-                recordRepo.bulkInsertRecords(data, batch_segment, batchId, dateRecordColumnName);
+                if (batch_count % BATCH_NUM == 0 || !it.hasNext()) {
+                    recordRepo.bulkInsertRecords(rows, dataRecordProps);
+                    rows.clear();
+                }
+                
+                batch_count++;
             }
 
-            return count;
+            return batch_count;
         } catch (Exception ex) {
             logger.info("Exception throwed out" + ex);
             throw new Exception();
@@ -157,9 +100,12 @@ public class UploadService {
     }
 
     @Transactional
-    public void promoteStagedToCurrent(String datasetName, Long userId, long importedRows) {
-        Optional<DatasetMetadata> meta = metadataRepo.findByUserIdAndDatasetName(userId, datasetName);
-        DatasetMetadata dataset = meta.get();
+    public void promoteStagedToCurrent(String datasetName, Long userId, long importedRows) throws Exception {
+        DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(userId, datasetName);
+        if (dataset == null) {
+            // TODO: add exception type
+            throw new Exception();
+        }
         var staged = dataset.getStaged();
         var current = dataset.getCurrent();
         

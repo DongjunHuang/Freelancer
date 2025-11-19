@@ -1,148 +1,397 @@
 <template>
-    <div class="min-h-screen bg-gray-50 text-slate-900">
-      <!-- 内容区 -->
-      <main class="max-w-7xl mx-auto px-4 py-6 grid gap-6 lg:grid-cols-3">
-        <!-- 左列（主内容） -->
-        <section class="lg:col-span-2 space-y-6">
-          <!-- 横幅卡片 -->
-          <div class="rounded-2xl border bg-white p-6">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-2xl font-bold leading-snug">Use YourBrand anywhere.</h3>
-                <p class="text-slate-600 mt-1">Online. In stores. Just about anywhere.</p>
-                <button class="mt-4 px-4 py-2 rounded-full bg-[#0B2E78] text-white hover:bg-[#0a2766]">Learn More</button>
-              </div>
-              <div class="hidden md:block w-40 h-24 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200"></div>
-            </div>
-          </div>
-  
-          <!-- Rewards -->
-          <div class="rounded-2xl border bg-white">
-            <div class="p-6">
-              <h4 class="text-sm font-semibold text-slate-700">YourBrand Rewards</h4>
-              <div class="mt-2 text-5xl font-bold">0 <span class="text-xl font-medium align-top">points</span></div>
-              <p class="text-slate-500 mt-1">$0.00 cash back value</p>
-              <p class="text-slate-500">Available balance</p>
-              <button class="mt-4 text-[#0B2E78] font-semibold hover:underline">Ways to earn</button>
-            </div>
-          </div>
-  
-          <!-- Benefit 提示 -->
-          <div class="rounded-2xl border bg-white p-5 flex items-center justify-between">
+  <div class="min-h-screen bg-slate-50">
+    <main class="mx-auto flex max-w-6xl gap-6 px-6 py-6">
+      <!-- Left side panel -->
+      <section class="flex-1 space-y-4">
+        <!-- Dataset select -->
+        <div class="rounded-2xl bg-white p-5 shadow-sm">
+          <div class="mb-3 flex items-center justify-between">
             <div>
-              <div class="font-semibold">Unlock new benefits</div>
-              <p class="text-sm text-slate-600">Get a Balance Account</p>
+              <h2 class="text-base font-semibold text-slate-900">
+                Select (Dataset)
+              </h2>
+              <p class="mt-1 text-xs text-slate-500">
+                Select your dataset first，then select columns and data range
+              </p>
             </div>
-            <button class="px-3 py-1.5 rounded-full border hover:bg-slate-50">Learn more</button>
-          </div>
-  
-          <!-- 最近活动 -->
-          <div class="rounded-2xl border bg-white">
-            <div class="p-5 border-b">
-              <div class="font-semibold">Recent activity</div>
-              <p class="text-sm text-slate-600">See when money comes in and when it goes out.</p>
-            </div>
-            <ul>
-              <li v-for="(item, i) in recent" :key="i" class="px-5 py-4 flex items-center justify-between border-b last:border-b-0">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-slate-100 grid place-items-center">💸</div>
-                  <div>
-                    <div class="font-medium">{{ item.title }}</div>
-                    <div class="text-xs text-slate-500">{{ item.date }}</div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div :class="item.amount >= 0 ? 'text-emerald-600' : 'text-slate-800'">
-                    {{ item.amount >= 0 ? '+' : '' }}{{ item.amount.toFixed(2) }}
-                  </div>
-                  <div class="text-xs text-slate-500">{{ item.currency }}</div>
-                </div>
-              </li>
-            </ul>
-            <div class="p-5">
-              <button class="text-[#0B2E78] font-semibold hover:underline">Show all</button>
-            </div>
-          </div>
-        </section>
-  
-        <!-- 右列（侧栏） -->
-        <aside class="space-y-6">
-          <!-- 快捷操作 -->
-          <div class="rounded-2xl border bg-white p-5">
-            <div class="grid grid-cols-4 gap-3 text-center">
-              <button v-for="q in quickActions" :key="q.label"
-                class="group">
-                <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 grid place-items-center group-hover:bg-slate-200"> {{ q.icon }} </div>
-                <div class="mt-2 text-xs text-slate-700">{{ q.label }}</div>
-              </button>
-            </div>
-          </div>
-  
-          <!-- 再次发送 -->
-          <div class="rounded-2xl border bg-white p-5">
-            <div class="font-semibold mb-3">Send again</div>
-            <button class="w-full flex items-center gap-3 px-3 py-2 rounded-xl border hover:bg-slate-50">
-              <span class="w-9 h-9 rounded-full bg-blue-100 grid place-items-center">🔎</span>
-              <span class="text-sm">Search</span>
+            <button
+              type="button"
+              class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
+            >
+              Manage datasets
             </button>
           </div>
-  
-          <!-- 银行与卡片 -->
-          <div class="rounded-2xl border bg-white p-5">
-            <div class="font-semibold mb-3">Banks and cards</div>
-            <ul class="space-y-3">
-              <li v-for="b in banks" :key="b.id" class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-lg bg-slate-100 grid place-items-center">🏦</div>
-                  <div>
-                    <div class="text-sm font-medium">{{ b.name }}</div>
-                    <div class="text-xs text-slate-500">{{ b.mask }}</div>
+
+          <div class="mt-2">
+            <label class="text-xs font-medium text-slate-700">Dataset</label>
+            <select
+              v-model="selectedDatasetName"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400 focus:bg-white">
+              <option disabled value="">Select</option>
+              <option
+                v-for="ds in datasets"
+                :key="ds.datasetName"
+                :value="ds.datasetName"> {{ ds.datasetName }}（{{ ds.rowCount }} rows）
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Column & Time selection -->
+        <div class="rounded-2xl bg-white p-5 shadow-sm">
+          <div class="mb-3">
+            <h2 class="text-base font-semibold text-slate-900">
+              Select columns and data range
+            </h2>
+            <p class="mt-1 text-xs text-slate-500">
+              select at most 2 columns，then select time range
+            </p>
+          </div>
+
+          <!-- Columns selection -->
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="text-xs font-medium text-slate-700">
+                Columns（at most 2）
+              </label>
+              <div
+                class="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2"
+              >
+                <label
+                  v-for="col in availableMetricColumns"
+                  :key="col.columnName"
+                  class="flex cursor-pointer items-center justify-between rounded-lg px-2 py-1 text-xs hover:bg-slate-100">
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      :value="col.columnName"
+                      v-model="selectedColumns"
+                      :disabled="isColumnDisabled(col.columnName)"
+                      class="h-3 w-3 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                    />
+                    <span class="font-medium text-slate-800">
+                      {{ col.columnName }}
+                    </span>
                   </div>
+                  <span class="text-[10px] uppercase text-slate-400">
+                    {{ col.dataType }}
+                  </span>
+                </label>
+
+                <p
+                  v-if="availableMetricColumns.length === 0"
+                  class="py-2 text-center text-xs text-slate-400">
+                  Current dataset does not have columns
+                </p>
+              </div>
+              <p class="mt-1 text-[11px] text-slate-400">
+                Selected {{ selectedColumns.length }}/2
+              </p>
+            </div>
+
+            <!-- Time range -->
+            <div>
+              <label class="text-xs font-medium text-slate-700">
+                Date range
+              </label>
+
+              <div class="mt-1 flex flex-wrap gap-2">
+                <button
+                  v-for="preset in timePresets"
+                  :key="preset.value"
+                  type="button"
+                  @click="applyPreset(preset.value)"
+                  class="rounded-full border px-3 py-1 text-xs"
+                  :class="
+                    preset.value === activePreset
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-400'
+                  "
+                >
+                  {{ preset.label }}
+                </button>
+              </div>
+
+              <!-- Define Date -->
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <div>
+                  <span class="block text-[11px] text-slate-500">Start date</span>
+                  <input
+                    v-model="dateFrom"
+                    type="date"
+                    class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-800 outline-none focus:border-slate-400 focus:bg-white"
+                  />
                 </div>
-                <button class="text-slate-500 hover:text-slate-700">⋯</button>
-              </li>
-            </ul>
-            <button class="mt-4 text-[#0B2E78] font-semibold hover:underline">Link a Card or Bank</button>
+                <div>
+                  <span class="block text-[11px] text-slate-500">End date</span>
+                  <input
+                    v-model="dateTo"
+                    type="date"
+                    class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-800 outline-none focus:border-slate-400 focus:bg-white"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-  
-          <!-- 慈善 -->
-          <div class="rounded-2xl border bg-white p-5">
-            <div class="font-semibold mb-2">Your favorite charities</div>
-            <p class="text-sm text-slate-600">Make giving simple.</p>
-            <button class="mt-3 text-[#0B2E78] font-semibold hover:underline">Add your first charity</button>
+
+          <!-- Generate graph button -->
+          <div class="mt-4 flex items-center justify-between">
+            <p class="text-[11px] text-slate-400">
+              At lease select one dateset, 1 column and 1 valid date range
+            </p>
+            <button
+              type="button"
+              @click="loadData"
+              :disabled="!canLoad"
+              class="rounded-full px-4 py-2 text-xs font-medium"
+              :class="
+                canLoad
+                  ? 'bg-slate-900 text-white hover:bg-slate-800'
+                  : 'cursor-not-allowed bg-slate-200 text-slate-400'
+              "
+            >
+              Generate graph
+            </button>
           </div>
-        </aside>
-      </main>
-    </div>
-  </template>
-  
-  <script setup lang="ts">
-  import { RouterLink } from 'vue-router'
-  
-  const topNav = [
-    { label: 'Home', to: '/' },
-    { label: 'Finances', to: '/finances' },
-    { label: 'Send and Request', to: '/send' },
-    { label: 'Rewards', to: '/rewards' },
-    { label: 'Wallet', to: '/wallet' },
-    { label: 'Activity', to: '/activity' },
-    { label: 'Help', to: '/help' },
-  ]
-  
-  const recent = [
-    { title: 'Payment to Grocery', date: 'Oct 25, 2025', amount: -36.8, currency: 'USD' },
-    { title: 'Refund from Vendor',  date: 'Oct 21, 2025', amount: +12.0, currency: 'USD' },
-    { title: 'Transfer to Bank',    date: 'Oct 20, 2025', amount: -150.0, currency: 'USD' },
-  ]
-  
-  const quickActions = [
-    { icon: '↔️', label: 'Send / Request' },
-    { icon: '💳', label: 'Savings' },
-    { icon: '🏆', label: 'Rewards' },
-    { icon: '🧾', label: 'Pay bills' },
-  ]
-  
-  const banks = [
-    { id: 1, name: 'JPMORGAN CHASE BANK, NA', mask: 'Checking ••••18' },
-  ]
-  </script>
+        </div>
+
+        <!-- graph show -->
+        <div class="rounded-2xl bg-white p-5 shadow-sm">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-base font-semibold text-slate-900">
+              Data diagram
+            </h2>
+            <span class="text-[11px] text-slate-400">
+              {{ chartTitle }}
+            </span>
+          </div>
+
+          <div
+            class="flex h-64 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50"
+          >
+            <p v-if="chartData.length === 0" class="text-xs text-slate-400">
+              Pelase select data set, columns and date range, then click "Generate graph"
+            </p>
+            <p v-else class="text-xs text-slate-500">
+              这里接入你的图表组件 (ECharts / Chart.js)，current data points：{{ chartData.length }}
+            </p>
+          </div>
+
+          <!-- Simply showcase -->
+          <div class="mt-4">
+            <div class="mb-2 flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-slate-900">
+                Details
+              </h3>
+              <button
+                type="button"
+                class="text-xs text-slate-500 hover:text-slate-800"
+              >
+                Show all
+              </button>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-slate-100">
+              <table class="min-w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500">
+                  <tr>
+                    <th class="px-4 py-2">时间</th>
+                    <th
+                      v-for="colKey in selectedColumns"
+                      :key="colKey"
+                      class="px-4 py-2"
+                    >
+                      {{ columnLabel(colKey) }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="row in chartData.slice(0, 10)"
+                    :key="row.time + JSON.stringify(row)"
+                    class="border-t border-slate-50"
+                  >
+                    <td class="px-4 py-2 text-slate-500">
+                      {{ row.time }}
+                    </td>
+                    <td
+                      v-for="colKey in selectedColumns"
+                      :key="colKey"
+                      class="px-4 py-2 text-slate-800"
+                    >
+                      {{ row[colKey] }}
+                    </td>
+                  </tr>
+                  <tr v-if="chartData.length === 0">
+                    <td
+                      colspan="3"
+                      class="px-4 py-6 text-center text-slate-400"
+                    >
+                      Data not available
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right side -->
+      <aside class="hidden w-72 space-y-4 lg:block">
+        <div class="rounded-2xl bg-white p-4 shadow-sm">
+          <h3 class="text-sm font-semibold text-slate-900">
+            Current dataset
+          </h3>
+          <p class="mt-1 text-xs text-slate-500">
+            After selecting dataset，should display some basic info here。
+          </p>
+          <div class="mt-3 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+            <p>
+              Name：
+              <span class="font-medium">
+                {{ currentDataset?.name || 'Not selected' }}
+              </span>
+            </p>
+            <p class="mt-1">
+              Column num：
+              <span class="font-medium">
+                {{ currentDataset?.columns.length || '-' }}
+              </span>
+            </p>
+            <p class="mt-1 text-[11px] text-slate-400">
+              这里以后可以展示：记录数、时间范围、上次更新等。
+            </p>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white p-4 shadow-sm">
+          <h3 class="text-sm font-semibold text-slate-900">
+            常用视图
+          </h3>
+          <p class="mt-1 text-xs text-slate-500">
+            未来可以在这里保存常用的 dataset + 字段 + 时间组合。
+          </p>
+          <button
+            type="button"
+            class="mt-3 w-full rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 hover:border-slate-400"
+          >
+            + 保存当前视图
+          </button>
+        </div>
+
+        <div class="rounded-2xl bg-white p-4 shadow-sm">
+          <h3 class="text-sm font-semibold text-slate-900">
+            使用提示
+          </h3>
+          <ul class="mt-2 space-y-1 text-xs text-slate-500">
+            <li>· 先选 dataset，再选列和时间。</li>
+            <li>· 数值列最多选择 2 个，避免图表过于拥挤。</li>
+            <li>· 时间范围过长时建议按月聚合。</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, ref, onMounted} from 'vue'
+import type { Dataset, ColumnMeta, ColumnType } from '@/api/types'
+import { fetchDatasets } from '@/api/dashboard'  
+
+const datasets = ref<Dataset[]>([])
+const selectedDatasetName = ref('')
+const selectedColumns = ref<string[]>([])
+const selectedDatasetId = ref<string>('')
+
+const loading = ref(false)
+const error = ref('')
+
+onMounted(async () => {
+  await loadData()
+})
+
+async function loadData() {
+  try {
+    loading.value = true
+
+    const res = await fetchDatasets()
+    datasets.value = res.data
+
+    console.log('Datasets:', datasets.value)
+  } catch (e) {
+    console.error(e)
+    error.value = 'Failed to load data'
+  } finally {
+    loading.value = false
+  }
+}
+
+const selectedDataset = computed<Dataset | null>(() => {
+  return datasets.value.find(d => d.datasetName === selectedDatasetName.value) ?? null
+})
+
+const availableMetricColumns = computed<ColumnMeta[]>(() => {
+  if (!selectedDataset.value)
+    return []
+
+  return selectedDataset.value.headers.filter(
+    (c) => c.isMetric
+  )
+})
+
+
+const dateFrom = ref<string>('')
+const dateTo = ref<string>('')
+
+// 图表数据占位
+const chartData = ref<Array<Record<string, any>>>([])
+
+// 时间 preset
+const timePresets = [
+  { label: 'last 7 days', value: '7d' },
+  { label: 'last 30 days', value: '30d' },
+  { label: 'last 90 days', value: '90d' },
+]
+const activePreset = ref<string | null>(null)
+
+const currentDataset = computed(() =>
+  datasets.value.find((d) => d.id === selectedDatasetId.value),
+)
+
+const columnLabel = (key: string) =>
+  currentDataset.value?.columns.find((c) => c.key === key)?.label ?? key
+
+const canLoad = computed(
+  () =>
+    !!selectedDatasetId.value &&
+    selectedColumns.value.length > 0 &&
+    !!dateFrom.value &&
+    !!dateTo.value,
+)
+
+const chartTitle = computed(() => {
+  if (!currentDataset.value || selectedColumns.value.length === 0) return 'not select'
+  return ''
+  //return `${currentDataset.value.name} · ${selectedColumns.map((k) => columnLabel(k)).join(' / ')}`
+})
+
+function isColumnDisabled(key: string) {
+  return selectedColumns.value.length >= 2 && !selectedColumns.value.includes(key)
+}
+
+function applyPreset(value: string) {
+  activePreset.value = value
+
+  const today = new Date()
+  const end = today.toISOString().slice(0, 10)
+  const startDate = new Date(today)
+
+  if (value === '7d') startDate.setDate(startDate.getDate() - 6)
+  if (value === '30d') startDate.setDate(startDate.getDate() - 29)
+  if (value === '90d') startDate.setDate(startDate.getDate() - 89)
+
+  dateFrom.value = startDate.toISOString().slice(0, 10)
+  dateTo.value = end
+}
+</script>

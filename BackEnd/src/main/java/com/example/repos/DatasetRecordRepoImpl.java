@@ -7,12 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.crypto.Data;
+
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+import com.example.models.DataProps;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.InsertOneModel;
@@ -30,25 +33,25 @@ public class DatasetRecordRepoImpl implements DatasetRecordRepoCustom {
 
     // TODO: currently I only consider insert situation, if the user insert multiple same CSV files, we need to deduplicate the related records
     @Override
-    public void bulkInsertRecords(DatasetMetadata data, List<Map<String, Object>> rows, String batchId, String recordDateColumnName) {
+    public void bulkInsertRecords(List<Map<String, String>> rows, DataProps dataProps) {
         MongoCollection<Document> coll = mongo.getCollection(MongoKeys.Common.RECORD_TABLENAME);
         List<WriteModel<Document>> batch = new ArrayList<>(rows.size());
         
         Instant now = Instant.now();
         LocalDate uploadedDate = LocalDate.now(ZoneOffset.UTC);
 
-        for (Map<String, Object> row : rows) {
+        for (Map<String, String> row : rows) {
             DatasetRecord record = DatasetRecord.builder()
-                .datasetId(data.getId())
-                .version(data.getStaged().getVersion())
+                .datasetId(dataProps.getDatasetId())
+                .version(dataProps.getStagedVersion())
                 .updatedAt(now)
                 .uploadDate(uploadedDate)       
-                .batchId(batchId)
+                .batchId(dataProps.getBatchId())
                 .build();
             
             // Ignore the column if not available
-            if (recordDateColumnName != null && row.containsKey(recordDateColumnName)) {
-                Object raw = row.get(recordDateColumnName);
+            if (dataProps.getRecordDateColumnName() != null && row.containsKey(dataProps.getRecordDateColumnName())) {
+                Object raw = row.get(dataProps.getRecordDateColumnName());
                 if (raw != null) {
                     LocalDate recordTime = dateParser.parseRecordTime(raw.toString());
                     record.setRecordDate(recordTime);
@@ -63,7 +66,7 @@ public class DatasetRecordRepoImpl implements DatasetRecordRepoCustom {
         }
     }
 
-    private Document toDocument(DatasetRecord record, Map<String, Object> row) {
+    private Document toDocument(DatasetRecord record, Map<String, String> row) {
         Document doc = new Document()
                 .append(MongoKeys.Record.DATASET_ID, record.getDatasetId())
                 .append(MongoKeys.Record.VERSION, record.getVersion())

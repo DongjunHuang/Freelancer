@@ -131,7 +131,7 @@ async function upload() {
     recordDateColumnFormat: recordDateFormat.value,
     newDataset: selectedMode.value === 'new', 
   };
-  console.log("datesetName {}, recordDateColumnName name {}, recordDateColumnFormat name {}, is new {}", tableName, recordDateColumn.value, recordDateFormat.value, dataset.isNew)
+  console.log("datesetName {}, recordDateColumnName name {}, recordDateColumnFormat name {}, is new {}", tableName, recordDateColumn.value, recordDateFormat.value, dataset.newDataset)
   try {
     await uploadCsv(file.value, dataset, {
       onProgress: (pct) => {
@@ -249,7 +249,6 @@ async function extractHeaders(file: File): Promise<string[]> {
 
     <!-- Select or add table name-->
     <div class="pt-4 grid gap-4 sm:grid-cols-2">
-      <!-- 左边：选择 existing/new -->
       <div>
         <select v-model="selectedMode" class="w-full border rounded-lg p-2">
           <option value="existing">Select from existing table.</option>

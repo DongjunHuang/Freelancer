@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @CompoundIndex(name = "idx_dataset_recordDate", def = "{'datasetId': 1, 'recordDate': 1}")
 @CompoundIndex(name = "idx_dataset_uploadDate", def = "{'datasetId': 1, 'uploadDate': 1}")
+@CompoundIndex(name = "idx_dataset_version_recordDate", def = "{ 'datasetId': 1, 'version': 1, 'recordDate': 1 }")
 public class DatasetRecord {   
     @Id
     private String id;                 
