@@ -29,7 +29,6 @@ public class DashboardService {
     }
 
     public FetchRecordsResp fetchRecords(Long userId, FetchRecordsReq req) {
-        // 1. 找到这个用户的 dataset metadata
         DatasetMetadata meta = datasetRepo.findByUserIdAndDatasetName(userId, req.getDatasetName());
         if (meta == null || meta.getCurrent() == null) {
             throw new IllegalArgumentException("Dataset not found or no current version");
@@ -38,14 +37,14 @@ public class DashboardService {
         String datasetId = meta.getId();
         Integer version = meta.getCurrent().getVersion();
 
-        List<DatasetRecord> records = null; /*recordRepo.findByDatasetIdAndVersionAndRecordDateBetween(
+        // TODO: add search by record date
+        List<DatasetRecord> records = recordRepo.findByDatasetIdAndVersionAndUploadDateBetween(
                         datasetId,
                         version,
                         req.getFromDate(),
                         req.getToDate()
-                );*/
+                );
 
-        // 3. 确定要返回哪些列：如果 req.columns 为空，就用 metadata.current.headers
         List<String> targetColumns;
         if (req.getColumns() == null || req.getColumns().isEmpty()) {
             targetColumns = meta.getCurrent().getHeaders().stream()
@@ -55,27 +54,24 @@ public class DashboardService {
             targetColumns = req.getColumns();
         }
 
-        // 4. 组装 rows，按目标 columns 过滤数据
         List<DataRowDto> rows = new ArrayList<>();
         for (DatasetRecord r : records) {
             DataRowDto rowDto = new DataRowDto();
-            // rowDto.setRecordDate(r.getRecordDate());
+            rowDto.setUploadDate(r.getUploadDate());
 
             Map<String, Object> filtered = new LinkedHashMap<>();
             Map<String, Object> src = r.getData();
             for (String col : targetColumns) {
                 filtered.put(col, src != null ? src.get(col) : null);
             }
-            // rowDto.setValues(filtered);
-
+            rowDto.setValues(filtered);
             rows.add(rowDto);
         }
 
-        // 5. 组装响应
         FetchRecordsResp resp = new FetchRecordsResp();
-        // resp.setDatasetName(req.getDatasetName());
-        // resp.setColumns(targetColumns);
-        // resp.setRows(rows);
+        resp.setDatasetName(req.getDatasetName());
+        resp.setColumns(targetColumns);
+        resp.setRows(rows);
         return resp;
     }
 }

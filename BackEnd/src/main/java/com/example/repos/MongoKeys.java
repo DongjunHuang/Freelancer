@@ -1,7 +1,5 @@
 package com.example.repos;
 
-import java.util.List;
-
 public interface MongoKeys {
     interface Common {
         final String ID = "_id";
