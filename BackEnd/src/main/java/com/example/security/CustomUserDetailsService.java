@@ -3,7 +3,6 @@ package com.example.security;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;

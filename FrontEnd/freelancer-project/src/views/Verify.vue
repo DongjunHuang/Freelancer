@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// TODO: modify the system to entering security code intead of token
+
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { verifyEmail } from '@/api/auth'
@@ -8,7 +10,6 @@ const router = useRouter()
 
 const state = ref<'loading' | 'ok' | 'error'>('loading')
 const errorMsg = ref<string>('')
-
 onMounted(async () => {
   const token = String(route.query.token || '')
   if (!token) {

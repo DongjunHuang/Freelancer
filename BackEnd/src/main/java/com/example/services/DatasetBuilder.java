@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +58,7 @@ public class DatasetBuilder {
             column.setDataType(type);
             column.setMetric(isMetric);
         }
+        logger.info("Filled inferred columns for dataset name {}", dataset.getDatasetName());
     }
 
 
@@ -90,48 +90,59 @@ public class DatasetBuilder {
                 ColumnMeta column = ColumnMeta.builder()
                                         .columnName(headers.get(i))
                                         .dataType(ColumnType.STRING)
-                                        .isMetric(false)
+                                        .metric(false)
                                         .build();
                 staged.getHeaders().add(column);
             }
         }
         dataset.setStaged(staged);
-        logger.info("Successfully merged headers for user {} with dataset {}", dataset.getUserId(), dataset.getDatasetName());
+        logger.info("Merged headers for datasetname {}", dataset.getDatasetName());
     }
 
     // Create and update dataset metadata
     public DatasetMetadata createIfNotPresentDatasetMetadata(
                             DataProps props, 
                             DatasetMetadataRepo metadataRepo) throws Exception {
-            Instant now = Instant.now();
-            // Newly created metadata
-            VersionControl current = VersionControl.builder()
-                                        .version(0)
-                                        .headers(new ArrayList<>())
-                                        .rowCount(0)
-                                        .build();
+        if (!props.isNewDataset()) {
+            DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(props.getUserId(), props.getDatasetName());
+            if (dataset != null) {
+                props.setRecordDateColumnName(dataset.getRecordDateColumnName());
+                props.setRecordSymbolColumnName(dataset.getRecordSymbolName());
+                props.setDatasetId(dataset.getId());
+            }
+            return dataset;
+        }
 
-            // Receive indexes
-            DatasetMetadata dataset = DatasetMetadata.builder()
-                .id(UUID.randomUUID().toString())
-                .userId(props.getUserId())
-                .datasetName(props.getDatasetName())
-                .status(MetadataStatus.READY)
-                .createdAt(now)
-                .updatedAt(now)
-                .current(current)
-                .staged(null)
-                .recordDateColumnName(props.getRecordDateColumnName())
-                .build();
-        logger.info("Successfully find or created dataset for user {} with dataset {}", props.getUserId(), props.getDatasetName());
+        Instant now = Instant.now();
+        // Newly created metadata
+        VersionControl current = VersionControl.builder()
+                                    .version(0)
+                                    .headers(new ArrayList<>())
+                                    .rowCount(0)
+                                    .build();
+
+        // Receive indexes
+        DatasetMetadata dataset = DatasetMetadata.builder()
+            .userId(props.getUserId())
+            .datasetName(props.getDatasetName())
+            .status(MetadataStatus.READY)
+            .createdAt(now)
+            .updatedAt(now)
+            .current(current)
+            .staged(null)
+            .recordDateColumnName(props.getRecordDateColumnName())
+            .recordSymbolName(props.getRecordSymbolColumnName())
+            .build();
+        logger.info("Find or created dataset for datasetname {}", props.getDatasetName());
         return dataset;
     }
 
     // The final stage to save the dataset metadata information
     public void saveDataset(DatasetMetadata dataset, DatasetMetadataRepo metadataRepo) {
         metadataRepo.save(dataset);
+        logger.info("Saved meta dataset for dataset name {}", dataset.getDatasetName());
     }
-
+    
     private boolean isMetricColumn(String header, ColumnType type) {
         if (type != ColumnType.NUMBER) {
             return false;
@@ -141,8 +152,12 @@ public class DatasetBuilder {
         }
         
         String h = header.trim().toLowerCase();
-        if (h.contains("id") || h.contains("code") || h.contains("no")
-            || h.contains("number") || h.contains("zip") || h.contains("postal")) {
+        if (h.contains("id") 
+            || h.contains("code") 
+            || h.contains("no")
+            || h.contains("number") 
+            || h.contains("zip") 
+            || h.contains("postal")) {
             return false;
         }
     

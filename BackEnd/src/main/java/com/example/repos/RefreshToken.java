@@ -49,11 +49,9 @@ public class RefreshToken {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /** 过期时间 */
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    /** 吊销标记 */
     @Column(nullable = false)
     private boolean revoked = false;
 }

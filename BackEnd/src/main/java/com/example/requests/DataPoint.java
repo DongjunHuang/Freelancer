@@ -5,9 +5,9 @@ import java.util.Map;
 
 import lombok.Data;
 
+
 @Data
-public class DataRowDto {
-    private LocalDate uploadDate;       
-    private LocalDate recordDate;       
+public class DataPoint {   
+    private LocalDate recordDate;        
     private Map<String, Object> values;    
 }

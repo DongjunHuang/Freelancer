@@ -8,11 +8,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.repos.DatasetMetadata;
 import com.example.requests.DatasetMetadataResp;
+import com.example.requests.FetchRecordsReq;
 import com.example.requests.FetchRecordsResp;
 import com.example.security.JwtUserDetails;
 import com.example.services.DashboardService;
@@ -40,12 +43,19 @@ public class DashboardController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/fetchRecords")
-    public ResponseEntity<List<FetchRecordsResp>> fetchRecords(Authentication auth) {
-        JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
-        // TODO
-        // Long userId = ((JwtUserDetails) auth.getPrincipal()).getUserId();
-        //FetchRecordsResp resp = dashboardService.fetchRecords(userId, req);
-        return ResponseEntity.ok(null);
+    @PostMapping("/queryDatapoints")
+    public ResponseEntity<FetchRecordsResp> queryDatapoints(
+                Authentication auth,
+                @RequestBody FetchRecordsReq req) {
+        Long userId = ((JwtUserDetails) auth.getPrincipal()).getId();
+        logger.info("Handle the fetch datapoints request from user {} with request {}",userId, req);
+        FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(req);
+        FetchRecordsResp resp = dashboardService.queryDatapoints(userId, props);
+        for (String key : resp.getDatapoints().keySet()) {
+            logger.info("Fetch the first data points from database key {} with value {}",  key, resp.getDatapoints().get(key));
+            break;
+        }
+        
+        return ResponseEntity.ok(resp);
     }
 }

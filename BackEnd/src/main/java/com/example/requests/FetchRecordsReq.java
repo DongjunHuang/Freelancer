@@ -8,7 +8,8 @@ import lombok.Data;
 @Data
 public class FetchRecordsReq {
     private String datasetName;
-    private LocalDate fromDate;
-    private LocalDate toDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private List<String> columns;
+    private String symbols;
 }

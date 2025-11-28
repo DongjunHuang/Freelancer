@@ -41,62 +41,99 @@ public class UploadService {
     private final static  int INFER_NUM = 30;
 
     public long appendRecords(MultipartFile file, DataProps dataRecordProps) throws Exception {
-        try (var parser = new CSVParser(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8),
-                CSVFormat.DEFAULT.withFirstRecordAsHeader().withTrim().withIgnoreEmptyLines())) {
+
+        // ====== Phase 1：parse first N lines, infer data types and save metadata dataset ======
+        DatasetMetadata dataset;
+    
+        try (var parser = new CSVParser(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8),
+                CSVFormat.DEFAULT
+                         .withFirstRecordAsHeader()
+                         .withTrim()
+                         .withIgnoreEmptyLines())) {
             List<String> headers = new ArrayList<>(parser.getHeaderMap().keySet());
-            logger.info("Insert into data record with headers {}", headers);
-            DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(dataRecordProps.getUserId(),
-                                                        dataRecordProps.getDatasetName());
+            logger.info("Append records, headers = {}", headers);
+    
+            dataset = builder.createIfNotPresentDatasetMetadata(dataRecordProps, metadataRepo);
             if (dataset == null) {
-                // Step1
-                dataset = builder.createIfNotPresentDatasetMetadata(dataRecordProps, metadataRepo);
+                // TODO: 
+                throw new IllegalStateException("DatasetMetadata is null");
             }
-
+    
             Set<String> columnsNeedsInfer = new HashSet<>();
-            
-            // Step2
             builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, headers);
-
+    
+            List<Map<String, String>> inferRows = new ArrayList<>();
+            Iterator<CSVRecord> it = parser.iterator();
+            int inspected = 0;
+    
+            while (it.hasNext() && inspected < INFER_NUM) {
+                CSVRecord record = it.next();
+                Map<String, String> row = new HashMap<>();
+                for (String header : headers) {
+                    row.put(header, record.get(header));
+                }
+                inferRows.add(row);
+                inspected++;
+            }
+    
+          
+            if (!inferRows.isEmpty() && !columnsNeedsInfer.isEmpty()) {
+                builder.inferAndfillStagedColumns(dataset, inferRows, columnsNeedsInfer);
+            }
+    
+           
+    
+            builder.saveDataset(dataset, metadataRepo);
             dataRecordProps.setStagedVersion(dataset.getCurrent().getVersion() + 1);
             dataRecordProps.setDatasetId(dataset.getId());
             
-            int batch_count = 1;
+            logger.info("Dataset metadata saved. datasetId={}, stagedVersion={}",
+                    dataRecordProps.getDatasetId(), dataRecordProps.getStagedVersion());
+        }
+    
+      
+         // ====== Phase 2：parse the whole file, put all data into records ======
+        long totalInserted = 0;
+    
+        try (var parser = new CSVParser(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8),
+                CSVFormat.DEFAULT
+                         .withFirstRecordAsHeader()
+                         .withTrim()
+                         .withIgnoreEmptyLines()
+        )) {
+            List<String> headers = new ArrayList<>(parser.getHeaderMap().keySet());
             Iterator<CSVRecord> it = parser.iterator();
+    
             List<Map<String, String>> rows = new ArrayList<>();
-            List<Map<String, String>> inferRows = new ArrayList<>();
-                
+            int batchCount = 0;
+    
             while (it.hasNext()) {
                 CSVRecord record = it.next();
                 Map<String, String> row = new HashMap<>();
-                for (String header : parser.getHeaderNames()) {
-                    row.put(header, record.get(header));
+                for (String header : headers) {
+                    String headerUppercase = header.toUpperCase();
+                    row.put(headerUppercase, record.get(header));
                 }
-                
-                
                 rows.add(row);
-                if (batch_count < INFER_NUM) {
-                    inferRows.add(row);
-                } else if (batch_count == INFER_NUM) {
-                    // Step3: save the metadata
-                    builder.inferAndfillStagedColumns(dataset, inferRows, columnsNeedsInfer);
-                    
-                    // Step4: save the metadata
-                    builder.saveDataset(dataset, metadataRepo);
-                }
-            
-                if (batch_count % BATCH_NUM == 0 || !it.hasNext()) {
+                batchCount++;
+    
+                if (batchCount == BATCH_NUM) {
                     recordRepo.bulkInsertRecords(rows, dataRecordProps);
+                    totalInserted += batchCount;
                     rows.clear();
+                    batchCount = 0;
                 }
-                
-                batch_count++;
             }
-
-            return batch_count;
-        } catch (Exception ex) {
-            logger.info("Exception throwed out" + ex);
-            throw new Exception();
+    
+            if (!rows.isEmpty()) {
+                recordRepo.bulkInsertRecords(rows, dataRecordProps);
+                totalInserted += rows.size();
+            }
         }
+    
+        return totalInserted;
     }
 
     @Transactional
@@ -114,7 +151,6 @@ public class UploadService {
         current.setRowCount(staged.getRowCount() + importedRows);
 
         dataset.setUpdatedAt(Instant.now());
-
         dataset.setStatus(MetadataStatus.READY);
         dataset.setStaged(null);
 

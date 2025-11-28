@@ -7,5 +7,6 @@ public class DatasetReq {
     private String datasetName;
     private String recordDateColumnName;
     private String recordDateColumnFormat;
+    private String recordSymbolColumnName;  
     private boolean newDataset;
 }

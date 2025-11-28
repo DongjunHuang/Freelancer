@@ -1,19 +1,22 @@
 package com.example.services;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.example.controllers.FetchRecordsProps;
 import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadata.ColumnMeta;
 import com.example.repos.DatasetMetadataRepo;
 import com.example.repos.DatasetRecord;
 import com.example.repos.DatasetRecordRepo;
-import com.example.requests.DataRowDto;
-import com.example.requests.FetchRecordsReq;
+import com.example.repos.MongoKeys;
+import com.example.requests.DataPoint;
 import com.example.requests.FetchRecordsResp;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
+    private static final Logger logger = LoggerFactory.getLogger(DashboardService.class);
+
     private final DatasetMetadataRepo datasetRepo;
     private final DatasetRecordRepo recordRepo;
     
@@ -28,50 +33,62 @@ public class DashboardService {
         return  datasetRepo.findByUserId(userId);
     }
 
-    public FetchRecordsResp fetchRecords(Long userId, FetchRecordsReq req) {
-        DatasetMetadata meta = datasetRepo.findByUserIdAndDatasetName(userId, req.getDatasetName());
+    public FetchRecordsResp queryDatapoints(Long userId, FetchRecordsProps props) {
+        DatasetMetadata meta = datasetRepo.findByUserIdAndDatasetName(userId, props.getDatasetName());
         if (meta == null || meta.getCurrent() == null) {
-            throw new IllegalArgumentException("Dataset not found or no current version");
+            throw new IllegalArgumentException("Dataset not found or no current version");            
         }
-
+        
         String datasetId = meta.getId();
         Integer version = meta.getCurrent().getVersion();
-
-        // TODO: add search by record date
-        List<DatasetRecord> records = recordRepo.findByDatasetIdAndVersionAndUploadDateBetween(
-                        datasetId,
-                        version,
-                        req.getFromDate(),
-                        req.getToDate()
-                );
-
-        List<String> targetColumns;
-        if (req.getColumns() == null || req.getColumns().isEmpty()) {
-            targetColumns = meta.getCurrent().getHeaders().stream()
-                    .map(ColumnMeta::getColumnName)
-                    .toList();
+               
+        // parse the symbols to fetch 
+        List<DatasetRecord> records = null;
+        Sort sort = Sort.by(
+            Sort.Order.asc(MongoKeys.Record.RECORD_DATE),
+            Sort.Order.asc(MongoKeys.Record.SYMBOL)
+        );
+        logger.info("The symbols found {} with datasetid {}, version {}, start date {}, enddate {}", 
+                    props.getSymbols(), 
+                    datasetId, 
+                    version, 
+                    props.getStartDate(), 
+                    props.getEndDate());
+        if (props.getSymbols() == null || props.getSymbols().isEmpty()) {
+            records = recordRepo.findByDatasetIdAndVersionAndUploadDateBetween(
+                datasetId,
+                version,
+                props.getStartDate(),
+                props.getEndDate(),
+                sort);
         } else {
-            targetColumns = req.getColumns();
+            records = recordRepo.findByDatasetIdAndVersionAndUploadDateBetweenAndSymbols(
+                datasetId,
+                version,
+                props.getStartDate(),
+                props.getEndDate(),
+                props.getSymbols(),
+                sort);
         }
 
-        List<DataRowDto> rows = new ArrayList<>();
-        for (DatasetRecord r : records) {
-            DataRowDto rowDto = new DataRowDto();
-            rowDto.setUploadDate(r.getUploadDate());
+        logger.info("Total number {} found from the database for request {}", records.size(), props);
 
-            Map<String, Object> filtered = new LinkedHashMap<>();
-            Map<String, Object> src = r.getData();
-            for (String col : targetColumns) {
-                filtered.put(col, src != null ? src.get(col) : null);
-            }
-            rowDto.setValues(filtered);
-            rows.add(rowDto);
-        }
+        // Make up data sets
+        Map<String, List<DataPoint>> datapoints =
+            records.stream().collect(Collectors.groupingBy(
+                DatasetRecord::getSymbol,
+                LinkedHashMap::new,
+                Collectors.mapping(
+                    (r) -> DatasetRecord.toDataPoint(r, props.getColumns()),
+                    Collectors.toList()
+                )
+            ));
+       
 
         FetchRecordsResp resp = new FetchRecordsResp();
-        resp.setDatasetName(req.getDatasetName());
-        resp.setColumns(targetColumns);
-        resp.setRows(rows);
+        resp.setDatasetName(props.getDatasetName());
+        resp.setColumns(props.getColumns());
+        resp.setDatapoints(datapoints);
         return resp;
     }
 }

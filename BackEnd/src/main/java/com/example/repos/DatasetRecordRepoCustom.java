@@ -5,5 +5,5 @@ import java.util.Map;
 import com.example.models.DataProps;
 
 public interface DatasetRecordRepoCustom {
-    public void bulkInsertRecords(List<Map<String, String>> rows, DataProps dataRecordProps);
+    public void bulkInsertRecords(List<Map<String, String>> rows, DataProps dataRecordProps) throws Exception;
 }

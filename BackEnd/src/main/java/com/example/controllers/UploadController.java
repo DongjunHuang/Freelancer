@@ -1,5 +1,6 @@
 package com.example.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.models.DataProps;
 import com.example.repos.DatasetMetadata;
+import com.example.requests.DatasetMetadataResp;
 import com.example.requests.DatasetReq;
 import com.example.security.JwtUserDetails;
 import com.example.services.MetadataService;
@@ -33,7 +35,7 @@ public class UploadController {
     private static final Logger logger = LoggerFactory.getLogger(UploadController.class);
     
     private final UploadService uploadService;
-    private final MetadataService dashboardService;
+    private final MetadataService metadataService;
 
     @PostMapping(value = "/uploadCsv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadWithNewDataset(
@@ -50,14 +52,22 @@ public class UploadController {
         // First create or update table metadata
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
         Long userId = user.getId();
-        
+
+        String symbolColumn = req.getRecordSymbolColumnName();
+        String symbolColumnUpperCase = symbolColumn == null ? null : symbolColumn.toUpperCase();
+
+        String dateColumn = req.getRecordDateColumnName();
+        String dateColumnUpperCase = dateColumn == null ? null : dateColumn.toUpperCase();
+
         // create props for dataset and record
         DataProps props = DataProps.builder()
                             .batchId(UUID.randomUUID().toString())
                             .userId(userId)
                             .datasetName(req.getDatasetName())
                             .recordDateColumnFormat(req.getRecordDateColumnFormat())
-                            .recordDateColumnName(req.getRecordDateColumnName())
+                            .recordDateColumnName(dateColumnUpperCase)
+                            .recordSymbolColumnName(symbolColumnUpperCase)
+                            .newDataset(req.isNewDataset())
                             .build();
 
         logger.info("The user id is {}, passed params is {}", userId, req);
@@ -72,6 +82,7 @@ public class UploadController {
             uploadService.promoteStagedToCurrent(req.getDatasetName(), userId, rowCount);
 
         } catch (Exception ex) {
+            logger.error("Exception thrown", ex);
             // Todo: roll back and return error to users
         }
                 
@@ -79,10 +90,16 @@ public class UploadController {
     }
 
     @GetMapping("/fetchDatasets")
-    public ResponseEntity<List<DatasetMetadata>> myDatasets(Authentication auth) {
+    public ResponseEntity<List<DatasetMetadataResp>> fetchDatasets(Authentication auth) {
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
         Long userId = user.getId();
-        return ResponseEntity.ok(dashboardService.getUserDatasets(userId));
+        List<DatasetMetadata> metadatas = metadataService.getUserDatasets(userId);
+        List<DatasetMetadataResp> responses = new ArrayList<>();
+        for (int i = 0; i < metadatas.size(); i++) {
+            responses.add(DatasetMetadataResp.fromDatasetMetadata(metadatas.get(i)));
+        }
+
+        return ResponseEntity.ok(responses);
     }
 }
 

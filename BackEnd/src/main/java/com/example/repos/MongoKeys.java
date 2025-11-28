@@ -19,6 +19,10 @@ public interface MongoKeys {
         final String STAGED = "staged";
         final String CURRENT = "current";
         final String ROW_COUNT = "rowCount";
+        final String RECORD_COUNT = "rowCount";
+        
+        // Record indexes
+        final String RECORD_SYMBOL_NAME = "recordSymbolName";
         final String RECORD_DATE_COLUMN_NAME = "recordDateColumnName";
         final String RECORD_DATE_COLUMN_FORMAT = "recordDateColumnFormat";
     }
@@ -34,5 +38,6 @@ public interface MongoKeys {
         final String BATCH_ID = "batchId";
         final String UPLOAD_DATE = "uploadDate";
         final String RECORD_DATE = "recordDate";
+        final String SYMBOL = "symbol";
     }
 }

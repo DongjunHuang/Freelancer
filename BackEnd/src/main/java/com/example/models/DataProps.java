@@ -8,6 +8,7 @@ import lombok.Data;
 public class DataProps {
     private String recordDateColumnName;
     private String recordDateColumnFormat;
+    private String recordSymbolColumnName;
     private Long userId;
     private String batchId;
     private String datasetName;

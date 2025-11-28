@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.crypto.Data;
-
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -33,13 +31,14 @@ public class DatasetRecordRepoImpl implements DatasetRecordRepoCustom {
 
     // TODO: currently I only consider insert situation, if the user insert multiple same CSV files, we need to deduplicate the related records
     @Override
-    public void bulkInsertRecords(List<Map<String, String>> rows, DataProps dataProps) {
+    public void bulkInsertRecords(List<Map<String, String>> rows, DataProps dataProps) throws Exception {
         MongoCollection<Document> coll = mongo.getCollection(MongoKeys.Common.RECORD_TABLENAME);
         List<WriteModel<Document>> batch = new ArrayList<>(rows.size());
         
         Instant now = Instant.now();
         LocalDate uploadedDate = LocalDate.now(ZoneOffset.UTC);
-
+        logger.info("Dataset id is {}", dataProps.getDatasetId());
+        
         for (Map<String, String> row : rows) {
             DatasetRecord record = DatasetRecord.builder()
                 .datasetId(dataProps.getDatasetId())
@@ -49,20 +48,36 @@ public class DatasetRecordRepoImpl implements DatasetRecordRepoCustom {
                 .batchId(dataProps.getBatchId())
                 .build();
             
-            // Ignore the column if not available
-            if (dataProps.getRecordDateColumnName() != null && row.containsKey(dataProps.getRecordDateColumnName())) {
-                Object raw = row.get(dataProps.getRecordDateColumnName());
-                if (raw != null) {
-                    LocalDate recordTime = dateParser.parseRecordTime(raw.toString());
-                    record.setRecordDate(recordTime);
-                }
+            // There are two lines needed to be added outside of data object. 
+            // The first is date column, critical to track the data from time
+            // The second is index defined by client, which is cutomized column to speed up search speed
+            if (dataProps.getRecordDateColumnName() == null || !row.containsKey(dataProps.getRecordDateColumnName())) {
+                // TODO: Add new exception here
+                throw new Exception();
+            }
+            
+            String localtime = row.get(dataProps.getRecordDateColumnName());
+            
+            LocalDate recordTime = dateParser.parseRecordTime(localtime, dataProps.getRecordDateColumnFormat());
+            
+            record.setRecordDate(recordTime);
+
+            if (dataProps.getRecordSymbolColumnName() == null || !row.containsKey(dataProps.getRecordSymbolColumnName())) {
+                // TODO: Add new exception here
+                throw new Exception();
             }
 
+            String symbolColumn = row.get(dataProps.getRecordSymbolColumnName());
+            record.setSymbol(symbolColumn);
+        
+
+            // Insert the batch into the mongo db
             Document doc = toDocument(record, row);
             batch.add(new InsertOneModel<>(doc));
         }
         if (!batch.isEmpty()) {
             coll.bulkWrite(batch, new BulkWriteOptions().ordered(false));
+            batch.clear();
         }
     }
 
@@ -74,6 +89,7 @@ public class DatasetRecordRepoImpl implements DatasetRecordRepoCustom {
                 .append(MongoKeys.Record.UPLOAD_DATE, record.getUploadDate())
                 .append(MongoKeys.Record.BATCH_ID, record.getBatchId())
                 .append(MongoKeys.Record.RECORD_DATE, record.getRecordDate())
+                .append(MongoKeys.Record.SYMBOL, record.getSymbol())
                 .append(MongoKeys.Record.DATA, new Document(row));
         return doc;
     }

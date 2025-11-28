@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { signin } from '@/api/auth'  
 import { useAuth } from '@/stores/auth'
-const { setToken, setUser } = useAuth()
 
+const { setToken, setUser } = useAuth()
 const router = useRouter()
 const f = ref({ username: '', password: '' })
 const loading = ref(false)

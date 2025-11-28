@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor 
 @AllArgsConstructor 
 @Builder
-@CompoundIndex(name = "user_table_idx", def = "{'userId': 1, 'datasetName': 1}", unique = true)
+@CompoundIndex(name = "user_dataset_idx", def = "{'userId': 1, 'datasetName': 1}", unique = true)
 public class DatasetMetadata {
     // ==========================================
     @Id 
@@ -39,7 +39,6 @@ public class DatasetMetadata {
     @Field(MongoKeys.Common.UPDATED_AT)
     private Instant updatedAt;
 
-    // ==========================================
     @Field(MongoKeys.Dataset.DATASET_NAME)
     private String datasetName;
 
@@ -59,6 +58,9 @@ public class DatasetMetadata {
     @Field(MongoKeys.Dataset.RECORD_DATE_COLUMN_FORMAT)
     private String recordDateColumnFormat;
 
+    @Field(MongoKeys.Dataset.RECORD_SYMBOL_NAME)
+    private String recordSymbolName;
+
     @Builder
     @Data
     public static class VersionControl {
@@ -73,7 +75,7 @@ public class DatasetMetadata {
         private String columnName;
         private ColumnType dataType;
         // TODO: change to column role
-        private boolean isMetric;      
+        private boolean metric;      
     }
 }
 

@@ -1,5 +1,5 @@
 import http from './http'
-import type { DatasetReq } from '@/api/types';
+import type { DatasetReq, Dataset } from '@/api/types';
 
 // uploadCsv.ts
 export const uploadCsv = (
@@ -61,3 +61,8 @@ export const uploadCsvSimulate = async (
     }, 100); 
   });
 };
+
+export async function fetchDatasets(): Promise<Dataset[]> {
+  const res = await http.get<Dataset[]>('/dashboard/fetchDatasets') 
+  return res.data
+}
