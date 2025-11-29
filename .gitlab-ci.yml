@@ -12,13 +12,20 @@ deploy-to-vps:
     - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
   script:
     - |
-      ssh "$VPS_USER@$VPS_HOST" "
-        set -e
-        cd /opt/freelancer
-        git pull           
-        docker compose pull || true  
-        docker compose up -d || true 
-      "
+      ssh "$VPS_USER@$VPS_HOST" << 'EOF'
+        set -ex
+        echo "== whoami =="
+        whoami
+        echo "== pwd(before) =="
+        pwd
+        cd /opt/freelancer/Backend
+        echo "== pwd(after cd) =="
+        pwd
+        echo "== git pull =="
+        git pull
+        echo "== docker compose up -d =="
+        docker compose up -d || true
+      EOF
   only:
     - main    
   environment:
