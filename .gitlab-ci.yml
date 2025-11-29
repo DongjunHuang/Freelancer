@@ -16,15 +16,6 @@ deploy-to-vps:
         set -ex
         echo "== whoami =="
         whoami
-        echo "== pwd(before) =="
-        pwd
-        cd /opt/freelancer/Backend
-        echo "== pwd(after cd) =="
-        pwd
-        echo "== git pull =="
-        git pull
-        echo "== docker compose up -d =="
-        docker compose up -d || true
       EOF
   only:
     - main    
