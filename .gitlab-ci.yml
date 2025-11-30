@@ -9,8 +9,6 @@ build_backend_image:
     - docker:24.0.7-dind
   variables:
     DOCKER_TLS_CERTDIR: ""  
-  rules:
-    - if: '$PIPELINE_MODE == "build"'
   when: manual
   before_script:
     - apk add --no-cache openjdk21-jdk maven git
