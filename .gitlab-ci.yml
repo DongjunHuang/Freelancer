@@ -77,7 +77,7 @@ deploy_to_k8s:
   variables:
     NS: "default"   
   before_script:
-    - apk add --no-cache curl gettext-base bash
+    - apk add --no-cache curl gettext bash
 
     # 1) Check KUBECONFIG_INLINE
     - |
