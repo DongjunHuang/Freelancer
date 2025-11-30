@@ -1,18 +1,3 @@
-workflow:
-  inputs:
-    action:
-      type: string
-      description: "Choose: build or deploy"
-      options:
-        - build
-        - deploy
-      required: true
-
-    image_tag:
-      type: string
-      description: "Image tag to deploy (only needed for deploy)"
-      required: false
-      
 stages:
   - build
   - deploy
