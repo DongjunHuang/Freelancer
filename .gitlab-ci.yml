@@ -1,6 +1,28 @@
 stages:
+  - prepare
   - build
   - deploy
+
+test-before-build:
+  stage: prepare
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache openssh-client
+    - mkdir -p ~/.ssh
+    - cp "$SSH_PRIVATE_KEY" ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+  script:
+    - |
+      ssh "$VPS_USER@$VPS_HOST" << 'EOF'
+        set -ex
+        echo "== whoami =="
+        whoami
+      EOF
+  only:
+    - main    
+  environment:
+    name: production
 
 build_backend_image:
   stage: build
@@ -46,24 +68,129 @@ build_backend_image:
     - echo "  $IMAGE_NAME:$TAG_RUN"
     - echo "  $IMAGE_NAME:latest   (Not suggested for production env)"
 
-deploy-to-vps:
+deploy_to_k8s:
   stage: deploy
   image: alpine:3.20
-  before_script:
-    - apk add --no-cache openssh-client
-    - mkdir -p ~/.ssh
-    - cp "$SSH_PRIVATE_KEY" ~/.ssh/id_ed25519
-    - chmod 600 ~/.ssh/id_ed25519
-    - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
-  script:
-    - |
-      ssh "$VPS_USER@$VPS_HOST" << 'EOF'
-        set -ex
-        echo "== whoami =="
-        whoami
-      EOF
+  when: manual       
   only:
-    - main    
+    - main            
+  variables:
+    NS: "default"   
+  before_script:
+    - apk add --no-cache curl gettext-base bash
+
+    # 1) Check KUBECONFIG_INLINE
+    - |
+      if [ -z "$KUBECONFIG_INLINE" ]; then
+        echo "ERROR: KUBECONFIG_INLINE not set"; exit 1;
+      fi
+
+    # 2) Write ~/.kube/config
+    - |
+      set -euo pipefail
+      mkdir -p ~/.kube
+
+      KUBECTL_VERSION="v1.30.2"
+      curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+      install -m 0755 kubectl /usr/local/bin/kubectl
+      kubectl version --client
+
+      # 写 kubeconfig
+      printf '%s' "$KUBECONFIG_INLINE" | base64 -d > ~/.kube/config
+
+      if [ ! -s ~/.kube/config ]; then
+        echo "❌ ~/.kube/config not created"; exit 1;
+      fi
+
+      chmod 600 ~/.kube/config
+
+    # 3) debug kubeconfig
+    - |
+      echo "== Checking server address =="
+      cat ~/.kube/config | grep "server:" || true
+      echo "== Checking contexts =="
+      cat ~/.kube/config | grep -E "current-context|name:" || true
+      echo "== First 10 lines of kubeconfig =="
+      head -n 10 ~/.kube/config || true
+
+    # 4) Check cluster health
+    - |
+      echo "== Cluster info =="
+      kubectl cluster-info
+      kubectl get nodes
+
+  script:
+    # 5) Input the location of the generated image
+    - |
+      if [ -z "${DEPLOY_IMAGE:-}" ]; then
+        echo "ERROR: DEPLOY_IMAGE is empty."
+        exit 1
+      fi
+
+      if echo "$DEPLOY_IMAGE" | grep -q '/'; then
+        IMAGE="$DEPLOY_IMAGE"
+      else
+        IMAGE="$CI_REGISTRY_IMAGE:$DEPLOY_IMAGE"
+      fi
+
+      echo "Will deploy IMAGE=$IMAGE"
+      export IMAGE
+
+    # 6) prepare k8s manifest（
+    - |
+      mkdir -p /tmp/k8s
+
+      cp Kubernetes/configmap.yaml       /tmp/k8s/configmap.yaml
+      cp Kubernetes/Freelancer-mysql.yaml /tmp/k8s/mysql.yaml
+      cp Kubernetes/Freelancer-mongo.yaml /tmp/k8s/mongo.yaml
+      cp Kubernetes/mongo-init.yaml      /tmp/k8s/mongo-init.yaml
+      cp Kubernetes/ingress.yaml         /tmp/k8s/ingress.yaml
+
+      envsubst < Kubernetes/Freelancer-app.yaml > /tmp/k8s/app.yaml
+      echo "=== Rendered app.yaml (image lines) ==="
+      grep -n 'image:' /tmp/k8s/app.yaml || true
+
+    # 7) Print Namespace
+    - |
+      echo "Namespace value is: '$NS'"
+
+    # 8) Set up secrets
+    - |
+      kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
+
+      kubectl -n "$NS" create secret generic freelancer-secret \
+        --from-literal=MYSQL_DATABASE="$MYSQL_DATABASE" \
+        --from-literal=MYSQL_USER="$MYSQL_USER" \
+        --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+        --from-literal=MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+        --from-literal=MONGO_INITDB_ROOT_USERNAME="$MONGO_INITDB_ROOT_USERNAME" \
+        --from-literal=MONGO_INITDB_ROOT_PASSWORD="$MONGO_INITDB_ROOT_PASSWORD" \
+        --from-literal=SPRING_DATA_MONGODB_URI="$SPRING_DATA_MONGODB_URI" \
+        --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
+
+    # 9) Apply manifest
+    - |
+      set -euo pipefail
+      kubectl -n "$NS" apply -f /tmp/k8s/mongo-init.yaml
+      kubectl -n "$NS" apply -f /tmp/k8s/mongo.yaml
+      kubectl -n "$NS" apply -f /tmp/k8s/ingress.yaml
+      kubectl -n "$NS" apply -f /tmp/k8s/configmap.yaml
+      kubectl -n "$NS" apply -f /tmp/k8s/mysql.yaml
+      kubectl -n "$NS" apply -f /tmp/k8s/app.yaml
+
+    # 10) Wait for rollout
+    - |
+      set -e
+
+      kubectl -n "$NS" rollout status statefulset/mysql --timeout=180s || true
+      kubectl -n "$NS" rollout status deployment/spring-freelancer --timeout=180s || true
+
+      echo "---- pods ----"
+      kubectl -n "$NS" get pods -o wide
+
+      echo "---- pvc ----"
+      kubectl -n "$NS" get pvc
+
   environment:
     name: production
 
