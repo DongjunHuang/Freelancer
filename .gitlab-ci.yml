@@ -36,10 +36,10 @@ build_backend_image:
         -t "$IMAGE_NAME:latest" \
         BackEnd
 
-    - echo "== Push images =="
-    - docker push "$IMAGE_NAME:$TAG_SHA"
-    - docker push "$IMAGE_NAME:$TAG_RUN"
-    - docker push "$IMAGE_NAME:latest"
+      echo "== Push images =="
+      docker push "$IMAGE_NAME:$TAG_SHA"
+      docker push "$IMAGE_NAME:$TAG_RUN"
+      docker push "$IMAGE_NAME:latest"
 
     - echo "== Build done. You can use one of these tags in deploy =="
     - echo "  $IMAGE_NAME:$TAG_SHA"
