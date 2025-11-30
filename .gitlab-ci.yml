@@ -28,7 +28,8 @@ build_backend_image:
     - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
 
     - echo "== Build docker image =="
-    - docker build \
+    - |
+      docker build \
         -f BackEnd/DockerFile \
         -t "$IMAGE_NAME:$TAG_SHA" \
         -t "$IMAGE_NAME:$TAG_RUN" \
