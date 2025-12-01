@@ -95,7 +95,7 @@ deploy_to_k8s:
       install -m 0755 kubectl /usr/local/bin/kubectl
       kubectl version --client
 
-      # 写 kubeconfig
+      # Write kubeconfig
       printf '%s' "$KUBECONFIG_INLINE" | base64 -d > ~/.kube/config
 
       if [ ! -s ~/.kube/config ]; then
@@ -122,6 +122,8 @@ deploy_to_k8s:
   script:
     # 5) Input the location of the generated image
     - |
+      set -euo pipefail
+      
       IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
       echo "== Will deploy IMAGE =="
       echo "  $IMAGE"
