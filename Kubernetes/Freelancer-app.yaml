@@ -18,45 +18,13 @@ spec:
         - name: app
           image: "${IMAGE}"
           imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: freelancer-secret
+            - configMapRef:
+                name: freelancer-cm   
           ports:
             - containerPort: 8080
-          env:
-            # MySQL
-            - name: MYSQL_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: freelancer-secret
-                  key: MYSQL_DATABASE
-            - name: SPRING_DATASOURCE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: freelancer-secret
-                  key: MYSQL_USER
-            - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: freelancer-secret
-                  key: MYSQL_PASSWORD
-            - name: SPRING_DATASOURCE_URL
-              value: "jdbc:mysql://db:3306/$(MYSQL_DATABASE)?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
-
-            # MongoDB
-            - name: SPRING_DATA_MONGODB_URI
-              valueFrom:
-                secretKeyRef:
-                  name: freelancer-secret
-                  key: SPRING_DATA_MONGODB_URI  
-            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CORE_ENV
-              value: TRACE
-            - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_MONGODB
-              value: DEBUG
-            # 打开 health probes 端点
-            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
-              value: "true"
-          envFrom:
-            - configMapRef:
-                name: freelancer-cm
-
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
