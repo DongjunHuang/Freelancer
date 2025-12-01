@@ -166,6 +166,7 @@ deploy_to_k8s:
         --from-literal=MONGO_INITDB_ROOT_USERNAME="$MONGO_INITDB_ROOT_USERNAME" \
         --from-literal=MONGO_INITDB_ROOT_PASSWORD="$MONGO_INITDB_ROOT_PASSWORD" \
         --from-literal=SPRING_DATA_MONGODB_URI="$SPRING_DATA_MONGODB_URI" \
+        --from-literal=JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY" \
         --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
 
     # 9) Apply manifest
