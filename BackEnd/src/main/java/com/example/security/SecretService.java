@@ -18,6 +18,7 @@ import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Base64;
 
@@ -36,7 +37,7 @@ public class SecretService {
     private Key key;
     public SecretService(@Value("${jwt.private-key}") String privateKeyBase64) {
         this.privateKeyBase64 = privateKeyBase64;
-        this.key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(privateKeyBase64));
+        this.key = Keys.hmacShaKeyFor(privateKeyBase64.getBytes(StandardCharsets.UTF_8));
         this.parser = Jwts.parserBuilder()
                                 .setSigningKey(this.key)
                                 .setAllowedClockSkewSeconds(60)
