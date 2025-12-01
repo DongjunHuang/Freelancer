@@ -124,11 +124,12 @@ deploy_to_k8s:
     - |
       set -euo pipefail
       
+      echo "== Resolve IMAGE =="
       IMAGE="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-      echo "== Will deploy IMAGE =="
-      echo "  $IMAGE"
+      echo "IMAGE=$IMAGE"
+      export IMAGE
 
-    # 6) prepare k8s manifest（
+    # 6) prepare k8s manifest
     - |
       mkdir -p /tmp/k8s
 
