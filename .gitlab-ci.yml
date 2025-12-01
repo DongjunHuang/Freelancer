@@ -30,43 +30,41 @@ build_backend_image:
   services:
     - docker:24.0.7-dind
   variables:
-    DOCKER_TLS_CERTDIR: ""  
+    DOCKER_TLS_CERTDIR: ""
   when: manual
   before_script:
     - apk add --no-cache openjdk21-jdk maven git
     - java -version
     - mvn -v
   script:
-    - echo "== Build Maven project =="
-    - cd BackEnd
-    - mvn clean package -DskipTests
-    - cd ..
-
-    - export IMAGE_NAME="$CI_REGISTRY_IMAGE"
-    - export TAG_SHA="$CI_COMMIT_SHA"
-    - export TAG_RUN="run-$CI_PIPELINE_ID"
-
-    - echo "== Login to GitLab Container Registry =="
-    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
-
-    - echo "== Build docker image =="
     - |
+      set -euo pipefail
+
+      echo "== Build Maven project =="
+      cd BackEnd
+      mvn clean package -DskipTests
+      cd ..
+
+      IMAGE_NAME="$CI_REGISTRY_IMAGE"
+      TAG_SHA="$CI_COMMIT_SHA"
+
+      echo "IMAGE_NAME=$IMAGE_NAME"
+      echo "TAG_SHA=$TAG_SHA"
+
+      echo "== Login to GitLab Container Registry =="
+      echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+
+      echo "== Build docker image =="
       docker build \
         -f BackEnd/DockerFile \
         -t "$IMAGE_NAME:$TAG_SHA" \
-        -t "$IMAGE_NAME:$TAG_RUN" \
-        -t "$IMAGE_NAME:latest" \
         BackEnd
 
-      echo "== Push images =="
+      echo "== Push image =="
       docker push "$IMAGE_NAME:$TAG_SHA"
-      docker push "$IMAGE_NAME:$TAG_RUN"
-      docker push "$IMAGE_NAME:latest"
 
-    - echo "== Build done. You can use one of these tags in deploy =="
-    - echo "  $IMAGE_NAME:$TAG_SHA"
-    - echo "  $IMAGE_NAME:$TAG_RUN"
-    - echo "  $IMAGE_NAME:latest   (Not suggested for production env)"
+      echo "== Build done. Tag for deploy =="
+      echo "  $IMAGE_NAME:$TAG_SHA"
 
 deploy_to_k8s:
   stage: deploy
