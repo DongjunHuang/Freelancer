@@ -173,9 +173,9 @@ deploy_to_k8s:
 
 
       echo "== Apply Flyway SQL ConfigMap & Job =="
-      kubectl -n "$NS" apply -f /tmp/k8s/flyway.yaml
-      kubectl -n "$NS" delete job flyway-migrate --ignore-not-found=true
       kubectl -n "$NS" apply -f /tmp/k8s/flyway-sql.yaml
+      kubectl -n "$NS" delete job flyway-migrate --ignore-not-found=true
+      kubectl -n "$NS" apply -f /tmp/k8s/flyway.yaml
 
       echo "== Wait Flyway migration done =="
       kubectl -n "$NS" wait --for=condition=complete job/flyway-migrate --timeout=120s || {
