@@ -131,12 +131,14 @@ deploy_to_k8s:
     - |
       mkdir -p /tmp/k8s
 
-      cp Kubernetes/configmap.yaml       /tmp/k8s/configmap.yaml
+      cp Kubernetes/configmap.yaml        /tmp/k8s/configmap.yaml
       cp Kubernetes/Freelancer-mysql.yaml /tmp/k8s/mysql.yaml
       cp Kubernetes/Freelancer-mongo.yaml /tmp/k8s/mongo.yaml
-      cp Kubernetes/mongo-init.yaml      /tmp/k8s/mongo-init.yaml
-      cp Kubernetes/ingress.yaml         /tmp/k8s/ingress.yaml
-
+      cp Kubernetes/mongo-init.yaml       /tmp/k8s/mongo-init.yaml
+      cp Kubernetes/ingress.yaml          /tmp/k8s/ingress.yaml
+      cp Kubernetes/flyway.yaml           /tmp/k8s/flyway.yaml
+      cp Kubernetes/flyway-sql.yaml       /tmp/k8s/flyway-sql.yaml
+      
       envsubst < Kubernetes/Freelancer-app.yaml > /tmp/k8s/app.yaml
       echo "=== Rendered app.yaml (image lines) ==="
       grep -n 'image:' /tmp/k8s/app.yaml || true
@@ -160,7 +162,7 @@ deploy_to_k8s:
         --from-literal=JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY" \
         --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
 
-    # 9) Apply manifest
+    # 10) Apply manifest
     - |
       set -euo pipefail
       kubectl -n "$NS" apply -f /tmp/k8s/mongo-init.yaml
@@ -168,6 +170,22 @@ deploy_to_k8s:
       kubectl -n "$NS" apply -f /tmp/k8s/ingress.yaml
       kubectl -n "$NS" apply -f /tmp/k8s/configmap.yaml
       kubectl -n "$NS" apply -f /tmp/k8s/mysql.yaml
+
+
+      echo "== Apply Flyway SQL ConfigMap & Job =="
+      kubectl -n "$NS" apply -f /tmp/k8s/flyway.yaml
+      kubectl -n "$NS" delete job flyway-migrate --ignore-not-found=true
+      kubectl -n "$NS" apply -f /tmp/k8s/flyway-sql.yaml
+
+      echo "== Wait Flyway migration done =="
+      kubectl -n "$NS" wait --for=condition=complete job/flyway-migrate --timeout=120s || {
+        echo "Flyway migration failed or timed out"
+        kubectl -n "$NS" logs job/flyway-migrate || true
+        exit 1
+      }
+
+      echo "== Apply application deployment (spring-freelancer) =="
+      
       kubectl -n "$NS" apply -f /tmp/k8s/app.yaml
 
     # 10) Wait for rollout
