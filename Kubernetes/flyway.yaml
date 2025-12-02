@@ -5,6 +5,7 @@ metadata:
 spec:
   template:
     spec:
+      ttlSecondsAfterFinished: 60
       restartPolicy: Never
       containers:
       - name: flyway
