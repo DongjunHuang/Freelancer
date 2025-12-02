@@ -3,9 +3,10 @@ kind: Job
 metadata:
   name: flyway-migrate
 spec:
+  ttlSecondsAfterFinished: 60
+  backoffLimit: 1  
   template:
     spec:
-      ttlSecondsAfterFinished: 60
       restartPolicy: Never
       containers:
       - name: flyway
