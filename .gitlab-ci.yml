@@ -160,6 +160,10 @@ deploy_to_k8s:
         --from-literal=MONGO_INITDB_ROOT_PASSWORD="$MONGO_INITDB_ROOT_PASSWORD" \
         --from-literal=SPRING_DATA_MONGODB_URI="$SPRING_DATA_MONGODB_URI" \
         --from-literal=JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY" \
+        --from-literal=MAIL_USERNAME="$MAIL_USERNAME" \
+        --from-literal=MAIL_PASSWORD="$MAIL_PASSWORD" \
+        --from-literal=TEST_MAIL_FROM="$TEST_MAIL_FROM" \
+        --from-literal=TEST_MAIL_TO="$TEST_MAIL_TO" \
         --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
 
     # 10) Apply manifest
