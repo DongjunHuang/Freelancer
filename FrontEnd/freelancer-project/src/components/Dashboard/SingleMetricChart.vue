@@ -147,7 +147,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="mt-1 flex flex-col gap-4 md:flex-row">
-      <!-- 左侧：图表 -->
+      <!-- left: diagram -->
       <div class="flex-1">
         <div
           class="h-52 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 flex items-center justify-center"

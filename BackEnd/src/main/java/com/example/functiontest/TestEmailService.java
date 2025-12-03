@@ -10,14 +10,14 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TestEmailService {
-    private final JavaMailSender mailSender;
-    
     @Value("${app.mailTo}")
     private String toAddress;
 
     @Value("${app.mailFrom}")
     private String fromAddress;
-
+    
+    private final JavaMailSender mailSender;
+    
     public void sendVerificationMail(String token) {
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setFrom(fromAddress);
