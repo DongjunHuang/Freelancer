@@ -25,19 +25,20 @@ spec:
                 name: freelancer-cm   
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
 
-          livenessProbe:
-            httpGet:
-              path: /actuator/health/liveness
-              port: 8080
-            initialDelaySeconds: 15
-            periodSeconds: 10
+          # readinessProbe:
+          #   httpGet:
+          #     path: /actuator/health/readiness
+          #     port: 8080
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+
+          # livenessProbe:
+          #   httpGet:
+          #     path: /actuator/health/liveness
+          #     port: 8080
+          #   initialDelaySeconds: 15
+          #   periodSeconds: 10
 
           resources:
             requests:
