@@ -177,19 +177,35 @@ deploy_to_k8s:
 
 
       echo "== Apply Flyway SQL ConfigMap & Job =="
+
       kubectl -n "$NS" apply -f /tmp/k8s/flyway-sql.yaml
+
       kubectl -n "$NS" delete job flyway-migrate --ignore-not-found=true
+
       kubectl -n "$NS" apply -f /tmp/k8s/flyway.yaml
 
       echo "== Wait Flyway migration done =="
-      kubectl -n "$NS" wait --for=condition=complete job/flyway-migrate --timeout=120s || {
-        echo "Flyway migration failed or timed out"
+
+      if ! kubectl -n "$NS" wait --for=condition=complete job/flyway-migrate --timeout=300s; then
+        echo "❌ Flyway migration failed or timed out"
+
+        echo "---- job ----"
+        kubectl -n "$NS" get job flyway-migrate -o wide || true
+        kubectl -n "$NS" describe job flyway-migrate || true
+
+        echo "---- pods ----"
+        kubectl -n "$NS" get pods -l job-name=flyway-migrate -o wide || true
+
+        echo "---- logs ----"
         kubectl -n "$NS" logs job/flyway-migrate || true
+
         exit 1
-      }
+      fi
+
+      echo "✅ Flyway migration finished. Logs:"
+      kubectl -n "$NS" logs job/flyway-migrate || true
 
       echo "== Apply application deployment (spring-freelancer) =="
-      
       kubectl -n "$NS" apply -f /tmp/k8s/app.yaml
 
     # 10) Wait for rollout
