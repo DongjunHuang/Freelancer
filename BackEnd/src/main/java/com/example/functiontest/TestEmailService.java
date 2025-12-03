@@ -1,24 +1,22 @@
 package com.example.functiontest;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
-@ConditionalOnBean(JavaMailSender.class)
+@RequiredArgsConstructor
 public class TestEmailService {
     private final JavaMailSender mailSender;
+    
     @Value("${app.mailTo}")
     private String toAddress;
 
     @Value("${app.mailFrom}")
     private String fromAddress;
-
-    public TestEmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
 
     public void sendVerificationMail(String token) {
         SimpleMailMessage msg = new SimpleMailMessage();
