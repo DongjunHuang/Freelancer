@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.models.FetchRecordsProps;
 import com.example.repos.DatasetMetadata;
 import com.example.requests.DatasetMetadataResp;
 import com.example.requests.FetchRecordsReq;
@@ -29,7 +30,7 @@ public class DashboardController {
     private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
     private final DashboardService dashboardService;
-    
+
     @GetMapping("/fetchDatasets")
     public ResponseEntity<List<DatasetMetadataResp>> fetchDatasets(Authentication auth) {
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
@@ -45,17 +46,19 @@ public class DashboardController {
 
     @PostMapping("/queryDatapoints")
     public ResponseEntity<FetchRecordsResp> queryDatapoints(
-                Authentication auth,
-                @RequestBody FetchRecordsReq req) {
-        Long userId = ((JwtUserDetails) auth.getPrincipal()).getId();
-        logger.info("Handle the fetch datapoints request from user {} with request {}",userId, req);
-        FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(req);
-        FetchRecordsResp resp = dashboardService.queryDatapoints(userId, props);
-        for (String key : resp.getDatapoints().keySet()) {
-            logger.info("Fetch the first data points from database key {} with value {}",  key, resp.getDatapoints().get(key));
-            break;
+            Authentication auth,
+            @RequestBody FetchRecordsReq req) {
+        try {
+            Long userId = ((JwtUserDetails) auth.getPrincipal()).getId();
+            logger.info("Handle the fetch datapoints request from user {} with request {}", userId, req);
+
+            FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(req);
+            FetchRecordsResp resp = dashboardService.queryDatapoints(userId, props);
+            return ResponseEntity.ok(resp);
+        } catch (Exception ex) {
+            // TODO: according to different type of exception and handle them differently
+            logger.error("The excetion is {}", ex.toString());
+            return ResponseEntity.status(500).build();
         }
-        
-        return ResponseEntity.ok(resp);
     }
 }

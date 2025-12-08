@@ -16,14 +16,14 @@ import lombok.Data;
 @Table(name = "metrics")
 @Data
 public class Metric {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @CreationTimestamp
-  @Column(nullable = false, updatable = false)
-  private Instant ts;
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private Instant ts;
 
-  @Column(nullable = false)
-  private Double value;
+    @Column(nullable = false)
+    private Double value;
 }

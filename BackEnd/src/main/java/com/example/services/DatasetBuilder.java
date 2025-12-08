@@ -26,9 +26,19 @@ public class DatasetBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(DatasetBuilder.class);
 
-    public void inferAndfillStagedColumns(DatasetMetadata dataset, 
-                                    List<Map<String, String>> inferRows, 
-                                    Set<String> columnsNeedsInfer) {
+    // The symbols that defined the metric is not metric with headers
+    private static final String[] NON_METRIC_COLUMN_SYMBOLS = { "id", "code", "no", "number", "zip", "postal", "date" };
+
+    /**
+     * We will pick up several samples of selected columns to infer
+     * 
+     * @param dataset
+     * @param inferRows
+     * @param columnsNeedsInfer
+     */
+    public void inferAndfillStagedColumns(DatasetMetadata dataset,
+            List<Map<String, String>> inferRows,
+            Set<String> columnsNeedsInfer) {
         Map<String, List<String>> map = new HashMap<>();
         for (int i = 0; i < inferRows.size(); i++) {
             Map<String, String> oneRow = inferRows.get(i);
@@ -38,11 +48,11 @@ public class DatasetBuilder {
                         map.put(header, new ArrayList<>());
                     }
                     map.get(header).add(oneRow.get(header));
-                }            
+                }
             }
         }
 
-        //infer and fill out the dataset
+        // infer and fill out the dataset
         for (int i = 0; i < dataset.getStaged().getHeaders().size(); i++) {
             ColumnMeta column = dataset.getStaged().getHeaders().get(i);
             String header = column.getColumnName();
@@ -61,24 +71,36 @@ public class DatasetBuilder {
         logger.info("Filled inferred columns for dataset name {}", dataset.getDatasetName());
     }
 
-
-    public void mergeAndFillInferNeededColumns(Set<String> columnsNeedsInfer, 
-                                            DatasetMetadata dataset, 
-                                            List<String> headers) throws Exception {
+    /**
+     * 1. Sometimes, user inputs different columns with the same data set name, to
+     * keep the flexibility, we keep the original
+     * columns and add new columns user adds.
+     * 
+     * 2. We pass the columns needed to be infered the types of the columns.
+     * 
+     * @param columnsNeedsInfer the columns user wants to infer, which is newly
+     *                          added columns.
+     * @param dataset           the dataset.
+     * @param headers           the headers.
+     */
+    public void mergeAndFillInferNeededColumns(Set<String> columnsNeedsInfer,
+            DatasetMetadata dataset,
+            List<String> headers) {
         VersionControl staged = VersionControl.builder()
-            .headers(new ArrayList<>())
-            .rowCount(dataset.getCurrent().getRowCount())
-            .version(dataset.getCurrent().getVersion() + 1)
-            .build();
+                .headers(new ArrayList<>())
+                .rowCount(dataset.getCurrent().getRowCount())
+                .version(dataset.getCurrent().getVersion() + 1)
+                .build();
 
         Set<String> currentColumns = new HashSet<>();
-        
+
         // put to set for dedup
         for (int i = 0; i < dataset.getCurrent().getHeaders().size(); i++) {
-            currentColumns.add(dataset.getCurrent().getHeaders().get(i).getColumnName());
-            
+            ColumnMeta header = dataset.getCurrent().getHeaders().get(i);
+            currentColumns.add(header.getColumnName());
+
             // put existed to the staged
-            staged.getHeaders().add(dataset.getCurrent().getHeaders().get(i));
+            staged.getHeaders().add(header);
         }
 
         // merge and dedup
@@ -88,23 +110,32 @@ public class DatasetBuilder {
 
                 // By default is string, we need to infer next
                 ColumnMeta column = ColumnMeta.builder()
-                                        .columnName(headers.get(i))
-                                        .dataType(ColumnType.STRING)
-                                        .metric(false)
-                                        .build();
+                        .columnName(headers.get(i))
+                        .dataType(ColumnType.STRING)
+                        .metric(false)
+                        .build();
                 staged.getHeaders().add(column);
+                currentColumns.add(headers.get(i));
             }
         }
         dataset.setStaged(staged);
         logger.info("Merged headers for datasetname {}", dataset.getDatasetName());
     }
 
-    // Create and update dataset metadata
+    /**
+     * Create dataset metadata if not presented.
+     * 
+     * @param props        the props passed to the function.
+     * @param metadataRepo the repo
+     * @return
+     * @throws Exception
+     */
     public DatasetMetadata createIfNotPresentDatasetMetadata(
-                            DataProps props, 
-                            DatasetMetadataRepo metadataRepo) throws Exception {
+            DataProps props,
+            DatasetMetadataRepo metadataRepo) {
         if (!props.isNewDataset()) {
-            DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(props.getUserId(), props.getDatasetName());
+            DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(props.getUserId(),
+                    props.getDatasetName());
             if (dataset != null) {
                 props.setRecordDateColumnName(dataset.getRecordDateColumnName());
                 props.setRecordSymbolColumnName(dataset.getRecordSymbolName());
@@ -116,51 +147,61 @@ public class DatasetBuilder {
         Instant now = Instant.now();
         // Newly created metadata
         VersionControl current = VersionControl.builder()
-                                    .version(0)
-                                    .headers(new ArrayList<>())
-                                    .rowCount(0)
-                                    .build();
+                .version(0)
+                .headers(new ArrayList<>())
+                .rowCount(0L)
+                .build();
 
         // Receive indexes
         DatasetMetadata dataset = DatasetMetadata.builder()
-            .userId(props.getUserId())
-            .datasetName(props.getDatasetName())
-            .status(MetadataStatus.READY)
-            .createdAt(now)
-            .updatedAt(now)
-            .current(current)
-            .staged(null)
-            .recordDateColumnName(props.getRecordDateColumnName())
-            .recordSymbolName(props.getRecordSymbolColumnName())
-            .build();
+                .userId(props.getUserId())
+                .datasetName(props.getDatasetName())
+                .status(MetadataStatus.READY)
+                .createdAt(now)
+                .updatedAt(now)
+                .current(current)
+                .staged(null)
+                .recordDateColumnName(props.getRecordDateColumnName())
+                .recordSymbolName(props.getRecordSymbolColumnName())
+                .build();
         logger.info("Find or created dataset for datasetname {}", props.getDatasetName());
         return dataset;
     }
 
-    // The final stage to save the dataset metadata information
+    /**
+     * Save the dataset information into the mongodb.
+     * 
+     * @param dataset      dataset.
+     * @param metadataRepo repo.
+     */
     public void saveDataset(DatasetMetadata dataset, DatasetMetadataRepo metadataRepo) {
         metadataRepo.save(dataset);
         logger.info("Saved meta dataset for dataset name {}", dataset.getDatasetName());
     }
-    
-    private boolean isMetricColumn(String header, ColumnType type) {
-        if (type != ColumnType.NUMBER) {
+
+    /**
+     * Helper function, to check if current number header represents metric columns
+     * because we infer
+     * some number columns maybe not real numbers, for example
+     * for zip code, phone number.
+     * 
+     * @param header the original header name.
+     * @param type   the type of the column.
+     * @return whether the column is metric.
+     */
+    public boolean isMetricColumn(String header, ColumnType type) {
+        // If the type if not number, then should not be metric
+        if (type != ColumnType.NUMBER || header == null) {
             return false;
         }
-        if (header == null)  {
-            return true; 
-        }
-        
+
         String h = header.trim().toLowerCase();
-        if (h.contains("id") 
-            || h.contains("code") 
-            || h.contains("no")
-            || h.contains("number") 
-            || h.contains("zip") 
-            || h.contains("postal")) {
-            return false;
+        for (String symbol : NON_METRIC_COLUMN_SYMBOLS) {
+            if (h.contains(symbol)) {
+                return false;
+            }
         }
-    
+
         return true;
     }
 }

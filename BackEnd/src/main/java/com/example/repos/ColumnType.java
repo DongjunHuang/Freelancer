@@ -4,5 +4,6 @@ public enum ColumnType {
     UNKNOWN,
     DATE, 
     NUMBER,
-    STRING
+    STRING,
+    BOOLEAN
 }

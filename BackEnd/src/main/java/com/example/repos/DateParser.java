@@ -11,17 +11,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class DateParser {
     private static final List<DateTimeFormatter> DEFAULT_FORMATTERS = List.of(
-        DateTimeFormatter.ISO_LOCAL_DATE,                     // yyyy-MM-dd
-        DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-        DateTimeFormatter.ofPattern("MM/dd/yyyy"),            // 04/15/2025
-        DateTimeFormatter.ofPattern("M/d/yyyy"),              // 4/15/2025
-        DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-        DateTimeFormatter.ofPattern("d/M/yyyy"),              // 5/4/2025
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-        DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"),
-        DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-        DateTimeFormatter.ISO_OFFSET_DATE_TIME
-    );
+            DateTimeFormatter.ISO_LOCAL_DATE, // yyyy-MM-dd
+            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+            DateTimeFormatter.ofPattern("MM/dd/yyyy"), // 04/15/2025
+            DateTimeFormatter.ofPattern("M/d/yyyy"), // 4/15/2025
+            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+            DateTimeFormatter.ofPattern("d/M/yyyy"), // 5/4/2025
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"),
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+            DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
     public LocalDate parseRecordTime(String raw, String userPattern) {
         if (raw == null || raw.isBlank()) {
@@ -48,7 +47,7 @@ public class DateParser {
             }
         }
 
-        // 3) Excel serial date 支持
+        // 3) Excel serial date
         if (s.matches("\\d+")) {
             long serial = Long.parseLong(s);
             return LocalDate.of(1899, 12, 30).plusDays(serial);

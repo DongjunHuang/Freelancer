@@ -38,6 +38,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
+/**
+ * Auth controller handles user related activities, including sign in, sign up, sign out, etc.
+ */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -55,13 +58,25 @@ public class AuthController {
     private final SecretService jwtService;
     private final AuthenticationManager authenticationManager;
     private final Environment env;
-        
+    
+    /**
+     * User sign up.
+     * 
+     * @param req the sign up request.
+     * @return the response to user sign up.
+     */
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupReq req) {
         userService.signup(req);
         return ResponseEntity.ok(Map.of("message","verification_email_sent"));
     }
 
+    /**
+     * Validate email.
+     * 
+     * @param token the token sent by user.
+     * @return whether validate email successfully.
+     */
     @GetMapping("/verify")
     public ResponseEntity<?> verify(@RequestParam String token) {
         userService.validateEmail(token);
@@ -71,7 +86,7 @@ public class AuthController {
     /**
      * Signin and issue accesstoken and refresh token to the client. At the first phase, only consider website.
      * 
-     * @param req
+     * @param req the sign in request.
      * @return
      */
     @PostMapping("/signin")
@@ -187,7 +202,11 @@ public class AuthController {
     @PostMapping("/resendEmail")
     public ResponseEntity<?> resend(@RequestBody Map<String, String> body) {
         String email = body.get("email");        
-        userService.resendEmail(email);
+        try {
+            userService.resendEmail(email);
+        } catch (Exception ex) {
+            // TODO: return the exception to the user
+        }
         return ResponseEntity.ok(Map.of("message", "If the account exists and is not verified, a new link has been sent."));
     }
 

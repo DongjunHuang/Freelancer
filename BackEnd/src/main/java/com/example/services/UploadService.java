@@ -29,6 +29,9 @@ import com.example.repos.MetadataStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Upload service handles the operation when user insert CSV file stream into the MONGO db.
+ */
 @Service
 @RequiredArgsConstructor
 public class UploadService {
@@ -40,8 +43,17 @@ public class UploadService {
     private final static  int BATCH_NUM = 300;
     private final static  int INFER_NUM = 30;
 
-    public long appendRecords(MultipartFile file, DataProps dataRecordProps) throws Exception {
 
+    /**
+     * The main function to record the datapoints into mongodb and make connection to the datasets.
+     * 
+     * @param file file passed from customers.
+     * @param dataRecordProps the props recorded.
+     * @return the number of rows inserted into the mongo db for this dataset.
+     * 
+     * @throws Exception the exception generated in the process.
+     */
+    public long appendRecords(MultipartFile file, DataProps dataRecordProps) throws Exception {
         // ====== Phase 1：parse first N lines, infer data types and save metadata dataset ======
         DatasetMetadata dataset;
     
@@ -53,13 +65,15 @@ public class UploadService {
                          .withIgnoreEmptyLines())) {
             List<String> headers = new ArrayList<>(parser.getHeaderMap().keySet());
             logger.info("Append records, headers = {}", headers);
-    
+                            
+            // Create the dataset, make sure the dataset first generated.
             dataset = builder.createIfNotPresentDatasetMetadata(dataRecordProps, metadataRepo);
             if (dataset == null) {
-                // TODO: 
+                // TODO: throw specific exception.
                 throw new IllegalStateException("DatasetMetadata is null");
             }
-    
+            
+            // Compare existing headers of the datasets from mongodb and headers parsed from the files.
             Set<String> columnsNeedsInfer = new HashSet<>();
             builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, headers);
     
@@ -77,7 +91,7 @@ public class UploadService {
                 inspected++;
             }
     
-          
+            // according to the sample records gathered to infer the type of the culumns
             if (!inferRows.isEmpty() && !columnsNeedsInfer.isEmpty()) {
                 builder.inferAndfillStagedColumns(dataset, inferRows, columnsNeedsInfer);
             }
@@ -158,6 +172,7 @@ public class UploadService {
     }
 
     // TODO: when user upload fails we should roll back the batch
+    // The user may be failed while they are inserting data, in this case, we do not want to generate stale in our database
     public void rollback(String batchId) {
 
     }

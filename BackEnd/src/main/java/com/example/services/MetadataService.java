@@ -9,6 +9,9 @@ import com.example.repos.DatasetMetadataRepo;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Metadata service to provide functions for datasets.
+ */
 @Service
 @RequiredArgsConstructor
 public class MetadataService {

@@ -13,6 +13,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This controller used to mainly for testing purpose. Should not visible to users.
+ */
 @RestController
 @RequestMapping("/tests")
 @RequiredArgsConstructor

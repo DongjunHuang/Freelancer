@@ -28,20 +28,35 @@ import com.example.services.UploadService;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * UploadController takes request from user to inject CSV file into the mongodb.
+ */
 @RestController
 @RequestMapping("/upload")
 @RequiredArgsConstructor
 public class UploadController {
     private static final Logger logger = LoggerFactory.getLogger(UploadController.class);
-    
+
+    // The upload service
     private final UploadService uploadService;
+
+    // The metadata service
     private final MetadataService metadataService;
 
+    /**
+     * The main entry to upload data to the MongoDB
+     * 
+     * @param file the file stream sent by user.
+     * @param req  the dataset request data.
+     * @param auth the auth information.
+     * 
+     * @return the result.
+     */
     @PostMapping(value = "/uploadCsv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadWithNewDataset(
-        @RequestParam("file") MultipartFile file,
-        @RequestPart("dataset") DatasetReq req,
-        Authentication auth) {
+            @RequestParam("file") MultipartFile file,
+            @RequestPart("dataset") DatasetReq req,
+            Authentication auth) {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "The file is empty"));
         }
@@ -51,6 +66,9 @@ public class UploadController {
 
         // First create or update table metadata
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
+        if (user == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Unable to recognize the user."));
+        }
         Long userId = user.getId();
 
         String symbolColumn = req.getRecordSymbolColumnName();
@@ -61,17 +79,17 @@ public class UploadController {
 
         // create props for dataset and record
         DataProps props = DataProps.builder()
-                            .batchId(UUID.randomUUID().toString())
-                            .userId(userId)
-                            .datasetName(req.getDatasetName())
-                            .recordDateColumnFormat(req.getRecordDateColumnFormat())
-                            .recordDateColumnName(dateColumnUpperCase)
-                            .recordSymbolColumnName(symbolColumnUpperCase)
-                            .newDataset(req.isNewDataset())
-                            .build();
+                .batchId(UUID.randomUUID().toString())
+                .userId(userId)
+                .datasetName(req.getDatasetName())
+                .recordDateColumnFormat(req.getRecordDateColumnFormat())
+                .recordDateColumnName(dateColumnUpperCase)
+                .recordSymbolColumnName(symbolColumnUpperCase)
+                .newDataset(req.isNewDataset())
+                .build();
 
         logger.info("The user id is {}, passed params is {}", userId, req);
-        
+
         // Create metadata
         try {
 
@@ -85,21 +103,32 @@ public class UploadController {
             logger.error("Exception thrown", ex);
             // Todo: roll back and return error to users
         }
-                
+
         return ResponseEntity.ok().body(Map.of("Result", "Success"));
     }
 
+    /**
+     * Fetch the datasetmetadata information.
+     * 
+     * @param auth the user login auth.
+     * 
+     * @return the result.
+     */
     @GetMapping("/fetchDatasets")
     public ResponseEntity<List<DatasetMetadataResp>> fetchDatasets(Authentication auth) {
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
         Long userId = user.getId();
         List<DatasetMetadata> metadatas = metadataService.getUserDatasets(userId);
+        if (metadatas == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
         List<DatasetMetadataResp> responses = new ArrayList<>();
         for (int i = 0; i < metadatas.size(); i++) {
-            responses.add(DatasetMetadataResp.fromDatasetMetadata(metadatas.get(i)));
+            if (metadatas.get(i) != null) {
+                responses.add(DatasetMetadataResp.fromDatasetMetadata(metadatas.get(i)));
+            }
         }
 
         return ResponseEntity.ok(responses);
     }
 }
-

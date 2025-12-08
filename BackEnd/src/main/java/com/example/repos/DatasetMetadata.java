@@ -17,20 +17,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Document(MongoKeys.Dataset.COLLECTION)
-@Data 
-@NoArgsConstructor 
-@AllArgsConstructor 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @CompoundIndex(name = "user_dataset_idx", def = "{'userId': 1, 'datasetName': 1}", unique = true)
 public class DatasetMetadata {
     // ==========================================
-    @Id 
-    private String id;         
-  
+    @Id
+    private String id;
+
     @Field(MongoKeys.Dataset.USERID)
     @Indexed
-    private Long userId;     
-     
+    private Long userId;
+
     // The creation time of the table
     @Field(MongoKeys.Common.CREATED_AT)
     private Instant createdAt;
@@ -44,11 +44,11 @@ public class DatasetMetadata {
 
     @Enumerated(EnumType.STRING)
     @Field(MongoKeys.Dataset.STATUS)
-    private MetadataStatus status;           
-    
+    private MetadataStatus status;
+
     @Field(MongoKeys.Dataset.CURRENT)
-    private VersionControl current;      
-    
+    private VersionControl current;
+
     @Field(MongoKeys.Dataset.STAGED)
     private VersionControl staged;
 
@@ -64,9 +64,9 @@ public class DatasetMetadata {
     @Builder
     @Data
     public static class VersionControl {
-        private Integer version;   
+        private Integer version;
         private List<ColumnMeta> headers;
-        private long rowCount;     
+        private Long rowCount;
     }
 
     @Builder
@@ -75,7 +75,6 @@ public class DatasetMetadata {
         private String columnName;
         private ColumnType dataType;
         // TODO: change to column role
-        private boolean metric;      
+        private boolean metric;
     }
 }
-

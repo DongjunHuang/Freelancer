@@ -12,41 +12,59 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * The listener for the finish of the database transaction, then send email to
+ * the target.
+ */
 @Component
 @RequiredArgsConstructor
+@Data
 public class VerificationMailListener {
     private static final Logger logger = LoggerFactory.getLogger(VerificationMailListener.class);
 
-    @Value("${app.frontendBaseUrl}") 
+    //
+    @Value("${app.frontendBaseUrl}")
     private String feBaseUrl;
 
-    @Value("${app.mailFrom}") 
+    @Value("${app.mailFrom}")
     private String mailFrom;
-    
+
     private final JavaMailSender mail;
 
+    /**
+     * Listner the finish of the transanction.
+     * 
+     * @param event the event to be listened.
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(VerificationCreatedEvent event) {
         logger.info("Sending email for verification to user.");
         this.sendVerificationMail(event.email(), event.token());
     }
 
-    private void sendVerificationMail(String email, String token) {
+    /**
+     * The action to send email to targeted email address.
+     * 
+     * @param email
+     * @param token
+     */
+    public void sendVerificationMail(String email, String token) {
         var link = feBaseUrl + "/verify?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         var msg = new SimpleMailMessage();
         msg.setFrom(mailFrom);
         msg.setTo(email);
         msg.setSubject("Verify your email");
         msg.setText("""
-        Welcome to Data Report Freelancer!
+                Welcome to Data Report Freelancer!
 
-        Please verify your email by clicking the link below (valid for 2 hours):
-        %s
+                Please verify your email by clicking the link below (valid for 2 hours):
+                %s
 
-        If you did not sign up, please ignore this email.
-        """.formatted(link));
+                If you did not sign up, please ignore this email.
+                """.formatted(link));
         mail.send(msg);
     }
 }

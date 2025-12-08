@@ -16,7 +16,7 @@ public class JsonAccessDeniedHandler implements AccessDeniedHandler {
     res.setStatus(HttpServletResponse.SC_FORBIDDEN);
     res.setContentType("application/json;charset=UTF-8");
     res.getWriter().write("""
-      {"code":403,"message":"Forbidden: insufficient permissions"}
-    """);
+        {"code":403,"message":"Forbidden: insufficient permissions"}
+         """);
   }
 }

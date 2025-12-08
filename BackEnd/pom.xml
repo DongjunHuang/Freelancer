@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0-SNAPSHOT</version>
+		<version>3.5.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example.freelancer</groupId>
@@ -81,6 +81,11 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+    		<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+    		<scope>test</scope>
+		</dependency>
+		<dependency>
   			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
@@ -109,8 +114,7 @@
 		<dependency>
     		<groupId>org.springframework.boot</groupId>
     		<artifactId>spring-boot-starter-aop</artifactId>
-			<version>3.5.6</version>
-  		</dependency>
+		</dependency>
 		<dependency>
     		<groupId>org.apache.commons</groupId>
     		<artifactId>commons-lang3</artifactId>
@@ -168,6 +172,34 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<configuration>
+					<append>true</append>
+					<outputDirectory>${project.build.directory}/jacoco</outputDirectory>
+					<excludes>
+          				<exclude>com/example/functiontest/**</exclude>
+        			</excludes>
+				</configuration>
+
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

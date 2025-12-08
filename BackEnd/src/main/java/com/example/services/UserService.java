@@ -43,22 +43,25 @@ public class UserService {
         userRepo.findByUsername(req.getUsername()).ifPresent(u -> { throw new IllegalArgumentException("Account taken"); });
         
         // Pending waiting for user to verify the email
-        User user = new User();
-        user.setUsername(req.getUsername());
-        user.setEmail(req.getEmail());
-        user.setPassword(encoder.encode(req.getPassword()));
-        user.setStatus(UserStatus.PENDING);
-        user.setPublicId(UUID.randomUUID().toString());
-        user.setRoles(DEFAULT_ROLE);
+        User user = User.builder()
+                        .username(req.getUsername())
+                        .email(req.getEmail())
+                        .password(encoder.encode(req.getPassword()))
+                        .status(UserStatus.PENDING)
+                        .publicId(UUID.randomUUID().toString())
+                        .roles(DEFAULT_ROLE)
+                        .build();
         userRepo.save(user);
         // Prepare the mail token to the user
-        
-        MailToken token = new MailToken();
-        token.setUserId(user.getUserId());
-        token.setEmail(user.getEmail());
-        token.setUsername(user.getUsername());
-        token.setToken(UUID.randomUUID().toString().replace("-", "") + RandomStringUtils.randomAlphanumeric(32));
-        token.setExpiresAt(LocalDateTime.now().plusHours(TTL_Hours));
+        String tokenString = UUID.randomUUID().toString().replace("-", "") + RandomStringUtils.randomAlphanumeric(32);
+        // TODO: the token might be changed for the user to enter 6 digits code
+        MailToken token = MailToken.builder()
+                                   .userId(user.getUserId())
+                                   .email(user.getEmail())
+                                   .username(user.getUsername())
+                                   .token(tokenString)
+                                   .expiresAt(LocalDateTime.now().plusHours(TTL_Hours))
+                                   .build();
         mailTokenRepo.save(token);  
         
         // Publish the event for email verification
@@ -68,7 +71,9 @@ public class UserService {
  
     @Transactional
     public void validateEmail(String token) {
+        // TODO: should change to specific exception.
         MailToken tok = mailTokenRepo.findByToken(token).orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+        
         if (tok.isUsed() || tok.getExpiresAt().isBefore(LocalDateTime.now())) {
             logger.info("The token is expired.");
             throw new IllegalStateException("Token expired/used");
@@ -83,25 +88,29 @@ public class UserService {
     }
 
     @Transactional
-    public void resendEmail(String email) {
+    public void resendEmail(String email)  throws Exception {
         // step1: Remove the old one first
         mailTokenRepo.deleteByEmail(email);
 
         // step2: check if the user is pending
         User user = userRepo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         if (user.getStatus() != UserStatus.PENDING) {
+            // TODO : add specific Exception type
             throw new IllegalArgumentException("The user is not pending");
         }
         user.setStatus(UserStatus.ACTIVE);
         userRepo.save(user);
 
         // step3: issue and save the new generated one
-        MailToken token = new MailToken();
-        token.setUserId(user.getUserId());
-        token.setEmail(user.getEmail());
-        token.setUsername(user.getUsername());
-        token.setToken(UUID.randomUUID().toString().replace("-", "") + RandomStringUtils.randomAlphanumeric(32));
-        token.setExpiresAt(LocalDateTime.now().plusHours(TTL_Hours));
+        String tokenString = UUID.randomUUID().toString().replace("-", "") + RandomStringUtils.randomAlphanumeric(32);
+        MailToken token = MailToken.builder()
+                                .userId(user.getUserId())
+                                .email(user.getEmail())
+                                .username(user.getUsername())
+                                .token(tokenString)
+                                .expiresAt(LocalDateTime.now().plusHours(TTL_Hours))
+                                .build();
+
         mailTokenRepo.save(token);  
 
         // step4: resend the email 

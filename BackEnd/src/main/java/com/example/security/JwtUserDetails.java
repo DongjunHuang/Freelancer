@@ -2,7 +2,6 @@ package com.example.security;
 
 import java.util.Collection;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -26,13 +25,13 @@ public class JwtUserDetails implements UserDetails {
     }
 
     @Override
-    public @Nullable String getPassword() {
+    public String getPassword() {
         return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-       return user.getUsername();
+        return user.getUsername();
     }
 
     public String getEmail() {
