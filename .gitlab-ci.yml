@@ -1,34 +1,24 @@
 stages:
-  - prepare
+  - test
   - build
   - deploy
 
-test-before-build:
-  stage: prepare
-  image: alpine:3.20
-  before_script:
-    - apk add --no-cache openssh-client
-    - mkdir -p ~/.ssh
-    - cp "$SSH_PRIVATE_KEY" ~/.ssh/id_ed25519
-    - chmod 600 ~/.ssh/id_ed25519
-    - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+unit-tests:
+  stage: test
+  image: maven:3.9-eclipse-temurin-21
   script:
-    - |
-      ssh "$VPS_USER@$VPS_HOST" << 'EOF'
-        set -ex
-        echo "== whoami =="
-        whoami
-      EOF
-  only:
-    - main    
-  environment:
-    name: production
+    - mvn -B test
+  artifacts:
+    when: always
+    reports:
+      junit: target/surefire-reports/*.xml
 
 build_backend_image:
   stage: build
   image: docker:24.0.7
   services:
     - docker:24.0.7-dind
+  needs: ["unit-tests"]  
   variables:
     DOCKER_TLS_CERTDIR: ""
   when: manual
@@ -69,6 +59,7 @@ build_backend_image:
 deploy_to_k8s:
   stage: deploy
   image: alpine:3.20
+  needs: ["build-image"]
   when: manual       
   only:
     - main            
