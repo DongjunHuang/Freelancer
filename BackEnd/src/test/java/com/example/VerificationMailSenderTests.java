@@ -22,7 +22,7 @@ public class VerificationMailSenderTests {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        listener.setMailFrom("noreply@test.com");
+        listener.setSendingEmail("noreply@test.com");
         listener.setFeBaseUrl("http://frontend");
         ;
     }

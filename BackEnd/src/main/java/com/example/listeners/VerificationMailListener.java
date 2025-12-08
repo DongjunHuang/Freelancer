@@ -25,12 +25,11 @@ import lombok.RequiredArgsConstructor;
 public class VerificationMailListener {
     private static final Logger logger = LoggerFactory.getLogger(VerificationMailListener.class);
 
-    //
     @Value("${app.frontendBaseUrl}")
     private String feBaseUrl;
 
-    @Value("${app.mailFrom}")
-    private String mailFrom;
+    @Value("${app.sendingEmail}")
+    private String sendingEmail;
 
     private final JavaMailSender mail;
 
@@ -41,20 +40,19 @@ public class VerificationMailListener {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(VerificationCreatedEvent event) {
-        logger.info("Sending email for verification to user.");
         this.sendVerificationMail(event.email(), event.token());
     }
 
     /**
      * The action to send email to targeted email address.
      * 
-     * @param email
-     * @param token
+     * @param email the target email address.
+     * @param token the token to be clicked for verification.
      */
     public void sendVerificationMail(String email, String token) {
-        var link = feBaseUrl + "/verify?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        String link = feBaseUrl + "/verify?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         var msg = new SimpleMailMessage();
-        msg.setFrom(mailFrom);
+        msg.setFrom(sendingEmail);
         msg.setTo(email);
         msg.setSubject("Verify your email");
         msg.setText("""
