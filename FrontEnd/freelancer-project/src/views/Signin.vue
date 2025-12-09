@@ -50,9 +50,6 @@ async function submit() {
           <input v-model.trim="f.username" type="text" placeholder="Username" class="w-full border rounded-lg px-3 py-2" required />
           <input v-model="f.password" type="password" placeholder="Password" class="w-full border rounded-lg px-3 py-2" required />
           <button class="w-full rounded-full bg-slate-900 text-white py-2.5 hover:opacity-90">Submit</button>
-          <p class="text-xs text-slate-500">
-            By signing up you agree to our Terms and Privacy Policy.
-          </p>
           <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
         </form>
       </div>

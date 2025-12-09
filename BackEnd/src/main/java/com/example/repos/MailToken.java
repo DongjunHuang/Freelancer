@@ -13,11 +13,20 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "mail_tokens")
 @Data
 @Builder
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class MailToken {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

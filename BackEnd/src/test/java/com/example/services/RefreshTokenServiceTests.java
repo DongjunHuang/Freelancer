@@ -35,13 +35,14 @@ public class RefreshTokenServiceTests {
         String ip = "127.0.0.1";
         LocalDateTime expiry = LocalDateTime.now().plusDays(7);
 
-        RefreshToken saved = new RefreshToken();
-        saved.setId(1L);
-        saved.setUsername(username);
-        saved.setToken(token);
-        saved.setDeviceId(deviceId);
-        saved.setIpAddress(ip);
-        saved.setExpiresAt(expiry);
+        RefreshToken saved = RefreshToken.builder()
+                .id(1L)
+                .username(username)
+                .token(token)
+                .deviceId(deviceId)
+                .ipAddress(ip)
+                .expiresAt(expiry)
+                .build();
 
         when(repo.save(any(RefreshToken.class))).thenReturn(saved);
 
@@ -69,8 +70,7 @@ public class RefreshTokenServiceTests {
     void findByToken_shouldDelegateToRepo() {
         // given
         String token = "abc";
-        RefreshToken rt = new RefreshToken();
-        rt.setToken(token);
+        RefreshToken rt = RefreshToken.builder().token(token).build();
 
         when(repo.findByToken(token)).thenReturn(Optional.of(rt));
 
@@ -86,9 +86,7 @@ public class RefreshTokenServiceTests {
     void validateRefreshToken_shouldReturnTrueWhenTokenExistsAndNotExpired() {
         // given
         String token = "valid-token";
-        RefreshToken rt = new RefreshToken();
-        rt.setToken(token);
-        rt.setExpiresAt(LocalDateTime.now().plusMinutes(10)); // 未来
+        RefreshToken rt = RefreshToken.builder().token(token).expiresAt(LocalDateTime.now().plusMinutes(10)).build();
 
         when(repo.findByToken(token)).thenReturn(Optional.of(rt));
 
@@ -117,9 +115,7 @@ public class RefreshTokenServiceTests {
     void validateRefreshToken_shouldReturnFalseWhenTokenExpired() {
         // given
         String token = "expired";
-        RefreshToken rt = new RefreshToken();
-        rt.setToken(token);
-        rt.setExpiresAt(LocalDateTime.now().minusMinutes(1)); 
+        RefreshToken rt = RefreshToken.builder().token(token).expiresAt(LocalDateTime.now().minusMinutes(1)).build();
 
         when(repo.findByToken(token)).thenReturn(Optional.of(rt));
 
@@ -146,8 +142,7 @@ public class RefreshTokenServiceTests {
     @Test
     void isExpired_shouldReturnTrueWhenExpiryBeforeNow() {
         // given
-        RefreshToken rt = new RefreshToken();
-        rt.setExpiresAt(LocalDateTime.now().minusHours(1));
+        RefreshToken rt = RefreshToken.builder().expiresAt(LocalDateTime.now().minusHours(1)).build();
 
         // when
         boolean expired = service.isExpired(rt);
@@ -159,8 +154,7 @@ public class RefreshTokenServiceTests {
     @Test
     void isExpired_shouldReturnFalseWhenExpiryAfterNow() {
         // given
-        RefreshToken rt = new RefreshToken();
-        rt.setExpiresAt(LocalDateTime.now().plusHours(1));
+        RefreshToken rt = RefreshToken.builder().expiresAt(LocalDateTime.now().plusHours(1)).build();
 
         // when
         boolean expired = service.isExpired(rt);

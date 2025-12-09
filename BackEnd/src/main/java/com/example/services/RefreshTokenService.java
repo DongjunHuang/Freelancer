@@ -21,25 +21,26 @@ public class RefreshTokenService {
     private final RefreshTokenRepo repo;
 
     /**
-     * Create and save the refresh token. The token genereted will be issue with the email to the user.
+     * Create and save the refresh token. The token genereted will be issue with the
+     * email to the user.
      * TODO: we might need to change to enter the code.
      * 
-     * @param username the user name.
-     * @param token the token.
-     * @param deviceId device ID generated per device issued by backend.
-     * @param ipAddress the ip address.
+     * @param username   the user name.
+     * @param token      the token.
+     * @param deviceId   device ID generated per device issued by backend.
+     * @param ipAddress  the ip address.
      * @param expiryDate the expiry date.
      * 
      * @return the token generated.
      */
     @Transactional
-    public RefreshToken createAndSaveRefreshToken(String username, 
-                                            String token, 
-                                            String deviceId,
-                                            String ipAddress,
-                                            LocalDateTime expiryDate) {
+    public RefreshToken createAndSaveRefreshToken(String username,
+            String token,
+            String deviceId,
+            String ipAddress,
+            LocalDateTime expiryDate) {
         repo.deleteByUsernameAndDeviceId(username, deviceId);
-        
+
         RefreshToken entity = new RefreshToken();
         entity.setUsername(username);
         entity.setToken(token);
@@ -63,14 +64,14 @@ public class RefreshTokenService {
      * Validate the refresh token.
      * 
      * @param token the token string.
-     * @return whether  the token is valid.
+     * @return whether the token is valid.
      */
     public boolean validateRefreshToken(String token) {
         return repo.findByToken(token)
-            .filter(rt -> rt.getExpiresAt().isAfter(LocalDateTime.now()))
-            .isPresent();
+                .filter(rt -> rt.getExpiresAt().isAfter(LocalDateTime.now()))
+                .isPresent();
     }
-    
+
     /**
      * Revoke the token by user name and device id.
      * 

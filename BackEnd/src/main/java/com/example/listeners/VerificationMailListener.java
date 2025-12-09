@@ -40,6 +40,7 @@ public class VerificationMailListener {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(VerificationCreatedEvent event) {
+        logger.info("Sending email to email address {} with token {}", event.email(), event.token());
         this.sendVerificationMail(event.email(), event.token());
     }
 

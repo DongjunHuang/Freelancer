@@ -12,26 +12,32 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.AccessLevel;
 
 @Entity
-@Table(
-    name = "refresh_tokens",
-    indexes = {
+@Table(name = "refresh_tokens", indexes = {
         @Index(name = "idx_token", columnList = "token"),
         @Index(name = "idx_user", columnList = "user_id")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_user_device", columnNames = {"user_id", "device_id"})
-    }
-)
+}, uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_device", columnNames = { "user_id", "device_id" })
+})
 @Data
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = false, length = 255)
     private String username;
 
