@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.example.repos.User;
+import com.example.repos.UserStatus;
 
 import lombok.Data;
 
@@ -20,7 +21,7 @@ public class JwtUserDetails implements UserDetails {
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+    public Collection<GrantedAuthority> getAuthorities() {
         return this.authorities;
     }
 
@@ -40,5 +41,9 @@ public class JwtUserDetails implements UserDetails {
 
     public Long getId() {
         return user.getUserId();
+    }
+
+    public UserStatus getStatus() {
+        return user.getStatus();
     }
 }

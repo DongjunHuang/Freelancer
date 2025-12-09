@@ -3,7 +3,7 @@
     "moduleResolution": "bundler",
     "module": "ESNext",
     "target": "ESNext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "naive-ui"],
     "paths": {
       "@/*": ["./src/*"]
     },

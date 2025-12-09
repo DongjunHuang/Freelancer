@@ -13,5 +13,5 @@ export const signout = () => http.post(`/auth/signout`);
 export const verifyEmail = (token: string) => http.get(`/auth/verify?token=${encodeURIComponent(token)}`)
 
 // To resend email
-export const resendEmail = (data: {email: string}) => http.post(`/auth/resendEmail`, data)
+export const resendEmail = (data: {username: string}) => http.post(`/auth/resendEmail`, data)
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive} from 'vue'
 import { useRouter } from 'vue-router'
-import { signup, resendEmail } from '@/api/auth'  
+import { signup } from '@/api/auth'  
 
 const router = useRouter()
 const f = reactive({
@@ -9,22 +9,14 @@ const f = reactive({
     username: '',
     password: '',
     email: ''
-  },
-  resend: {
-    email: ''
   }
 })
-const cooldown = ref(0)
 const loading = ref(false)
 const error = ref('')
 const success = ref('');
 const isSignupFormValid = computed(() => {
   return f.signup.username.trim() && f.signup.email.trim() && f.signup.password.trim()
 })
-const isResendFormValid = computed(() => {
-  return f.resend.email.trim()
-})
-const toast = (msg: string) => alert(msg)
 
 async function submit() {
   if (!isSignupFormValid.value || loading.value) 
@@ -52,14 +44,6 @@ async function submit() {
   }
 }
 
-const onResendEmailClick = async () => {
-  if (cooldown.value) 
-      return
-  cooldown.value = 60
-  const timer = setInterval(() => { cooldown.value!--; if (!cooldown.value) clearInterval(timer) }, 1000)
-  const res = await resendEmail({ email: f.resend.email })
-  toast(res.data?.message)
-}
 </script>
 
 <template>

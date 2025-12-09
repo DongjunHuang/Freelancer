@@ -2,6 +2,7 @@ package com.example.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.repos.UserStatus;
 import com.example.requests.SigninReq;
 import com.example.requests.SignupReq;
 import com.example.security.SecretService;
@@ -12,7 +13,6 @@ import com.example.services.UserService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -39,12 +39,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
 /**
- * Auth controller handles user related activities, including sign in, sign up, sign out, etc.
+ * Auth controller handles user related activities, including sign in, sign up,
+ * sign out, etc.
  */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
+    private final static int REFRESH_TOKEN_TTL_IN_DAYS = 7;
     /**
      * The logger.
      */
@@ -58,7 +60,7 @@ public class AuthController {
     private final SecretService jwtService;
     private final AuthenticationManager authenticationManager;
     private final Environment env;
-    
+
     /**
      * User sign up.
      * 
@@ -68,7 +70,7 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupReq req) {
         userService.signup(req);
-        return ResponseEntity.ok(Map.of("message","verification_email_sent"));
+        return ResponseEntity.ok(Map.of("message", "verification_email_sent"));
     }
 
     /**
@@ -80,11 +82,12 @@ public class AuthController {
     @GetMapping("/verify")
     public ResponseEntity<?> verify(@RequestParam String token) {
         userService.validateEmail(token);
-        return ResponseEntity.ok(Map.of("message","verified"));
+        return ResponseEntity.ok(Map.of("message", "verified"));
     }
 
     /**
-     * Signin and issue accesstoken and refresh token to the client. At the first phase, only consider website.
+     * Signin and issue accesstoken and refresh token to the client. At the first
+     * phase, only consider website.
      * 
      * @param req the sign in request.
      * @return
@@ -92,51 +95,56 @@ public class AuthController {
     @PostMapping("/signin")
     public ResponseEntity<?> signin(@RequestBody SigninReq req, HttpServletRequest request) {
         try {
+            logger.info("Signin for user {}", req.getUsername());
             Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
-            );
+                    new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
 
-            JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();        
+            JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();
+            if (principal.getStatus() == UserStatus.PENDING) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of(
+                                "error", "EMAIL_NOT_VERIFIED",
+                                "message", "The account not validated"));
+            }
+
             String refreshToken = jwtService.generateRefreshToken(principal.getUsername(), principal.getEmail());
-            
             String deviceId = jwtService.generateSignedDeviceId();
             String ipAddress = getClientIp(request);
-            refreshTokenService.createAndSaveRefreshToken(principal.getUsername(), 
-                                                            refreshToken, 
-                                                            deviceId,
-                                                            ipAddress,
-                                                            LocalDateTime.now().plusDays(7));
-            
+
+            // Create and save refresh token
+            refreshTokenService.createAndSaveRefreshToken(principal.getUsername(),
+                    refreshToken,
+                    deviceId,
+                    ipAddress,
+                    LocalDateTime.now().plusDays(REFRESH_TOKEN_TTL_IN_DAYS));
+
             boolean isProd = List.of(env.getActiveProfiles()).contains("prod");
 
             // Generate cookie sending back to the client.
             ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true)
-                .secure(isProd)        
-                .path("/auth")
-                .maxAge(Duration.ofDays(7))
-                .sameSite("Strict")
-                .build();
-            
+                    .httpOnly(true)
+                    .secure(isProd)
+                    .path("/auth")
+                    .maxAge(Duration.ofDays(REFRESH_TOKEN_TTL_IN_DAYS))
+                    .sameSite("Strict")
+                    .build();
 
             ResponseCookie did = ResponseCookie.from("deviceid", deviceId)
-                .httpOnly(true)
-                .secure(isProd)   
-                .sameSite("Strict")             
-                .path("/")                    
-                .maxAge(Duration.ofDays(400)) 
-                .build();
-            
+                    .httpOnly(true)
+                    .secure(isProd)
+                    .sameSite("Strict")
+                    .path("/")
+                    .maxAge(Duration.ofDays(400))
+                    .build();
+
             var accessToken = jwtService.generateAccessToken(principal.getUsername(), principal.getEmail());
             return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString(), did.toString())
-                .body(Map.of(
-                    "accessToken", accessToken,
-                    "user", Map.of(
-                        "username", principal.getUsername(),
-                        "email",    principal.getEmail()
-                    )
-                ));
+                    .header(HttpHeaders.SET_COOKIE, cookie.toString(), did.toString())
+                    .body(Map.of(
+                            "accessToken", accessToken,
+                            "user", Map.of(
+                                    "username", principal.getUsername(),
+                                    "email", principal.getEmail())));
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid credentials"));
@@ -148,7 +156,7 @@ public class AuthController {
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing refresh token");
         }
-    
+
         if (!jwtService.isValid(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
         }
@@ -161,9 +169,9 @@ public class AuthController {
 
     @PostMapping("/signout")
     public ResponseEntity<Void> signout(
-        @RequestHeader(value="Authorization", required=false) String authHeader,
-        @CookieValue(value="refreshToken", required=false) String refreshCookie,
-        @CookieValue(value="deviceid", required=false) String deviceId) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @CookieValue(value = "refreshToken", required = false) String refreshCookie,
+            @CookieValue(value = "deviceid", required = false) String deviceId) {
         String username = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -172,7 +180,7 @@ public class AuthController {
                 username = jwtService.parse(access).getUsername();
             }
         }
-        
+
         if (username == null && refreshCookie != null && deviceId != null) {
             if (jwtService.isValid(refreshCookie)) {
                 var rt = refreshTokenService.findByToken(refreshCookie).orElse(null);
@@ -181,7 +189,7 @@ public class AuthController {
                 }
             }
         }
-        
+
         if (username == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -189,25 +197,27 @@ public class AuthController {
         refreshTokenService.revokeByUsernameAndDeviceId(username, deviceId);
 
         ResponseCookie clearRT = ResponseCookie.from("refreshToken", "")
-            .path("/auth")
-            .httpOnly(true)
-            .maxAge(0)
-            .build();
+                .path("/auth")
+                .httpOnly(true)
+                .maxAge(0)
+                .build();
 
         return ResponseEntity.ok()
-            .header(HttpHeaders.SET_COOKIE, clearRT.toString())
-            .build();
+                .header(HttpHeaders.SET_COOKIE, clearRT.toString())
+                .build();
     }
 
     @PostMapping("/resendEmail")
     public ResponseEntity<?> resend(@RequestBody Map<String, String> body) {
-        String email = body.get("email");        
+        String username = body.get("username");
+
         try {
-            userService.resendEmail(email);
+            userService.resendEmail(username);
         } catch (Exception ex) {
             // TODO: return the exception to the user
         }
-        return ResponseEntity.ok(Map.of("message", "If the account exists and is not verified, a new link has been sent."));
+        return ResponseEntity
+                .ok(Map.of("message", "If the account exists and is not verified, a new link has been sent."));
     }
 
     public String getClientIp(HttpServletRequest request) {
@@ -216,7 +226,7 @@ public class AuthController {
             return ip.split(",")[0].trim();
         }
         ip = request.getHeader("X-Real-IP");
-        if (ip != null && !ip.isBlank()) 
+        if (ip != null && !ip.isBlank())
             return ip;
         return request.getRemoteAddr();
     }

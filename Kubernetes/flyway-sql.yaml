@@ -49,3 +49,7 @@ data:
       INDEX idx_token (token),
       INDEX idx_user (username)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  V4__unique_mail_token_user.sql: |
+    ALTER TABLE mail_tokens
+    ADD CONSTRAINT uniq_mail_tokens_user UNIQUE (user_id);
+    
