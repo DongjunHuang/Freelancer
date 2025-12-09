@@ -41,12 +41,13 @@ public class RefreshTokenService {
             LocalDateTime expiryDate) {
         repo.deleteByUsernameAndDeviceId(username, deviceId);
 
-        RefreshToken entity = new RefreshToken();
-        entity.setUsername(username);
-        entity.setToken(token);
-        entity.setExpiresAt(expiryDate);
-        entity.setIpAddress(ipAddress);
-        entity.setDeviceId(deviceId);
+        RefreshToken entity = RefreshToken.builder()
+                .username(username)
+                .token(token)
+                .expiresAt(expiryDate)
+                .ipAddress(ipAddress)
+                .deviceId(deviceId)
+                .build();
         return repo.save(entity);
     }
 

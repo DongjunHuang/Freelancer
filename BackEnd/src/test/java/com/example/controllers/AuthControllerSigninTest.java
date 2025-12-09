@@ -186,14 +186,12 @@ public class AuthControllerSigninTest {
         // given
         String refreshToken = "refresh-token";
         String deviceId = "device-123";
-
+        String username = "bob";
         String authHeader = null;
-
+        LocalDateTime localtime = LocalDateTime.now().plusDays(1);
         when(jwtService.isValid(refreshToken)).thenReturn(true);
 
-        RefreshToken rt = new RefreshToken();
-        rt.setUsername("bob");
-        rt.setExpiresAt(LocalDateTime.now().plusDays(1));
+        RefreshToken rt = RefreshToken.builder().username(username).expiresAt(localtime).build();
 
         when(refreshTokenService.findByToken(refreshToken)).thenReturn(Optional.of(rt));
 
@@ -235,12 +233,11 @@ public class AuthControllerSigninTest {
         // given
         String refreshToken = "refresh-token";
         String deviceId = "device-123";
-
+        String username = "bob";
+        LocalDateTime localtime = LocalDateTime.now().minusMinutes(1);
         when(jwtService.isValid(refreshToken)).thenReturn(true);
 
-        RefreshToken rt = new RefreshToken();
-        rt.setUsername("bob");
-        rt.setExpiresAt(LocalDateTime.now().minusMinutes(1));
+        RefreshToken rt = RefreshToken.builder().username(username).expiresAt(localtime).build();
 
         when(refreshTokenService.findByToken(refreshToken)).thenReturn(Optional.of(rt));
 
