@@ -5,6 +5,7 @@ import org.mockito.*;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.example.exception.ConflictException;
 import com.example.listeners.VerificationCreatedEvent;
 import com.example.repos.MailToken;
 import com.example.repos.MailTokenRepo;
@@ -270,8 +271,8 @@ public class UserServiceTests {
 
                 // when / then
                 assertThatThrownBy(() -> userService.signup(req))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("Email taken");
+                                .isInstanceOf(ConflictException.class)
+                                .hasMessageContaining("Email already registered");
 
                 verify(userRepo, never()).findByUsername(anyString());
                 verify(userRepo, never()).save(any());
@@ -292,8 +293,8 @@ public class UserServiceTests {
 
                 // when / then
                 assertThatThrownBy(() -> userService.signup(req))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("Account taken");
+                                .isInstanceOf(ConflictException.class)
+                                .hasMessageContaining("Username already taken");
 
                 verify(userRepo, never()).save(any());
                 verify(mailTokenRepo, never()).save(any());

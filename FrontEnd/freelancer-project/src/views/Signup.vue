@@ -2,7 +2,7 @@
 import { ref, computed, reactive} from 'vue'
 import { useRouter } from 'vue-router'
 import { signup } from '@/api/auth'  
-
+const errorMsg = ref('')
 const router = useRouter()
 const f = reactive({
   signup: {
@@ -32,13 +32,15 @@ async function submit() {
     
     success.value = res.data?.message || 'Registration successful. Please check your email the link to verify.'
     setTimeout(() => router.push('/signin'), 1200)
-  } catch (e: any) {
-    if (e.response?.data?.detail) 
-      error.value = e.response.data.detail
-    else if (e.response?.data?.message) 
-      error.value = e.response.data.message
-    else 
-      error.value = e.message || 'Registration failed'
+  } catch (e: any) {  
+    const code = e?.response?.data?.code
+    const detail  = e?.response?.data?.detail
+    
+    if (code === 'USERNAME_USED' || code === 'EMAIL_USED') {
+      errorMsg.value = detail
+      return
+    }
+
   } finally {
     loading.value = false
   }
@@ -56,6 +58,9 @@ async function submit() {
           <input v-model.trim="f.signup.email" type="email" placeholder="Email" class="w-full border rounded-lg px-3 py-2" required />
           <input v-model="f.signup.password" type="password" placeholder="Password" class="w-full border rounded-lg px-3 py-2" required />
           
+          <p v-if="errorMsg" class="text-red-500 text-sm">
+            {{ errorMsg }}
+          </p>
           <button :disabled="!isSignupFormValid || loading"
                   @click="submit"
                   class="w-full rounded-full bg-slate-900 text-white py-2.5 disabled:opacity-40 hover:opacity-90 flex items-center justify-center">

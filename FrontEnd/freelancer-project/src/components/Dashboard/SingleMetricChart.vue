@@ -161,7 +161,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- 右侧：Symbol 选择 -->
+      <!-- right: symbol selection -->
       <div class="w-full md:w-48">
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-2">
           <div class="mb-1 flex items-center justify-between">

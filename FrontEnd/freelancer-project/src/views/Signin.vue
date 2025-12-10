@@ -6,6 +6,7 @@ import { signin } from '@/api/auth'
 import { useAuth } from '@/stores/auth'
 import { resendEmail } from '@/api/auth'  
 
+const errorMsg = ref('')
 const { setToken, setUser } = useAuth()
 const router = useRouter()
 const f = reactive({
@@ -66,18 +67,20 @@ async function submit() {
     }
   } catch (e: any) {
       console.log(e)
-      
-      const code = e?.response?.data?.error
-      const msg  = e?.response?.data?.message
-      console.log(code)
-      console.log(msg)
-      
+      const error = e?.response?.data?.error
+      if (error === 'Invalid credentials') {
+         errorMsg.value = error
+         return
+      }      
+
+      const code = e?.response?.data?.code
+
+
       if (code === 'EMAIL_NOT_VERIFIED') {
         showVerifyModal.value = true
         return
       }
 
-      error.value = msg || e.message || 'Login failed'
   } finally {
     loading.value = false
     lastTriedUsername.value = f.signin.username
@@ -125,7 +128,9 @@ onUnmounted(() => {
         <form class="space-y-4" @submit.prevent="submit">
           <input v-model.trim="f.signin.username" type="text" placeholder="Username" class="w-full border rounded-lg px-3 py-2" required />
           <input v-model="f.signin.password" type="password" placeholder="Password" class="w-full border rounded-lg px-3 py-2" required />
-        
+          <p v-if="errorMsg" class="text-red-500 text-sm">
+            {{ errorMsg }}
+          </p>
           <button :disabled="!isSignupFormValid || loading"
                   @click="submit"
                   class="w-full rounded-full bg-slate-900 text-white py-2.5 disabled:opacity-40 hover:opacity-90 flex items-center justify-center">

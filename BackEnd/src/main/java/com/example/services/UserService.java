@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.controllers.AuthController;
+import com.example.exception.ConflictException;
+import com.example.exception.ErrorCode;
 import com.example.listeners.VerificationCreatedEvent;
 import com.example.repos.MailToken;
 import com.example.repos.MailTokenRepo;
@@ -19,6 +21,7 @@ import com.example.repos.User;
 import com.example.repos.UserRepo;
 import com.example.repos.UserStatus;
 import com.example.requests.SignupReq;
+import com.example.utils.TokenUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -40,10 +43,10 @@ public class UserService {
     @Transactional
     public void signup(SignupReq req) {
         userRepo.findByEmail(req.getEmail()).ifPresent(u -> {
-            throw new IllegalArgumentException("Email taken");
+            throw new ConflictException(ErrorCode.EMAIL_USED);
         });
         userRepo.findByUsername(req.getUsername()).ifPresent(u -> {
-            throw new IllegalArgumentException("Account taken");
+            throw new ConflictException(ErrorCode.USERNAME_USED);
         });
 
         // Pending waiting for user to verify the email
@@ -56,14 +59,13 @@ public class UserService {
                 .roles(DEFAULT_ROLE)
                 .build();
         userRepo.save(user);
-        // Prepare the mail token to the user
-        String tokenString = UUID.randomUUID().toString().replace("-", "") + RandomStringUtils.randomAlphanumeric(32);
+
         // TODO: the token might be changed for the user to enter 6 digits code
         MailToken token = MailToken.builder()
                 .userId(user.getUserId())
                 .email(user.getEmail())
                 .username(user.getUsername())
-                .token(tokenString)
+                .token(TokenUtils.getRefreshToken())
                 .expiresAt(LocalDateTime.now().plusHours(TTL_Hours))
                 .build();
         mailTokenRepo.save(token);

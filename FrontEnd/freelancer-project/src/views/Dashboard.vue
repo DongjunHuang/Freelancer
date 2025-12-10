@@ -71,7 +71,7 @@ function buildAllSeriesForColumn(column: string): Series[] {
   if (!displayRecord.value) return []
 
   const { datapoints } = displayRecord.value
-  const colKey = column.toUpperCase()   // 如果后端用大写存 key 的话
+  const colKey = column.toUpperCase()
 
   return Object.entries(datapoints).map(([symbol, points]) => {
     const ys = points.map((p, idx) => {
@@ -84,7 +84,6 @@ function buildAllSeriesForColumn(column: string): Series[] {
       )
 
       if (raw == null || raw === '') {
-        // 用 null 表示“这里没值”，Chart 会自动断开
         return null
       }
 

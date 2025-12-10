@@ -12,18 +12,21 @@ import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    // 统一构造 ProblemDetail（可添加traceId等）
     private ProblemDetail pd(HttpStatus status, String title, String code, String detail) {
         ProblemDetail p = ProblemDetail.forStatusAndDetail(status, detail);
         p.setTitle(title);
-        p.setProperty("code", code);                           // 你的业务码
+        p.setProperty("code", code);
         p.setProperty("timestamp", OffsetDateTime.now());
-        p.setProperty("traceId", UUID.randomUUID().toString()); // 或从MDC取
+        p.setProperty("traceId", UUID.randomUUID().toString());
         return p;
     }
 
-    // 业务异常映射
+    @ExceptionHandler(ConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ProblemDetail handleConflict(ConflictException ex) {
+        return pd(HttpStatus.CONFLICT, "Conflict", ex.getCode(), ex.getMessage());
+    }
+
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleBadRequest(BadRequestException ex) {
@@ -36,19 +39,12 @@ public class GlobalExceptionHandler {
         return pd(HttpStatus.NOT_FOUND, "Not Found", ex.getCode(), ex.getMessage());
     }
 
-    @ExceptionHandler(ConflictException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ProblemDetail handleConflict(ConflictException ex) {
-        return pd(HttpStatus.CONFLICT, "Conflict", ex.getCode(), ex.getMessage());
-    }
-
     @ExceptionHandler(BusinessRuleException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ProblemDetail handleBiz(BusinessRuleException ex) {
         return pd(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable Entity", ex.getCode(), ex.getMessage());
     }
 
-    // 参数校验：@Valid/@Validated 触发
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleInvalid(MethodArgumentNotValidException ex) {
@@ -59,7 +55,6 @@ public class GlobalExceptionHandler {
         return p;
     }
 
-    // Spring Security：未认证/权限不足
     @ExceptionHandler(AuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ProblemDetail handleAuth(AuthenticationException ex) {
@@ -72,11 +67,9 @@ public class GlobalExceptionHandler {
         return pd(HttpStatus.FORBIDDEN, "Forbidden", "FORBIDDEN", ex.getMessage());
     }
 
-    // 兜底
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ProblemDetail handleAny(Exception ex, WebRequest req) {
-        // 这里务必做好日志
         return pd(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "INTERNAL_ERROR", "Unexpected error");
     }
 }
