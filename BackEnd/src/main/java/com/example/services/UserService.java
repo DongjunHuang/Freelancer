@@ -1,5 +1,6 @@
 package com.example.services;
 
+import java.security.Timestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -59,15 +60,25 @@ public class UserService {
                 .roles(DEFAULT_ROLE)
                 .build();
         userRepo.save(user);
+        String tokenString = TokenUtils.getRefreshToken();
 
         // TODO: the token might be changed for the user to enter 6 digits code
-        MailToken token = MailToken.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .username(user.getUsername())
-                .token(TokenUtils.getRefreshToken())
-                .expiresAt(LocalDateTime.now().plusHours(TTL_Hours))
-                .build();
+        MailToken token = mailTokenRepo.findByUserId(user.getUserId())
+                .map(existing -> {
+                    existing.setToken(tokenString);
+                    existing.setExpiresAt(LocalDateTime.now().plusHours(TTL_Hours));
+                    existing.setUsed(false);
+                    existing.setCreatedAt(LocalDateTime.now());
+                    return existing;
+                })
+                .orElseGet(() -> MailToken.builder()
+                        .userId(user.getUserId())
+                        .email(user.getEmail())
+                        .username(user.getUsername())
+                        .token(tokenString)
+                        .expiresAt(LocalDateTime.now().plusHours(TTL_Hours))
+                        .used(false)
+                        .build());
         mailTokenRepo.save(token);
 
         // Publish the event for email verification

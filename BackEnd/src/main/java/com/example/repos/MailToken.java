@@ -45,11 +45,11 @@ public class MailToken {
   private String username;
 
   @Column(nullable = false)
-  private boolean used = false;
+  private boolean used;
 
   @Column(nullable = false)
   private LocalDateTime expiresAt;
 
-  @CreationTimestamp
-  private Timestamp createdAt;
+  @Column(nullable = false, updatable = false)
+  private LocalDateTime createdAt;
 }

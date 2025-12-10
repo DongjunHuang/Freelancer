@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface MailTokenRepo extends JpaRepository<MailToken, Long> {
     Optional<MailToken> findByToken(String token);
 
+    Optional<MailToken> findByUserId(Long userId);
+
     void deleteByEmail(String email);
 
     void deleteByUsername(String username);
