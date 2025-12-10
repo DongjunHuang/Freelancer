@@ -70,17 +70,9 @@ async function submit() {
       const error = e?.response?.data?.error
       if (error === 'Invalid credentials') {
          errorMsg.value = error
-         return
-      }      
-
-      const code = e?.response?.data?.code
-
-
-      if (code === 'EMAIL_NOT_VERIFIED') {
-        showVerifyModal.value = true
-        return
-      }
-
+      } else if (error == 'EMAIL_NOT_VERIFIED') {
+         showVerifyModal.value = true
+      }        
   } finally {
     loading.value = false
     lastTriedUsername.value = f.signin.username
