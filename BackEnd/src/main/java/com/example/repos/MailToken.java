@@ -50,6 +50,7 @@ public class MailToken {
   @Column(nullable = false)
   private LocalDateTime expiresAt;
 
+  @CreationTimestamp
   @Column(nullable = false, updatable = false)
   private LocalDateTime createdAt;
 }

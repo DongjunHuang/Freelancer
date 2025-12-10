@@ -1,5 +1,21 @@
 package com.example.exception;
 
-public class BusinessRuleException extends AppException {      // 422
-    public BusinessRuleException(String msg) { super("BUSINESS_RULE", msg); }
+import lombok.Getter;
+
+/**
+ * The business rules exceptions.
+ * 1. The user is not pending.
+ */
+@Getter
+public class BusinessRuleException extends RuntimeException {
+    private final ErrorCode error;
+
+    public BusinessRuleException(ErrorCode error) {
+        super(error.getMessage());
+        this.error = error;
+    }
+
+    public String getCode() {
+        return error.getCode();
+    }
 }

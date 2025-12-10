@@ -210,12 +210,7 @@ public class AuthController {
     @PostMapping("/resendEmail")
     public ResponseEntity<?> resend(@RequestBody Map<String, String> body) {
         String username = body.get("username");
-
-        try {
-            userService.resendEmail(username);
-        } catch (Exception ex) {
-            // TODO: return the exception to the user
-        }
+        userService.resendEmail(username);
         return ResponseEntity
                 .ok(Map.of("message", "If the account exists and is not verified, a new link has been sent."));
     }

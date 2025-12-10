@@ -27,12 +27,6 @@ public class GlobalExceptionHandler {
         return pd(HttpStatus.CONFLICT, "Conflict", ex.getCode(), ex.getMessage());
     }
 
-    @ExceptionHandler(BadRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ProblemDetail handleBadRequest(BadRequestException ex) {
-        return pd(HttpStatus.BAD_REQUEST, "Bad Request", ex.getCode(), ex.getMessage());
-    }
-
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ProblemDetail handleNotFound(NotFoundException ex) {
@@ -41,7 +35,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessRuleException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    public ProblemDetail handleBiz(BusinessRuleException ex) {
+    public ProblemDetail handleNotFound(BusinessRuleException ex) {
         return pd(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable Entity", ex.getCode(), ex.getMessage());
     }
 

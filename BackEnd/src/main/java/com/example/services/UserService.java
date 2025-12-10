@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.controllers.AuthController;
+import com.example.exception.BusinessRuleException;
 import com.example.exception.ConflictException;
 import com.example.exception.ErrorCode;
+import com.example.exception.NotFoundException;
 import com.example.listeners.VerificationCreatedEvent;
 import com.example.repos.MailToken;
 import com.example.repos.MailTokenRepo;
@@ -105,28 +107,36 @@ public class UserService {
     }
 
     @Transactional
-    public void resendEmail(String username) throws Exception {
+    public void resendEmail(String username) {
         // step1: Remove the old one first
         mailTokenRepo.deleteByUsername(username);
 
         // step2: check if the user is pending
-        User user = userRepo.findByUsername(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        if (user == null || user.getStatus() != UserStatus.PENDING) {
-            // TODO : add specific Exception type
-            throw new IllegalArgumentException("The user does not exist or is not pending");
+        if (user.getStatus() != UserStatus.PENDING) {
+            throw new BusinessRuleException(ErrorCode.USER_IS_NOT_PENDING);
         }
 
         // step3: issue and save the new generated one
-        String tokenString = UUID.randomUUID().toString().replace("-", "") + RandomStringUtils.randomAlphanumeric(32);
-        MailToken token = MailToken.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .username(user.getUsername())
-                .token(tokenString)
-                .expiresAt(LocalDateTime.now().plusHours(TTL_Hours))
-                .build();
-
+        String tokenString = TokenUtils.getRefreshToken();
+        MailToken token = mailTokenRepo.findByUserId(user.getUserId())
+                .map(existing -> {
+                    existing.setToken(tokenString);
+                    existing.setExpiresAt(LocalDateTime.now().plusHours(TTL_Hours));
+                    existing.setUsed(false);
+                    existing.setCreatedAt(LocalDateTime.now());
+                    return existing;
+                })
+                .orElseGet(() -> MailToken.builder()
+                        .userId(user.getUserId())
+                        .email(user.getEmail())
+                        .username(user.getUsername())
+                        .token(tokenString)
+                        .expiresAt(LocalDateTime.now().plusHours(TTL_Hours))
+                        .used(false)
+                        .build());
         mailTokenRepo.save(token);
 
         // step4: resend the email

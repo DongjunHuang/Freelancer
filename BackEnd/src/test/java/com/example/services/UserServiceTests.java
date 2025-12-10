@@ -5,7 +5,10 @@ import org.mockito.*;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.example.exception.BusinessRuleException;
 import com.example.exception.ConflictException;
+import com.example.exception.ErrorCode;
+import com.example.exception.NotFoundException;
 import com.example.listeners.VerificationCreatedEvent;
 import com.example.repos.MailToken;
 import com.example.repos.MailTokenRepo;
@@ -178,8 +181,8 @@ public class UserServiceTests {
                 when(userRepo.findByUsername(username)).thenReturn(Optional.empty());
 
                 assertThatThrownBy(() -> userService.resendEmail(username))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessage("User not found");
+                                .isInstanceOf(NotFoundException.class)
+                                .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage());
 
                 verify(mailTokenRepo, never()).save(any());
                 verify(publisher, never()).publishEvent(any());
@@ -198,8 +201,8 @@ public class UserServiceTests {
                 when(userRepo.findByUsername(username)).thenReturn(Optional.of(user));
 
                 assertThatThrownBy(() -> userService.resendEmail(username))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessage("The user does not exist or is not pending");
+                                .isInstanceOf(BusinessRuleException.class)
+                                .hasMessage(ErrorCode.USER_IS_NOT_PENDING.getMessage());
 
                 verify(userRepo, never()).save(any());
                 verify(mailTokenRepo, never()).save(any());
