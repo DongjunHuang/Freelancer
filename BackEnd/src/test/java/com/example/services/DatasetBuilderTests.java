@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -71,7 +72,7 @@ public class DatasetBuilderTests {
         }
 
         @Test
-        void testExistingDatasetReturnedWhenNotNew() throws Exception {
+        void testExistingDatasetReturnedWhenNotNew() {
                 DatasetMetadataRepo repo = Mockito.mock(DatasetMetadataRepo.class);
 
                 DataProps props = DataProps.builder()
@@ -93,7 +94,7 @@ public class DatasetBuilderTests {
                                                 .build())
                                 .build();
 
-                when(repo.findByUserIdAndDatasetName(1L, "prices")).thenReturn(existing);
+                when(repo.findByUserIdAndDatasetName(1L, "prices")).thenReturn(Optional.of(existing));
 
                 // --- Act ---
                 DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, repo);
@@ -108,7 +109,7 @@ public class DatasetBuilderTests {
         }
 
         @Test
-        void testNewDatasetCreatedWhenPropsIsNew() throws Exception {
+        void testNewDatasetCreatedWhenPropsIsNew() {
                 // --- Arrange ---
                 DatasetMetadataRepo repo = Mockito.mock(DatasetMetadataRepo.class);
 
@@ -138,7 +139,7 @@ public class DatasetBuilderTests {
         }
 
         @Test
-        void testMergeAndFillInferNeededColumnShouldCopyExistingAndAddNewColumns() throws Exception {
+        void testMergeAndFillInferNeededColumnShouldCopyExistingAndAddNewColumns() {
                 // Given col_a(NUMBER, metric)，col_b(STRING, non-metric)
                 ColumnMeta colA = ColumnMeta.builder()
                                 .columnName("col_a")

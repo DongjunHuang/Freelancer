@@ -4,8 +4,8 @@ import lombok.Getter;
 
 /**
  * The exection handles information already exists
- * 1. User name exists when user signs up
- * 2. User email address exists when user signs up
+ * USERNAME_USED
+ * EMAIL_USED
  */
 @Getter
 public class ConflictException extends RuntimeException {

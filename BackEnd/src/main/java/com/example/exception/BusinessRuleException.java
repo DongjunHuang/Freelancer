@@ -4,7 +4,9 @@ import lombok.Getter;
 
 /**
  * The business rules exceptions.
- * 1. The user is not pending.
+ * USER_IS_NOT_PENDING
+ * TOKEN_EXPIRED
+ * TOKEN_INVALID
  */
 @Getter
 public class BusinessRuleException extends RuntimeException {

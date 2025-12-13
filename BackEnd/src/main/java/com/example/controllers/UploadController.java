@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.exception.ErrorCode;
 import com.example.models.DataProps;
 import com.example.repos.DatasetMetadata;
 import com.example.requests.DatasetMetadataResp;
@@ -25,6 +28,8 @@ import com.example.requests.DatasetReq;
 import com.example.security.JwtUserDetails;
 import com.example.services.MetadataService;
 import com.example.services.UploadService;
+import com.example.exception.AuthenticationException;
+import com.example.exception.BadRequestException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -58,16 +63,16 @@ public class UploadController {
             @RequestPart("dataset") DatasetReq req,
             Authentication auth) {
         if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "The file is empty"));
+            throw new BadRequestException(ErrorCode.NOT_VALID_FILE);
         }
-        if (req == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "table name is empty."));
+        if (req == null || req.getDatasetName() == null || req.getDatasetName().isEmpty()) {
+            throw new BadRequestException(ErrorCode.NOT_VALID_SET_NAME);
         }
 
         // First create or update table metadata
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
         if (user == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Unable to recognize the user."));
+            throw new AuthenticationException(ErrorCode.NOT_VALID_USER);
         }
         Long userId = user.getId();
 
@@ -91,18 +96,11 @@ public class UploadController {
         logger.info("The user id is {}, passed params is {}", userId, req);
 
         // Create metadata
-        try {
+        // Step 2: insert records to the document
+        long rowCount = uploadService.appendRecords(file, props);
 
-            // Step 2: insert records to the document
-            long rowCount = uploadService.appendRecords(file, props);
-
-            // Step 3: update metadata
-            uploadService.promoteStagedToCurrent(req.getDatasetName(), userId, rowCount);
-
-        } catch (Exception ex) {
-            logger.error("Exception thrown", ex);
-            // Todo: roll back and return error to users
-        }
+        // Step 3: update metadata
+        uploadService.promoteStagedToCurrent(req.getDatasetName(), userId, rowCount);
 
         return ResponseEntity.ok().body(Map.of("Result", "Success"));
     }
@@ -130,5 +128,26 @@ public class UploadController {
         }
 
         return ResponseEntity.ok(responses);
+    }
+
+    @DeleteMapping("/dataset/{name}")
+    public ResponseEntity<Void> deleteByName(@PathVariable String name, Authentication auth) {
+        // TODO: currently we use auth to fetch the user id, but to decouple
+        // authentication, we probably want to
+        // create currentUserProvider to provide user data/
+        /**
+         * @Component
+         *            public class CurrentUserProvider {
+         *            public Long getUserId() {
+         *            Authentication auth =
+         *            SecurityContextHolder.getContext().getAuthentication();
+         *            return ((JwtUserDetails) auth.getPrincipal()).getUserId();
+         *            }
+         *            }
+         */
+        JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
+        Long userId = user.getId();
+        metadataService.deleteDatasetByNameAndUserId(name, userId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,7 +1,7 @@
 import http from './http'
 import type { DatasetReq, Dataset } from '@/api/types';
 
-// uploadCsv.ts
+// The api to upload csv file
 export const uploadCsv = (
   file: File,
   dataset: DatasetReq,
@@ -31,6 +31,19 @@ export const uploadCsv = (
   });
 };
 
+// The api to fetch datasets for the user
+export async function fetchDatasets(): Promise<Dataset[]> {
+  const res = await http.get<Dataset[]>('/dashboard/fetchDatasets') 
+  return res.data
+}
+
+// The api to delete dataset
+export async function deleteDataset(datasetName: string): Promise<void> {
+  const res = await http.delete(`/upload/dataset/${datasetName}`)
+  return res.data
+}
+
+// ====================================================================
 // the simulated function to test the upload functionality.
 export const uploadCsvSimulate = async (
   formData: FormData,
@@ -61,8 +74,3 @@ export const uploadCsvSimulate = async (
     }, 100); 
   });
 };
-
-export async function fetchDatasets(): Promise<Dataset[]> {
-  const res = await http.get<Dataset[]>('/dashboard/fetchDatasets') 
-  return res.data
-}

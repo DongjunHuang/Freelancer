@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.example.exception.ErrorCode;
+import com.example.exception.NotFoundException;
 import com.example.models.DataProps;
 import com.example.repos.ColumnType;
 import com.example.repos.DatasetMetadata;
@@ -135,12 +137,11 @@ public class DatasetBuilder {
             DatasetMetadataRepo metadataRepo) {
         if (!props.isNewDataset()) {
             DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(props.getUserId(),
-                    props.getDatasetName());
-            if (dataset != null) {
-                props.setRecordDateColumnName(dataset.getRecordDateColumnName());
-                props.setRecordSymbolColumnName(dataset.getRecordSymbolName());
-                props.setDatasetId(dataset.getId());
-            }
+                    props.getDatasetName()).orElseThrow(() -> new NotFoundException(ErrorCode.DATASET_NOT_FOUND));
+            props.setRecordDateColumnName(dataset.getRecordDateColumnName());
+            props.setRecordSymbolColumnName(dataset.getRecordSymbolName());
+            props.setDatasetId(dataset.getId());
+
             return dataset;
         }
 

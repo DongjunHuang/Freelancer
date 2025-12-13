@@ -1,10 +1,8 @@
 package com.example.services;
 
-import java.security.Timestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -91,14 +89,14 @@ public class UserService {
     public void validateEmail(String token) {
         // TODO: should change to specific exception.
         MailToken tok = mailTokenRepo.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+                .orElseThrow(() -> new BusinessRuleException(ErrorCode.TOKEN_INVALID));
 
         if (tok.isUsed() || tok.getExpiresAt().isBefore(LocalDateTime.now())) {
-            logger.info("The token is expired.");
-            throw new IllegalStateException("Token expired/used");
+            throw new BusinessRuleException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        User user = userRepo.findById(tok.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepo.findById(tok.getUserId())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
         user.setStatus(UserStatus.ACTIVE);
         userRepo.save(user);
 

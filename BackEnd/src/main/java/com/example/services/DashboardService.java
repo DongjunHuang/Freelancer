@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.example.exception.ErrorCode;
+import com.example.exception.NotFoundException;
 import com.example.models.FetchRecordsProps;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadataRepo;
@@ -52,11 +54,9 @@ public class DashboardService {
      * @param props
      * @return
      */
-    public FetchRecordsResp queryDatapoints(Long userId, FetchRecordsProps props) throws Exception {
-        DatasetMetadata meta = datasetRepo.findByUserIdAndDatasetName(userId, props.getDatasetName());
-        if (meta == null || meta.getCurrent() == null) {
-            throw new IllegalArgumentException("Dataset not found or no current version");
-        }
+    public FetchRecordsResp queryDatapoints(Long userId, FetchRecordsProps props) {
+        DatasetMetadata meta = datasetRepo.findByUserIdAndDatasetName(userId, props.getDatasetName())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.DATASET_NOT_FOUND));
 
         String datasetId = meta.getId();
         Integer version = meta.getCurrent().getVersion();
@@ -88,9 +88,9 @@ public class DashboardService {
                     props.getSymbols(),
                     sort);
         }
-
         if (records == null) {
-            throw new Exception("Can not find any data points");
+            // The defensive check for null
+            throw new IllegalStateException("Repository returned null list");
         }
         logger.info("Total number {} found from the database for request {}", records.size(), props);
 

@@ -35,7 +35,6 @@ http.interceptors.request.use(
   }
 )
 
-// The function to refresh access token
 async function refreshAccessToken(): Promise<string> {
   const res = await http.post('/auth/refresh', {}, { withCredentials: true })
   return res.data.accessToken

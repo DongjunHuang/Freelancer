@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import { UploadEvents } from '@/constants/events'
-import type { UploadState } from '@/composables/UploadComposable'
+import type { UploadState, UploadStatePatch} from '@/composables/UploadComposable'
 
 // Only read props
 const props = defineProps<{
@@ -10,8 +10,12 @@ const props = defineProps<{
 
 // Change events
 const emit = defineEmits<{
-  'update:state': [UploadState]
+  (e: UploadEvents.UpdateState, next: UploadStatePatch): void
 }>()
+
+function emitPatch(patch: UploadStatePatch) {
+  emit(UploadEvents.UpdateState, patch)
+}
 
 const isDragging = ref(false)  
 const error = ref('')
@@ -39,37 +43,37 @@ function onFileChange(e: Event) {
 }
 
 async function handleFile(f: File) {
-  // If not csv file
+  // Not csv
   if (!f.name.endsWith('.csv')) {
-    updateState({
+    emitPatch({
       error: 'Please select a CSV file',
       file: null,
-      headers: []
+      config: { headers: [] }
     })
     return
   }
 
-  // If over 5 MB size of file
+  // Over 5MB
   if (f.size > 5 * 1024 * 1024) {
-    updateState({
+    emitPatch({
       error: 'File too large (max 5MB)',
       file: null,
-      headers: []
+      config: { headers: [] }
     })
     return
   }
 
-  // Clear state
-  updateState({
+  // Clear error + set file
+  emitPatch({
     error: '',
     file: f
   })
 
   const extracted = await extractHeaders(f)
 
-  // Set up headers
-  updateState({
-    headers: extracted
+  // Set headers (✅ 在 config 里)
+  emitPatch({
+    config: { headers: extracted }
   })
 
   if (fileInput.value) {
@@ -78,10 +82,10 @@ async function handleFile(f: File) {
 }
 
 function clearFile() {
-  updateState({
+  emitPatch({
     file: null,
     error: '',
-    headers: []
+    config: { headers: [] }
   })
 
   if (fileInput.value) {
@@ -100,13 +104,6 @@ async function extractHeaders(file: File): Promise<string[]> {
     .map(h => h.trim())
     .filter(h => h.length > 0);
     return [...headers];
-}
-
-function updateState(patch: Partial<UploadState>) {
-  emit(UploadEvents.UpdateState, {
-    ...props.state,
-    ...patch
-  })
 }
 </script>
 

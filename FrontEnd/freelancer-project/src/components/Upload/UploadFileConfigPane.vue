@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { UploadEvents } from '@/constants/events'
-import type { UploadState } from '@/composables/UploadComposable'
+import type { UploadState, UploadStatePatch } from '@/composables/UploadComposable'
 
 const props = defineProps<{state: UploadState}>()
-const emit = defineEmits<{'update:state': [UploadState] }>()
+const emit = defineEmits<{
+  (e: 'update:state', next: UploadStatePatch): void
+}>()
 const dateFormats = [
   'yyyy-MM-dd',
   'yyyy/MM/dd',
@@ -12,31 +13,24 @@ const dateFormats = [
   'dd/MM/yyyy'
 ];
 
-function updateState(patch: Partial<UploadState>) {
-  emit(UploadEvents.UpdateState, {
-    ...props.state,
-    ...patch
-  })
-}
-
 const recordDateColumn = computed({
-  get: () => props.state.recordDateColumn,
+  get: () => props.state.config.recordDateColumn,
   set: (value: string) => {
-    updateState({ recordDateColumn: value })
+    emit('update:state', { config: { recordDateColumn: value } })
   },
 })
 
 const recordDateFormat = computed({
-  get: () => props.state.recordDateFormat,
+  get: () => props.state.config.recordDateFormat, 
   set: (value: string) => {
-    updateState({ recordDateFormat: value })
+    emit('update:state', { config: { recordDateFormat: value } })
   },
 })
 
 const symbol = computed({
-  get: () => props.state.symbol,
+  get: () => props.state.config.symbol,
   set: (value: string) => {
-    updateState({ symbol: value })
+    emit('update:state', { config: { symbol: value } }) 
   },
 })
 </script>
@@ -51,7 +45,7 @@ const symbol = computed({
     </p>
 
     <!-- Only display when headers exit -->
-    <div v-if="props.state.headers.length" class="mt-3 space-y-3">
+    <div v-if="props.state.config.headers.length" class="mt-3 space-y-3">
       <!-- Date column -->
       <div>
         <span class="block text-xs font-medium text-slate-700">
@@ -62,7 +56,7 @@ const symbol = computed({
           class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-400 focus:bg-white">
           <option disabled value="">-- Select --</option>
           <option
-            v-for="h in props.state.headers"
+            v-for="h in props.state.config.headers"
             :key="h"
             :value="h">
             {{ h }}
@@ -101,7 +95,7 @@ const symbol = computed({
           class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-400 focus:bg-white">
           <option disabled value="">-- Select --</option>
           <option
-            v-for="h in props.state.headers"
+            v-for="h in props.state.config.headers"
             :key="h + '-symbol'"
             :value="h">
             {{ h }}

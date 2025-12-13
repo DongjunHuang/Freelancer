@@ -3,8 +3,8 @@ package com.example.exception;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException.BadRequest;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.OffsetDateTime;
@@ -39,6 +39,19 @@ public class GlobalExceptionHandler {
         return pd(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable Entity", ex.getCode(), ex.getMessage());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleInvalid(BadRequestException ex) {
+        return pd(HttpStatus.BAD_REQUEST, "Bad request", ex.getCode(), ex.getMessage());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ProblemDetail handleAuth(AuthenticationException ex) {
+        return pd(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getCode(), ex.getMessage());
+    }
+
+    // ==========================================================
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleInvalid(MethodArgumentNotValidException ex) {
@@ -49,9 +62,9 @@ public class GlobalExceptionHandler {
         return p;
     }
 
-    @ExceptionHandler(AuthenticationException.class)
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ProblemDetail handleAuth(AuthenticationException ex) {
+    public ProblemDetail handleAuth(org.springframework.security.core.AuthenticationException ex) {
         return pd(HttpStatus.UNAUTHORIZED, "Unauthorized", "UNAUTHORIZED", ex.getMessage());
     }
 

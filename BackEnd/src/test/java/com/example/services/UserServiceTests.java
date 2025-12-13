@@ -52,8 +52,8 @@ public class UserServiceTests {
                 when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.empty());
 
                 assertThatThrownBy(() -> userService.validateEmail("abc"))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("Invalid token");
+                                .isInstanceOf(BusinessRuleException.class)
+                                .hasMessageContaining(ErrorCode.TOKEN_INVALID.getMessage());
 
                 verify(mailTokenRepo).findByToken("abc");
                 verifyNoMoreInteractions(mailTokenRepo, userRepo);
@@ -64,15 +64,15 @@ public class UserServiceTests {
                 MailToken token = MailToken.builder()
                                 .token("abc")
                                 .userId(1L)
-                                .expiresAt(LocalDateTime.now().minusMinutes(1)) // 已过期
+                                .expiresAt(LocalDateTime.now().minusMinutes(1))
                                 .used(false)
                                 .build();
 
                 when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
 
                 assertThatThrownBy(() -> userService.validateEmail("abc"))
-                                .isInstanceOf(IllegalStateException.class)
-                                .hasMessageContaining("Token expired");
+                                .isInstanceOf(BusinessRuleException.class)
+                                .hasMessageContaining(ErrorCode.TOKEN_EXPIRED.getMessage());
 
                 verify(mailTokenRepo).findByToken("abc");
                 verifyNoMoreInteractions(mailTokenRepo, userRepo);
@@ -90,7 +90,7 @@ public class UserServiceTests {
                 when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
 
                 assertThatThrownBy(() -> userService.validateEmail("abc"))
-                                .isInstanceOf(IllegalStateException.class);
+                                .isInstanceOf(BusinessRuleException.class);
 
                 verify(mailTokenRepo).findByToken("abc");
         }
@@ -140,7 +140,7 @@ public class UserServiceTests {
         }
 
         @Test
-        void testResendEmailShouldGenerateNewTokenAndPublishEvent() throws Exception {
+        void testResendEmailShouldGenerateNewTokenAndPublishEvent() {
                 String username = "john";
 
                 User user = User.builder().userId(100L).username(username).status(UserStatus.PENDING).build();

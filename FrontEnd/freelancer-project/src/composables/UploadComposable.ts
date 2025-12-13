@@ -1,43 +1,50 @@
-import { reactive, ref } from 'vue'
-import type { Dataset } from '@/api/types'
-
 export interface UploadState {
-  isNewSelectedMode: boolean
-  selectedDatasetName: string
+  // data set
+  dataset: {
+    isNew: boolean          
+    selectedName: string
+    newName: string        
+  }
+
+  // File upload
   file: File | null
-  options: {
+  error: string
+
+  // File config
+  config: {
     delimiter: string
     hasHeader: boolean
-    timeColumn: string
-    symbolColumn: string
+    recordDateColumn: string
+    recordDateFormat: string
+    symbol: string
+    headers: string[]
   }
-  headers: string[]
-  error: string
-  // Variable for UploadFileConfigPane.vue
-  recordDateColumn: string
-  recordDateFormat: string
-  symbol: string
 }
 
-const datasets = ref<Dataset[]>([])
-
-const uploadState = reactive<UploadState>({
-    isNewSelectedMode: false,
-    selectedDatasetName: '',
-    file: null,
-    options: {
-      delimiter: ',',
-      hasHeader: true,
-      timeColumn: '',
-      symbolColumn: '',
+export function createInitialUploadState(): UploadState {
+  return {
+    dataset: {
+      isNew: true,            // Default：create new dataset
+      selectedName: '',     // Select existed
+      newName: ''             // User input
     },
-    recordDateColumn: '',
-    recordDateFormat: '',
-    headers: [],
-    symbol: '',
-    error: ''
-})
+    file: null,               // Not select file
+    error: '',                // No error
 
-export function useUploadState() {
-  return { uploadState, datasets }
+    config: {
+      delimiter: ',',         // The separator of CSV file
+      hasHeader: true,        // The first row is header
+      recordDateColumn: '',   // User select
+      recordDateFormat: '',   // User select
+      symbol: '',             // User select
+      headers: []             // Headers
+    }
+  }
+}
+
+export type UploadStatePatch = {
+  dataset?: Partial<UploadState['dataset']>
+  config?: Partial<UploadState['config']>
+  file?: UploadState['file']
+  error?: UploadState['error']
 }

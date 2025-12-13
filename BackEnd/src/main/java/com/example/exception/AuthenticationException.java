@@ -2,15 +2,11 @@ package com.example.exception;
 
 import lombok.Getter;
 
-/**
- * The resource not found exception including
- * USER_NOT_FOUND
- */
 @Getter
-public class NotFoundException extends RuntimeException {
+public class AuthenticationException extends RuntimeException {
     private final ErrorCode error;
 
-    public NotFoundException(ErrorCode error) {
+    public AuthenticationException(ErrorCode error) {
         super(error.getMessage());
         this.error = error;
     }

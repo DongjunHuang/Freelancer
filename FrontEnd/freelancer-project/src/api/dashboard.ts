@@ -1,6 +1,7 @@
 import http from './http'
 import type { Dataset, FetchRecordsResp } from '@/api/types'
 
+// The api to request for refresh token
 export const refreshAccessTokenRequest = () => http.get(`/dashboard/getNumberSql`)
 
 export async function fetchDatasets(): Promise<Dataset[]> {

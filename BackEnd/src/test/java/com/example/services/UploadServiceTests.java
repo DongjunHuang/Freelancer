@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -124,7 +125,7 @@ public class UploadServiceTests {
                                 .build();
 
                 when(metadataRepo.findByUserIdAndDatasetName(userId, datasetName))
-                                .thenReturn(dataset);
+                                .thenReturn(Optional.of(dataset));
 
                 // when
                 service.promoteStagedToCurrent(datasetName, userId, importedRows);

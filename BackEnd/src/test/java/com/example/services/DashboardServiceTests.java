@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,7 +19,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
+import org.springframework.web.client.HttpClientErrorException.NotFound;
 
+import com.example.exception.ErrorCode;
+import com.example.exception.NotFoundException;
 import com.example.models.FetchRecordsProps;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadata.VersionControl;
@@ -61,8 +65,8 @@ public class DashboardServiceTests {
                 FetchRecordsProps props = FetchRecordsProps.builder().datasetName("my-ds").build();
 
                 assertThatThrownBy(() -> service.queryDatapoints(userId, props))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("Dataset not found");
+                                .isInstanceOf(NotFoundException.class)
+                                .hasMessageContaining(ErrorCode.DATASET_NOT_FOUND.getMessage());
         }
 
         @Test
@@ -74,8 +78,8 @@ public class DashboardServiceTests {
                 meta.setCurrent(null);
 
                 assertThatThrownBy(() -> service.queryDatapoints(userId, props))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("no current version");
+                                .isInstanceOf(NotFoundException.class)
+                                .hasMessageContaining(ErrorCode.DATASET_NOT_FOUND.getMessage());
         }
 
         @Test
@@ -121,7 +125,7 @@ public class DashboardServiceTests {
                                 any(Sort.class))).thenReturn(records);
 
                 when(datasetRepo.findByUserIdAndDatasetName(userId, datasetName))
-                                .thenReturn(meta);
+                                .thenReturn(Optional.of(meta));
 
                 FetchRecordsResp resp = service.queryDatapoints(userId, props);
 

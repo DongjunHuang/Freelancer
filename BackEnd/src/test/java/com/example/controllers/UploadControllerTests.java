@@ -1,5 +1,9 @@
 package com.example.controllers;
 
+import com.example.exception.AuthenticationException;
+import com.example.exception.BadRequestException;
+import com.example.exception.ErrorCode;
+import com.example.exception.NotFoundException;
 import com.example.models.DataProps;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.User;
@@ -28,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UploadControllerTests {
@@ -64,53 +69,37 @@ public class UploadControllerTests {
 
     @Test
     void testUploadWithNewDatasetWhenFileIsNull() {
-        ResponseEntity<?> resp = controller.uploadWithNewDataset(
+        assertThatThrownBy(() -> controller.uploadWithNewDataset(
                 null,
                 datasetReq,
-                authentication);
-
-        assertThat(resp.getStatusCode().value()).isEqualTo(400);
-        assertThat(resp.getBody()).isInstanceOf(Map.class);
-
-        @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) resp.getBody();
-        assertThat(body.get("error")).isEqualTo("The file is empty");
-
-        verifyNoInteractions(uploadService);
+                authentication))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage(ErrorCode.NOT_VALID_FILE.getMessage());
     }
 
     @Test
     void testUploadWithNewDatasetWhenFileIsEmpty() {
         when(file.isEmpty()).thenReturn(true);
 
-        ResponseEntity<?> resp = controller.uploadWithNewDataset(
+        assertThatThrownBy(() -> controller.uploadWithNewDataset(
                 file,
                 datasetReq,
-                authentication);
-
-        assertThat(resp.getStatusCode().value()).isEqualTo(400);
-        @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) resp.getBody();
-        assertThat(body.get("error")).isEqualTo("The file is empty");
-
-        verifyNoInteractions(uploadService);
+                authentication))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage(ErrorCode.NOT_VALID_FILE.getMessage());
     }
 
     @Test
     void testUploadWithNewDatasetShouldReturnBadRequest() {
         when(file.isEmpty()).thenReturn(false);
 
-        ResponseEntity<?> resp = controller.uploadWithNewDataset(
+        assertThatThrownBy(() -> controller.uploadWithNewDataset(
                 file,
-                null,
-                authentication);
+                datasetReq,
+                authentication))
+                .isInstanceOf(AuthenticationException.class)
+                .hasMessage(ErrorCode.NOT_VALID_USER.getMessage());
 
-        assertThat(resp.getStatusCode().value()).isEqualTo(400);
-        @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) resp.getBody();
-        assertThat(body.get("error")).isEqualTo("table name is empty.");
-
-        verifyNoInteractions(uploadService);
     }
 
     @Test
@@ -148,31 +137,6 @@ public class UploadControllerTests {
 
         // promoteStagedToCurrent
         verify(uploadService).promoteStagedToCurrent("my_table", 123L, 42L);
-    }
-
-    @Test
-    void testUploadWithNewDatasetWhenServiceThrows() throws Exception {
-        String userName = "1234";
-        long userId = 123L;
-
-        User us = User.builder().username(userName).userId(userId).build();
-        JwtUserDetails user = new JwtUserDetails(us, null);
-        when(file.isEmpty()).thenReturn(false);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(uploadService.appendRecords(any(MultipartFile.class), any(DataProps.class)))
-                .thenThrow(new RuntimeException("boom"));
-
-        ResponseEntity<?> resp = controller.uploadWithNewDataset(
-                file,
-                datasetReq,
-                authentication);
-
-        assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
-        @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) resp.getBody();
-        assertThat(body.get("Result")).isEqualTo("Success");
-
-        verify(uploadService, never()).promoteStagedToCurrent(anyString(), anyLong(), anyLong());
     }
 
     private boolean isValidUUID(String value) {
