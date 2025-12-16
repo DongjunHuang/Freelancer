@@ -92,15 +92,13 @@ public class DashboardService {
             // The defensive check for null
             throw new IllegalStateException("Repository returned null list");
         }
-        logger.info("Total number {} found from the database for request {}", records.size(), props);
 
         // Make up data sets
-        Map<String, List<DataPoint>> datapoints = records.stream().collect(Collectors.groupingBy(
-                DatasetRecord::getSymbol,
-                LinkedHashMap::new,
-                Collectors.mapping(
-                        (r) -> DatasetRecord.toDataPoint(r, props.getColumns()),
-                        Collectors.toList())));
+        List<DataPoint> datapoints = records.stream()
+                .flatMap(r -> DatasetRecord.toDataPoints(r, props.getColumns()).stream())
+                .toList();
+        logger.info("Total number datapoints {} found from the number of records {} for request {}", datapoints.size(),
+                records.size(), props);
 
         FetchRecordsResp resp = new FetchRecordsResp();
         resp.setDatasetName(props.getDatasetName());

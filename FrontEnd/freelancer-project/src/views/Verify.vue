@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// TODO: modify the system to entering security code intead of token
-
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { verifyEmail } from '@/api/auth'

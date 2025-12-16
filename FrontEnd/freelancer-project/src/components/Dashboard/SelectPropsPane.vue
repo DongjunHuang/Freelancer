@@ -95,10 +95,10 @@ function updateSymbolString(event: Event) {
       </p>
     </div>
 
-    <!-- 🔹 Symbols / Indexes Input -->
+    <!-- 🔹 Symbols -->
     <div class="mb-4">
       <label class="text-xs font-medium text-slate-700">
-        Symbols / Indexes
+        Symbols
       </label>
       <input
         :value="filters.symbols"

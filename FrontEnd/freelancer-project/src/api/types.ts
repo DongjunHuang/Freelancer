@@ -23,14 +23,16 @@ export interface Dataset {
 
 // Data Points data types
 export interface DataPoint {
-    recordDate: string;                          
-    values: Record<string, number | string | null>;
+    recordDate: string;          // The recorded date
+    symbol: string;              // The symbol
+    column: string;              // The column
+    value: number | null;  // The real datapoints
 }
-  
+
 export interface FetchRecordsResp {
-    datasetName: string;
-    columns: string[];                           
-    datapoints: Record<string, DataPoint[]>                    
+    datasetName: string;    // The dataset name
+    columns: string[];      // The selected columns  
+    datapoints: DataPoint[]    // The datapoints for the corresponding columns          
 }
 
 export interface Series { 
@@ -38,3 +40,9 @@ export interface Series {
     label: string; 
     points: Array<number | null> 
 }
+
+export interface ChartData {
+    labels: string[]
+    symbols: string[]
+    seriesMap: Record<string, Array<number | null>>
+  }

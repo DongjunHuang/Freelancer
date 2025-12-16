@@ -22,6 +22,7 @@
   "dependencies": {
     "axios": "^1.12.2",
     "chart.js": "^4.5.1",
+    "echarts": "^6.0.0",
     "naive-ui": "^2.43.2",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.7.1",
@@ -42,6 +43,7 @@
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.21",
+    "baseline-browser-mapping": "^2.9.7",
     "eslint": "^9.33.0",
     "eslint-plugin-oxlint": "~1.11.0",
     "eslint-plugin-playwright": "^2.2.2",

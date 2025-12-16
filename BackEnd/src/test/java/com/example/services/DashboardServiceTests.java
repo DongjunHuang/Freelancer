@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +20,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.client.HttpClientErrorException.NotFound;
 
 import com.example.exception.ErrorCode;
 import com.example.exception.NotFoundException;
@@ -87,34 +87,43 @@ public class DashboardServiceTests {
                 Long userId = 1L;
                 String datasetName = "prices";
                 String datasetId = "dataset-1";
-                List<String> list = List.of("close", "volume");
+                List<String> columns = List.of("close", "volume");
 
+                // Prepare request props
                 FetchRecordsProps props = FetchRecordsProps.builder()
                                 .datasetName(datasetName)
                                 .startDate(LocalDate.of(2024, 1, 1))
                                 .endDate(LocalDate.of(2024, 1, 31))
-                                .columns(list)
+                                .columns(columns)
                                 .symbols(null)
                                 .build();
 
+                // Prepare dataset meta
                 DatasetMetadata meta = DatasetMetadata.builder()
                                 .userId(userId)
                                 .id(datasetId)
                                 .current(VersionControl.builder().version(2).build())
                                 .build();
 
-                DatasetRecord r1 = new DatasetRecord();
-                r1.setSymbol("AAPL");
-                r1.setRecordDate(LocalDate.of(2024, 1, 5));
+                // Prepare data record
+                Map<String, String> data1 = new HashMap<>();
+                data1.put("close", "1234");
+                data1.put("volume", "3455");
+                Map<String, String> data2 = new HashMap<>();
+                data2.put("close", "1234");
+                data2.put("volume", "3455");
+                data2.put("pick", "3455");
+                Map<String, String> data3 = new HashMap<>();
+                data3.put("close", "1234");
+                data3.put("volume", "3455");
+                data3.put("down", "pppp");
 
-                DatasetRecord r2 = new DatasetRecord();
-                r2.setSymbol("AAPL");
-                r2.setRecordDate(LocalDate.of(2024, 1, 6));
-
-                DatasetRecord r3 = new DatasetRecord();
-                r3.setSymbol("MSFT");
-                r3.setRecordDate(LocalDate.of(2024, 1, 5));
-
+                DatasetRecord r1 = DatasetRecord.builder().symbol("AAPL").data(data1)
+                                .recordDate(LocalDate.of(2024, 1, 5)).build();
+                DatasetRecord r2 = DatasetRecord.builder().symbol("AAPL").data(data2)
+                                .recordDate(LocalDate.of(2024, 1, 6)).build();
+                DatasetRecord r3 = DatasetRecord.builder().symbol("MSFT").data(data3)
+                                .recordDate(LocalDate.of(2024, 1, 5)).build();
                 List<DatasetRecord> records = List.of(r1, r2, r3);
 
                 when(recordRepo.findByDatasetIdAndVersionAndUploadDateBetween(
@@ -139,9 +148,8 @@ public class DashboardServiceTests {
                 assertThat(resp.getDatasetName()).isEqualTo(datasetName);
                 assertThat(resp.getColumns()).containsExactly("close", "volume");
 
-                Map<String, List<DataPoint>> dp = resp.getDatapoints();
-                assertThat(dp.keySet()).containsExactly("AAPL", "MSFT");
-                assertThat(dp.get("AAPL")).hasSize(2);
-                assertThat(dp.get("MSFT")).hasSize(1);
+                List<DataPoint> datapoints = resp.getDatapoints();
+                assertThat(datapoints.size()).isEqualTo(6);
+
         }
 }

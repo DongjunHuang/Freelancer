@@ -18,7 +18,8 @@ const filters = reactive<DashboardFilters>({
 })
 
 const datasets = ref<Dataset[]>([])
-const records = ref<FetchRecordsResp | null>(null)
+const records = ref<FetchRecordsResp>()
+
 export function useDashboardState() {
   return { filters, datasets, records }
 }

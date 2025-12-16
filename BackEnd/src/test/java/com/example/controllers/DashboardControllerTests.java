@@ -51,7 +51,9 @@ public class DashboardControllerTests {
 
         FetchRecordsResp serviceResp = new FetchRecordsResp();
         serviceResp.setDatasetName("my-dataset");
-        serviceResp.setDatapoints(Collections.emptyMap());
+
+        // TODO
+        // serviceResp.setDatapoints(Collections.emptyMap());
 
         ArgumentCaptor<FetchRecordsProps> propsCaptor = ArgumentCaptor.forClass(FetchRecordsProps.class);
 

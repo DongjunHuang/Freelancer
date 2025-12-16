@@ -1,13 +1,15 @@
 package com.example.requests;
 
 import java.time.LocalDate;
-import java.util.Map;
 
+import lombok.Builder;
 import lombok.Data;
 
-
 @Data
-public class DataPoint {   
-    private LocalDate recordDate;        
-    private Map<String, Object> values;    
+@Builder
+public class DataPoint {
+    LocalDate recordDate; // time stamp
+    String symbol; // series
+    String column; // metric
+    Double value; // Value
 }

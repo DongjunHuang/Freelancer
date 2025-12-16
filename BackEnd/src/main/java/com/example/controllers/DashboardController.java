@@ -48,17 +48,11 @@ public class DashboardController {
     public ResponseEntity<FetchRecordsResp> queryDatapoints(
             Authentication auth,
             @RequestBody FetchRecordsReq req) {
-        try {
-            Long userId = ((JwtUserDetails) auth.getPrincipal()).getId();
-            logger.info("Handle the fetch datapoints request from user {} with request {}", userId, req);
+        Long userId = ((JwtUserDetails) auth.getPrincipal()).getId();
+        logger.info("Handle the fetch datapoints request from user {} with request {}", userId, req);
 
-            FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(req);
-            FetchRecordsResp resp = dashboardService.queryDatapoints(userId, props);
-            return ResponseEntity.ok(resp);
-        } catch (Exception ex) {
-            // TODO: according to different type of exception and handle them differently
-            logger.error("The excetion is {}", ex.toString());
-            return ResponseEntity.status(500).build();
-        }
+        FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(req);
+        FetchRecordsResp resp = dashboardService.queryDatapoints(userId, props);
+        return ResponseEntity.ok(resp);
     }
 }

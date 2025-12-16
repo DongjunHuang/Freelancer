@@ -3,7 +3,6 @@ package com.example.exception;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException.BadRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.security.access.AccessDeniedException;
 

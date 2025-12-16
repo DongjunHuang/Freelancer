@@ -20,6 +20,14 @@ const selectedDatasetName = computed({
     })
   },
 })
+
+const datasetOptions = computed(() =>
+  props.datasets.map(ds => ({
+    label: `${ds.datasetName} (${ds.rowCount} rows)`,
+    value: ds.datasetName,
+  }))
+)
+
 </script>
 
 <template>
@@ -30,27 +38,17 @@ const selectedDatasetName = computed({
           Select (Dataset)
         </h2>
       </div>
-      <button
-        type="button"
-        class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
-      >
-        Manage datasets
-      </button>
     </div>
 
     <div class="mt-2">
       <label class="text-xs font-medium text-slate-700">Dataset</label>
-      <select
-        v-model="selectedDatasetName"
-        class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400 focus:bg-white">
-        <option disabled value="">Select</option>
-        <option
-          v-for="ds in datasets"
-          :key="ds.datasetName"
-          :value="ds.datasetName"> 
-            {{ ds.datasetName }}（{{ ds.rowCount }} rows）
-        </option>
-      </select>
+      <n-select
+        v-model:value="selectedDatasetName"
+        :options="datasetOptions"
+        placeholder="Select"
+        filterable
+        clearable
+        class="mt-1 w-full"/>
     </div>
   </div>
 </template>

@@ -12,15 +12,99 @@ import DisplayDetailsPane from '@/components/Dashboard/DisplayDetailsPane.vue'
 import RightSidePane from '@/components/Dashboard/RightSidePane.vue'
 
 // Import types
-import type { ColumnMeta, Series } from '@/api/types'
-const { filters, datasets, records } = useDashboardState()
+import type { ColumnMeta, FetchRecordsResp, DataPoint, ChartData} from '@/api/types'
 
+const { filters, datasets} = useDashboardState()
 const error = ref('')
 const loading = ref(false)
+const resp = ref<FetchRecordsResp | null>(null)
 
 const selectedDataset = computed(() => datasets.value.find((d) => d.datasetName === filters.selectedDatasetName) || null)
 
+// Load data when mounted
+onMounted(loadData)
+
+const selectedKeysByCol = ref<Record<string, string[]>>({})
+
+function buildLabelsForColumn(points: DataPoint[], col: string): string[] {
+  const set = new Set<string>()
+
+  for (const p of points) {
+    if (p.column === col) {
+      set.add(p.recordDate)
+    }
+  } 
+  return Array.from(set).sort((a, b) => +new Date(a) - +new Date(b))
+}
+
+function buildSymbolsForColumn(points: DataPoint[], col: string): string[] {
+  const set = new Set<string>()
+  for (const p of points) {
+    if (p.column === col) {
+      set.add(p.symbol)
+    }
+  }
+  return Array.from(set).sort()
+}
+
+function buildSeriesMapForColumn(points: DataPoint[], col: string, labels: string[]) {
+  // sym -> (date -> value)
+  const bySym = new Map<string, Map<string, number | null>>()
+
+  for (const p of points) {
+    if (p.column !== col) {
+      continue
+    }
+    if (!bySym.has(p.symbol)) {
+      bySym.set(p.symbol, new Map())
+    }
+    bySym.get(p.symbol)!.set(p.recordDate, p.value ?? null)
+  }
+
+  const out: Record<string, Array<number>> = {}
+  for (const [sym, dateMap] of bySym.entries()) {
+    out[sym] = labels.map(d => dateMap.get(d) ?? 0)
+  }
+  return out
+}
+
+const chartsByCol = computed<Record<string, ChartData>>(() => {
+  if (!resp.value) return {}
+
+  const points = resp.value.datapoints
+  const out: Record<string, ChartData> = {}
+
+  for (const col of resp.value.columns) {
+    const labels = buildLabelsForColumn(points, col)
+    const symbols = buildSymbolsForColumn(points, col)
+    const seriesMap = buildSeriesMapForColumn(points, col, labels)
+    out[col] = { labels, symbols, seriesMap }
+  }
+
+  return out
+})
+
+watch(
+  () => chartsByCol.value,
+  (next) => {
+    for (const [col, chart] of Object.entries(next)) {
+      if (!selectedKeysByCol.value[col]) {
+        selectedKeysByCol.value[col] = chart.symbols.slice(0, 5)
+      }
+    }
+  },
+  { immediate: true, deep: false }
+)
+
+// ================================
 // Mounted to call, load the datasets metadata from the client
+// Available metric columns
+const availableMetricColumns = computed<ColumnMeta[]>(() => {
+  return selectedDataset.value
+    ? selectedDataset.value.headers.filter(h => h.metric)
+    : []
+})
+
 async function loadData() {
   try {
     loading.value = true
@@ -35,12 +119,15 @@ async function loadData() {
 
 // Fetch the datapoints from the backend
 async function generate() {
-  if (!filters.selectedDatasetName) 
+  if (!filters.selectedDatasetName) {
+    console.log("Not able to find selectedDatasetName")
     return
-
+  }
+    
   try {
     loading.value = true
     error.value = ''
+    console.log("Prepare request {}", filters)
 
     const res = await fetchDatapoints({
       datasetName: filters.selectedDatasetName,
@@ -50,94 +137,15 @@ async function generate() {
       symbols: filters.symbols
     })
 
-    records.value = res.data 
-    console.log("[Records] ", records)
+    resp.value = res.data 
+    console.log("[Resp] ", resp)
   } catch (e) {
     console.error(e)
-    error.value = 'Failed to load records'
+    error.value = 'Failed to load'
   } finally {
     loading.value = false
   }
 }
-
-// Available metric columns
-const availableMetricColumns = computed<ColumnMeta[]>(() => {
-  return selectedDataset.value
-    ? selectedDataset.value.headers.filter(h => h.metric)
-    : []
-})
-
-function buildAllSeriesForColumn(column: string): Series[] {
-  if (!displayRecord.value) return []
-
-  const { datapoints } = displayRecord.value
-  const colKey = column.toUpperCase()
-
-  return Object.entries(datapoints).map(([symbol, points]) => {
-    const ys = points.map((p, idx) => {
-      const raw = p.values[colKey]
-
-      console.log(
-        `[series=${symbol}] point[${idx}]`,
-        'raw =', raw,
-        'typeof =', typeof raw
-      )
-
-      if (raw == null || raw === '') {
-        return null
-      }
-
-      const n = typeof raw === 'number' ? raw : Number(raw)
-
-      if (!Number.isFinite(n)) {
-        console.log(
-          `[series=${symbol}] point[${idx}] -> invalid number, set to null`
-        )
-        return null
-      }
-
-      console.log(
-        `[series=${symbol}] point[${idx}] -> parsed number:`,
-        n
-      )
-      return n
-    })
-
-    console.log(`[series=${symbol}] final ys =`, ys)
-
-    return {
-      key: symbol,
-      label: symbol,
-      points: ys,
-    }
-  })
-}
-
-const labels = computed(() => {
-  const firstSymbol = Object.keys(displayRecord.value!.datapoints)[0]
-  return displayRecord.value!.datapoints[firstSymbol].map(p => p.recordDate)
-})
-
-watch(
-  () => filters.selectedDatasetName,
-  (val) => {
-    console.log('[selectedDatasetName]', val)
-  }
-)
-watch(
-  () => availableMetricColumns.value,
-  (cols) => {
-    console.log('[metricColumns]', cols)
-  },
-  { deep: true }
-)
-watch(
-  () => selectedDataset.value,
-  (ds) => {
-    console.log('[selectedDataset.headers]', ds?.headers)
-  },
-  { deep: true }
-)
 
 const canLoad = computed(
   () =>
@@ -147,13 +155,6 @@ const canLoad = computed(
     !!filters.endDate,
 )
 
-const displayRecord = computed(() => {
-  return records.value
-})
-
-
-// Load data when mounted
-onMounted(loadData)
 </script>
 
 <template>
@@ -173,8 +174,7 @@ onMounted(loadData)
           <SelectPropsPane
             :filters="filters"
             :metricColumns="availableMetricColumns"
-            @update:filters="(next) => Object.assign(filters, next)"
-          />
+            @update:filters="(next) => Object.assign(filters, next)"/>
         </div>
 
         <!-- graph show -->
@@ -184,27 +184,27 @@ onMounted(loadData)
               Data diagram
             </h2>
             <span class="text-[11px] text-slate-400">
-              {{ records ? Object.values(records.datapoints ?? {}).flat().length : 0 }} records
+              {{ resp ? Object.values(resp.datapoints ?? {}).flat().length : 0 }} records
             </span>
           </div>
 
-          <p v-if="!displayRecord" class="text-xs text-slate-500">
+          <p v-if="!resp" class="text-xs text-slate-500">
             Please select dataset、date range、columns，then click Generate graph.
           </p>
 
-          <div
-            v-else
-            class="flex flex-col gap-4">
+          <div v-else class="flex flex-col gap-4">
             <SingleMetricChart
-              v-for="col in filters.selectedColumns"
+              v-for="col in (resp?.columns ?? [])"
               :key="col"
-              :labels="labels"
-              :all-series="buildAllSeriesForColumn(col)"
+              :labels="chartsByCol[col]?.labels ?? []"
               :column="col"
+              :symbols="chartsByCol[col]?.symbols ?? []"
+              :seriesMap="chartsByCol[col]?.seriesMap ?? {}"
+              :selectedKeys="selectedKeysByCol[col] ?? []"
+              @update:selectedKeys="(v) => (selectedKeysByCol[col] = v)"
             />
           </div>
-        </div>
-
+        </div>  
         <!-- Simply showcase -->
         <div>
           <DisplayDetailsPane 

@@ -1,135 +1,112 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, onMounted, onBeforeUnmount, computed } from 'vue'
-import type { Series, DataPoint } from '@/api/types'
-import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js'
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend)
-
 const props = defineProps<{
-  column: string
   labels: string[]
-  // like
-  /* [
-  { key: "AAPL", label: "Apple",  points: [150, 153, 158, 160] },
-  { key: "MSFT", label: "Microsoft", points: [300, 302, 298, 310] },
-  { key: "TSLA", label: "Tesla", points: [250, 240, 245, 255] }
-  ]
-  */ 
-  allSeries: Series[]
+  column: string
+  symbols: string[]
+  selectedKeys: string[]
+  seriesMap: Record<string, Array<number | null>>
 }>()
+import { ref, watch, onMounted, onBeforeUnmount,computed, nextTick} from 'vue'
+import * as echarts from 'echarts'
 
-const symbols = computed(() => props.allSeries.map(s => s.key))
-const selectedKeys = ref<string[]>([])
-const chartCanvas = ref<HTMLCanvasElement | null>(null)
-let chart: Chart<'line'> | null = null
+const onResize = () => chart?.resize()
+const chartEl = ref<HTMLElement | null>(null)
+let chart: echarts.ECharts | null = null
 
-function buildChartData() {
-  console.log("⚡ buildChartData() called")
-  console.log("props.labels =", props.labels)
-  console.log("selectedKeys =", selectedKeys.value)
-  console.log("allSeries =", props.allSeries)
-
-  const active = props.allSeries.filter(series =>
-    selectedKeys.value.includes(series.key)
-  )
-
-  console.log("active series =", active)
+function buildOption(): echarts.EChartsOption {
+  const series = props.selectedKeys.map(sym => ({
+    name: sym,
+    type: 'line' as const,
+    showSymbol: false,
+    smooth: false,
+    data: props.labels.map((d, i) => [new Date(d), props.seriesMap[sym]?.[i] ?? null]),
+  }))
 
   return {
-    labels: props.labels,
-    datasets: active.map(series => {
-      console.log(`\n📌 Processing series:`, series.label)
+    animation: false,
+    grid: { left: 44, right: 16, top: 20, bottom: 45, containLabel: true },
 
-      const convertedPoints = series.points.map((v, idx) => {
-        console.log(`  raw[${idx}] =`, v, "typeof =", typeof v)
+    legend: { show: false },
 
-        if (v == null) {
-          console.log(`  → [${idx}] = null (kept as null)`)
-          return null
-        }
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'line' }
+    },
 
-        const num = typeof v === "number" ? v : Number(v)
+    xAxis: {
+      type: 'time',
+      axisLabel: { hideOverlap: true }
+    },
 
-        if (!Number.isFinite(num)) {
-          console.log(`  → [${idx}] = null (invalid number)`)
-          return null
-        }
+    yAxis: {
+      type: 'value',
+      name: props.column,
+      nameGap: 18
+    },
 
-        console.log(`  → [${idx}] converted to number:`, num)
-        return num
-      })
+    dataZoom: [
+      { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true },
+      { type: 'slider', xAxisIndex: 0, height: 18, bottom: 12 }
+    ],
 
-      console.log("convertedPoints =", convertedPoints)
-
-      return {
-        label: series.label,
-        data: convertedPoints,
-        tension: 0.2,
-        pointRadius: 0,
-      }
-    }),
+    series
   }
 }
 
-function destroyChart() {
-  if (chart) {
-    chart.destroy()
-    chart = null
-  }
-}
-
-function redraw() {
-  if (!chartCanvas.value) return
-
-  const data = buildChartData()
-
-  if (!props.labels.length || !data.datasets.length) {
-    destroyChart()
+function render() {
+  if (!chartEl.value) {
     return
   }
 
-  destroyChart()
+  const rect = chartEl.value.getBoundingClientRect()
+  console.log('[chart] rect', rect.width, rect.height)
+  console.log('[chart] labels', props.labels.length)
+  console.log('[chart] selectedKeys', props.selectedKeys)
+  console.log('[chart] seriesMap keys', Object.keys(props.seriesMap || {}))
 
-  const ctx = chartCanvas.value.getContext('2d')
-  if (!ctx) return
-
-  chart = new Chart(ctx, {
-    type: 'line',
-    data,
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: { title: { display: true, text: 'Date' } },
-        y: { title: { display: true, text: props.column } },
-      },
-      plugins: {
-        legend: { display: true },
-        tooltip: { enabled: true },
-      },
-    },
-  })
-}
-onMounted(() => {
-  selectedKeys.value = symbols.value.slice()
-  redraw()
-})
-
-onUnmounted(() => {
-  if (chart) {
-    chart.destroy()
-    chart = null
+  if (rect.width === 0 || rect.height === 0) {
+    console.warn('[chart] container has 0 size, skip render')
+    return
   }
+
+  if (!chart) chart = echarts.init(chartEl.value)
+  const option = buildOption()
+  console.log('[chart] option series len', (option as any).series?.length)
+  chart.setOption(option, true)
+}
+
+onMounted(() => {
+  render()
 })
-watch(
-  [() => props.allSeries, () => props.labels, selectedKeys],
-  () => redraw(),
-  { deep: true }
-)
 
 onBeforeUnmount(() => {
-  destroyChart()
+  window.removeEventListener('resize', onResize)
+  chart?.dispose()
+  chart = null
 })
+
+watch(
+  () => [props.labels, props.selectedKeys, props.seriesMap, props.column],
+  () => render(),
+  { deep: true, immediate: true }
+)
+
+const emit = defineEmits<{
+  (e: 'update:selectedKeys', v: string[]): void
+}>()
+
+const selectedKeysModel = computed<string[]>({
+  get: () => props.selectedKeys ?? [],
+  set: (v) => emit('update:selectedKeys', v)
+})
+
+function selectAll() {
+  emit('update:selectedKeys', props.symbols.slice())
+}
+
+function unselectAll() {
+  emit('update:selectedKeys', [])
+}
 </script>
 
 <template>
@@ -141,7 +118,7 @@ onBeforeUnmount(() => {
           {{ column }}
         </h3>
         <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-          {{ selectedKeys.length }}/{{ symbols.length }} series
+          {{ selectedKeys.length }}/{{ symbols.length }}
         </span>
       </div>
     </div>
@@ -150,14 +127,14 @@ onBeforeUnmount(() => {
       <!-- left: diagram -->
       <div class="flex-1">
         <div
-          class="h-52 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 flex items-center justify-center"
-        >
+          class="h-[360px] md:h-[480px] rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
+          
           <p v-if="!labels.length" class="text-xs text-slate-500">
             No data. Please generate records first.
           </p>
-          <div v-else class="h-full w-full">
-            <canvas ref="chartCanvas" class="h-full w-full" />
-          </div>
+
+          <!-- ECharts container -->
+          <div v-else ref="chartEl" class="h-full w-full" />
         </div>
       </div>
 
@@ -166,35 +143,43 @@ onBeforeUnmount(() => {
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-2">
           <div class="mb-1 flex items-center justify-between">
             <span class="text-[11px] font-medium text-slate-700">
-              Symbols / Indexes
+              Symbols
             </span>
-            <span class="text-[10px] text-slate-400">
-              {{ symbols.length }}
-            </span>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="text-[10px] text-slate-500 hover:text-slate-900"
+                @click="selectAll">
+                All
+              </button>
+
+              <button
+                type="button"
+                class="text-[10px] text-slate-500 hover:text-slate-900"
+                @click="unselectAll">
+                None
+              </button>
+
+              <span class="text-[10px] text-slate-400">
+                {{ symbols.length }}
+              </span>  
+            </div>
           </div>
 
-          <p
-            v-if="!symbols.length"
-            class="py-2 text-[11px] text-slate-400"
-          >
+          <p v-if="!symbols.length" class="py-2 text-[11px] text-slate-400">
             No symbols available.
           </p>
 
-          <div
-            v-else
-            class="max-h-40 space-y-1 overflow-y-auto pr-1"
-          >
+          <div v-else class="max-h-40 space-y-1 overflow-y-auto pr-1">
             <label
               v-for="sym in symbols"
               :key="sym"
-              class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-slate-100"
-            >
+              class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-slate-100">
               <input
                 type="checkbox"
                 class="h-3 w-3 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                 :value="sym"
-                v-model="selectedKeys"
-              />
+                v-model="selectedKeysModel"/>
               <span class="truncate text-slate-800" :title="sym">
                 {{ sym }}
               </span>

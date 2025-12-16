@@ -18,8 +18,8 @@ export interface FetchRecordsParams {
   }
 
 export const fetchDatapoints = (params: FetchRecordsParams) => {
-return http.post<FetchRecordsResp>(
-    '/dashboard/queryDatapoints', 
-    params
-)
+    return http.post<FetchRecordsResp>(
+        '/dashboard/queryDatapoints', 
+        params
+    )
 }
