@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 type User = { username: string; email: string }
 export const useAuth = defineStore('auth', {

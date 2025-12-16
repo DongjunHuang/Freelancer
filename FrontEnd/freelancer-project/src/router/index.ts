@@ -13,26 +13,52 @@ const router =  createRouter({
   history: createWebHistory(BASE),
   routes: [
     // testing only
-    { path: "/signin", component: Signin, meta: { guestOnly: true } },
-    { path: "/signup", component: Signup, meta: { guestOnly: true } },
-    { path: "/verify", component: Verify, meta: { guestOnly: true }},
+    { 
+      path: "/signin", 
+      component: Signin, 
+      meta: { requiresAuth: false } 
+    },
+    { 
+      path: "/signup", 
+      component: Signup, 
+      meta: { requiresAuth: false } 
+    },
+    { 
+      path: "/verify", 
+      component: Verify, 
+      meta: { requiresAuth: false }
+    },
     
     // require loggin first
-    { path: "/dashboard", component: Dashboard},
-    { path: '/upload', component: Upload },
-    { path: '/tests', component: Tests},
-  ],
+    { 
+      path: "/dashboard", 
+      component: Dashboard,
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/upload', 
+      component: Upload, 
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/tests', 
+      component: Tests,
+      meta: { requiresAuth: false }
+    }, 
+  ]
 })
 
 router.beforeEach((to, from, next) => {
-  const { isLoggedIn } = useAuth()
-  if (to.meta.requiresAuth && !isLoggedIn) {
-    return next({ path: '/signin', query: { redirect: to.fullPath } })
+  const auth = useAuth()
+
+  if (to.meta.requiresAuth && !auth.isLoggedIn) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
+  } else {
+    next()
   }
-  if (to.meta.guestOnly && isLoggedIn) {
-    return next('/tests')
-  }
-  next()
 })
 
 export default router
