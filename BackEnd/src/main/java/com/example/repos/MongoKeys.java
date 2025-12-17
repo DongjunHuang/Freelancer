@@ -8,7 +8,7 @@ public interface MongoKeys {
         final String UPDATED_AT = "updatedAt";
         final String CREATED_AT = "createdAt";
     }
-    
+
     interface Dataset {
         final String COLLECTION = "datesets";
         final String USERNAME = "username";
@@ -20,7 +20,9 @@ public interface MongoKeys {
         final String CURRENT = "current";
         final String ROW_COUNT = "rowCount";
         final String RECORD_COUNT = "rowCount";
-        
+        final String LAST_ERROR_CODE = "lastErrorCode";
+        final String LAST_ERROR_MESSAGE = "lastErrorMessage";
+
         // Record indexes
         final String RECORD_SYMBOL_NAME = "recordSymbolName";
         final String RECORD_DATE_COLUMN_NAME = "recordDateColumnName";

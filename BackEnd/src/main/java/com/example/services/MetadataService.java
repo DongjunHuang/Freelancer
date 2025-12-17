@@ -4,11 +4,14 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.exception.BadRequestException;
 import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
+import com.example.guards.DatasetAction;
+import com.example.guards.DatasetStateGuard;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadataRepo;
 import com.example.repos.DatasetRecordRepo;
+import com.example.repos.DatasetStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,8 +21,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MetadataService {
-    private final DatasetMetadataRepo metadataRepo;
     private final DatasetRecordRepo recordRepo;
+    private final DatasetStateGuard stateGuard;
+    private final DatasetMetadataRepo datasetRepo;
 
     /**
      * Get the user datasets by user id.
@@ -28,7 +32,7 @@ public class MetadataService {
      * @return the datasets found for the user.
      */
     public List<DatasetMetadata> getUserDatasets(Long userId) {
-        return metadataRepo.findByUserId(userId);
+        return datasetRepo.findByUserId(userId);
     }
 
     /**
@@ -37,13 +41,25 @@ public class MetadataService {
      * @param datasetId
      */
     public void deleteDatasetByNameAndUserId(String name, Long userId) {
-        DatasetMetadata ds = metadataRepo.findByUserIdAndDatasetName(userId, name)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.DATASET_NOT_FOUND));
+        DatasetMetadata dataset = stateGuard.loadAndCheck(userId, name, DatasetAction.DELETE);
 
-        // Remove datapoints
-        recordRepo.deleteByDatasetId(ds.getId());
+        // Notify the deleting status of the dataset
+        datasetRepo.save(dataset);
 
-        // Remove dataset
-        metadataRepo.delete(ds);
+        try {
+            // Remove datapoints
+            recordRepo.deleteByDatasetId(dataset.getId());
+
+            // Remove dataset
+            datasetRepo.delete(dataset);
+        } catch (Exception ex) {
+            if (dataset != null) {
+                dataset.setStatus(DatasetStatus.FAILED);
+                dataset.setLastErrorCode(ErrorCode.DELETE_FAILED);
+                dataset.setLastErrorMessage(ex.getMessage());
+                datasetRepo.save(dataset);
+            }
+            throw new BadRequestException(ErrorCode.DELETE_FAILED);
+        }
     }
 }

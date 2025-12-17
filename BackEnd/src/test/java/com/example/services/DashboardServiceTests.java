@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,12 +24,14 @@ import org.springframework.data.domain.Sort;
 
 import com.example.exception.ErrorCode;
 import com.example.exception.NotFoundException;
+import com.example.guards.DatasetStateGuard;
 import com.example.models.FetchRecordsProps;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadata.VersionControl;
 import com.example.repos.DatasetMetadataRepo;
 import com.example.repos.DatasetRecord;
 import com.example.repos.DatasetRecordRepo;
+import com.example.repos.DatasetStatus;
 import com.example.requests.DataPoint;
 import com.example.requests.FetchRecordsResp;
 
@@ -43,6 +46,17 @@ public class DashboardServiceTests {
 
         @InjectMocks
         DashboardService service;
+
+        DatasetStateGuard datasetGuard;
+
+        @BeforeEach
+        void setUp() {
+                datasetGuard = new DatasetStateGuard(datasetRepo);
+                service = new DashboardService(
+                                datasetRepo,
+                                recordRepo,
+                                datasetGuard);
+        }
 
         @Test
         void testGetUserDatasetsValid() {
@@ -83,7 +97,7 @@ public class DashboardServiceTests {
         }
 
         @Test
-        void testQueryDatapointsWithoutSymbols() throws Exception {
+        void testQueryDatapointsWithoutSymbols() {
                 Long userId = 1L;
                 String datasetName = "prices";
                 String datasetId = "dataset-1";
@@ -103,6 +117,7 @@ public class DashboardServiceTests {
                                 .userId(userId)
                                 .id(datasetId)
                                 .current(VersionControl.builder().version(2).build())
+                                .status(DatasetStatus.ACTIVE)
                                 .build();
 
                 // Prepare data record
@@ -126,7 +141,7 @@ public class DashboardServiceTests {
                                 .recordDate(LocalDate.of(2024, 1, 5)).build();
                 List<DatasetRecord> records = List.of(r1, r2, r3);
 
-                when(recordRepo.findByDatasetIdAndVersionAndUploadDateBetween(
+                when(recordRepo.findByDatasetIdAndVersionLteAndRecordDateBetween(
                                 eq(datasetId),
                                 eq(2),
                                 eq(props.getStartDate()),
@@ -138,7 +153,7 @@ public class DashboardServiceTests {
 
                 FetchRecordsResp resp = service.queryDatapoints(userId, props);
 
-                verify(recordRepo, times(1)).findByDatasetIdAndVersionAndUploadDateBetween(
+                verify(recordRepo, times(1)).findByDatasetIdAndVersionLteAndRecordDateBetween(
                                 eq(datasetId),
                                 eq(2),
                                 eq(props.getStartDate()),
@@ -151,5 +166,15 @@ public class DashboardServiceTests {
                 List<DataPoint> datapoints = resp.getDatapoints();
                 assertThat(datapoints.size()).isEqualTo(6);
 
+        }
+
+        @Test
+        void testQueryDatapointsWithDifferentDatapointsVersion() {
+                // TODO
+        }
+
+        @Test
+        void testQueryDatapointsWithUnavalableDatasetStatusDeleting() {
+                // TODO
         }
 }

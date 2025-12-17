@@ -27,16 +27,21 @@ async function signOut () {
         <RouterLink
           to="/upload"
           class="hover:text-blue-700 transition-colors"
-          active-class="text-blue-800 font-semibold"
-          >Upload
+          active-class="text-blue-800 font-semibold">
+          Upload
         </RouterLink>
 
         <RouterLink
           to="/dashboard"
           class="hover:text-blue-700 transition-colors"
-          active-class="text-blue-800 font-semibold"
-          >
+          active-class="text-blue-800 font-semibold">
           Dashboard
+        </RouterLink>
+        <RouterLink
+          to="/feedback"
+          class="hover:text-blue-700 transition-colors"
+          active-class="text-blue-800 font-semibold">
+          Feedback
         </RouterLink>
       </nav>
     </div>

@@ -28,7 +28,7 @@ import com.example.exception.NotFoundException;
 import com.example.models.DataProps;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.MetadataStatus;
+import com.example.repos.DatasetStatus;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +60,7 @@ public class UploadService {
      */
     public long appendRecords(MultipartFile file, DataProps dataRecordProps) {
 
-        DatasetMetadata dataset;
+        DatasetMetadata dataset = null;
         long totalInserted = 0;
 
         try {
@@ -101,7 +101,8 @@ public class UploadService {
                     builder.inferAndfillStagedColumns(dataset, inferRows, columnsNeedsInfer);
                 }
 
-                builder.saveDataset(dataset, metadataRepo);
+                // change the status of the dataset and start uploading
+                metadataRepo.save(dataset);
                 dataRecordProps.setStagedVersion(dataset.getCurrent().getVersion() + 1);
                 dataRecordProps.setDatasetId(dataset.getId());
 
@@ -148,8 +149,14 @@ public class UploadService {
 
             return totalInserted;
 
-        } catch (IOException e) {
-            throw new BadRequestException(ErrorCode.FILE_READ_FAILED);
+        } catch (Exception e) {
+            if (dataset != null) {
+                dataset.setStatus(DatasetStatus.FAILED);
+                dataset.setLastErrorCode(ErrorCode.UPLOAD_FAILED);
+                dataset.setLastErrorMessage(e.getMessage());
+                metadataRepo.save(dataset);
+            }
+            throw new BadRequestException(ErrorCode.UPLOAD_FAILED);
         }
     }
 
@@ -165,16 +172,9 @@ public class UploadService {
         current.setRowCount(staged.getRowCount() + importedRows);
 
         dataset.setUpdatedAt(Instant.now());
-        dataset.setStatus(MetadataStatus.READY);
+        dataset.setStatus(DatasetStatus.ACTIVE);
         dataset.setStaged(null);
 
         metadataRepo.save(dataset);
-    }
-
-    // TODO: when user upload fails we should roll back the batch
-    // The user may be failed while they are inserting data, in this case, we do not
-    // want to generate stale in our database
-    public void rollback(String batchId) {
-
     }
 }

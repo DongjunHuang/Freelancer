@@ -12,24 +12,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
+import com.example.guards.DatasetAction;
+import com.example.guards.DatasetStateGuard;
 import com.example.models.DataProps;
 import com.example.repos.ColumnType;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadata.ColumnMeta;
 import com.example.repos.DatasetMetadata.VersionControl;
 import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.MetadataStatus;
+import com.example.repos.DatasetStatus;
 import com.example.utils.ColumnsTypeInfer;
 
-@Component
-public class DatasetBuilder {
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 
+@Component
+@RequiredArgsConstructor
+@Builder
+public class DatasetBuilder {
     private static final Logger logger = LoggerFactory.getLogger(DatasetBuilder.class);
 
-    // The symbols that defined the metric is not metric with headers
-    private static final String[] NON_METRIC_COLUMN_SYMBOLS = { "id", "code", "no", "number", "zip", "postal", "date" };
+    private final DatasetStateGuard datasetGuard;
 
     /**
      * We will pick up several samples of selected columns to infer
@@ -64,7 +67,7 @@ public class DatasetBuilder {
 
             // fill the column
             ColumnType type = ColumnsTypeInfer.inferColumnType(header, map.get(header));
-            boolean isMetric = isMetricColumn(header, type);
+            boolean isMetric = ColumnsTypeInfer.isMetricColumn(header, type);
 
             // update staged header
             column.setDataType(type);
@@ -136,12 +139,15 @@ public class DatasetBuilder {
             DataProps props,
             DatasetMetadataRepo metadataRepo) {
         if (!props.isNewDataset()) {
-            DatasetMetadata dataset = metadataRepo.findByUserIdAndDatasetName(props.getUserId(),
-                    props.getDatasetName()).orElseThrow(() -> new NotFoundException(ErrorCode.DATASET_NOT_FOUND));
+            DatasetMetadata dataset = datasetGuard.loadAndCheck(props.getUserId(), props.getDatasetName(),
+                    DatasetAction.UPLOAD);
+
             props.setRecordDateColumnName(dataset.getRecordDateColumnName());
             props.setRecordSymbolColumnName(dataset.getRecordSymbolName());
             props.setDatasetId(dataset.getId());
 
+            // The dataset right now should be uploading status
+            dataset.setStatus(DatasetStatus.UPLOADING);
             return dataset;
         }
 
@@ -157,7 +163,7 @@ public class DatasetBuilder {
         DatasetMetadata dataset = DatasetMetadata.builder()
                 .userId(props.getUserId())
                 .datasetName(props.getDatasetName())
-                .status(MetadataStatus.READY)
+                .status(DatasetStatus.UPLOADING)
                 .createdAt(now)
                 .updatedAt(now)
                 .current(current)
@@ -167,42 +173,5 @@ public class DatasetBuilder {
                 .build();
         logger.info("Find or created dataset for datasetname {}", props.getDatasetName());
         return dataset;
-    }
-
-    /**
-     * Save the dataset information into the mongodb.
-     * 
-     * @param dataset      dataset.
-     * @param metadataRepo repo.
-     */
-    public void saveDataset(DatasetMetadata dataset, DatasetMetadataRepo metadataRepo) {
-        metadataRepo.save(dataset);
-        logger.info("Saved meta dataset for dataset name {}", dataset.getDatasetName());
-    }
-
-    /**
-     * Helper function, to check if current number header represents metric columns
-     * because we infer
-     * some number columns maybe not real numbers, for example
-     * for zip code, phone number.
-     * 
-     * @param header the original header name.
-     * @param type   the type of the column.
-     * @return whether the column is metric.
-     */
-    public boolean isMetricColumn(String header, ColumnType type) {
-        // If the type if not number, then should not be metric
-        if (type != ColumnType.NUMBER || header == null) {
-            return false;
-        }
-
-        String h = header.trim().toLowerCase();
-        for (String symbol : NON_METRIC_COLUMN_SYMBOLS) {
-            if (h.contains(symbol)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

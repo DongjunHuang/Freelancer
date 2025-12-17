@@ -6,6 +6,8 @@ import Signup from '@/views/Signup.vue';
 import Dashboard from '@/views/Dashboard.vue';
 import Verify from '@/views/Verify.vue'
 import Upload from '@/views/Upload.vue'
+import FeedBack from '@/views/Feedback.vue'
+
 import { useAuth } from '@/stores/auth'
 
 const BASE = import.meta.env.BASE_URL
@@ -44,6 +46,11 @@ const router =  createRouter({
       path: '/tests', 
       component: Tests,
       meta: { requiresAuth: false }
+    },
+    { 
+      path: '/feedback(not ready)', 
+      component: FeedBack,
+      meta: { requiresAuth: true }
     }, 
   ]
 })

@@ -41,7 +41,7 @@ import com.example.repos.DatasetMetadata.ColumnMeta;
 import com.example.repos.DatasetMetadata.VersionControl;
 import com.example.repos.DatasetMetadataRepo;
 import com.example.repos.DatasetRecordRepo;
-import com.example.repos.MetadataStatus;
+import com.example.repos.DatasetStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UploadServiceTests {
@@ -117,7 +117,7 @@ public class UploadServiceTests {
                 DatasetMetadata dataset = DatasetMetadata.builder()
                                 .userId(userId)
                                 .datasetName(datasetName)
-                                .status(MetadataStatus.IMPORTING)
+                                .status(DatasetStatus.UPLOADING)
                                 .createdAt(oldUpdatedAt)
                                 .updatedAt(oldUpdatedAt)
                                 .current(current)
@@ -140,8 +140,8 @@ public class UploadServiceTests {
                 // 2) clean staged
                 assertNull(dataset.getStaged());
 
-                // 3) change status to READY
-                assertEquals(MetadataStatus.READY, dataset.getStatus());
+                // 3) change status to ACTIVE
+                assertEquals(DatasetStatus.ACTIVE, dataset.getStatus());
 
                 // 4) updatedAt is updated
                 assertNotNull(dataset.getUpdatedAt());
@@ -152,7 +152,7 @@ public class UploadServiceTests {
         }
 
         @Test
-        void appendRecords_happyPath_shouldSaveMetadata_andBulkInsertRows() throws Exception {
+        void appendRecordsHappyPath() {
                 String datasetId = "1234";
 
                 // prepare CSV
@@ -181,6 +181,7 @@ public class UploadServiceTests {
                                 .current(current)
                                 .createdAt(Instant.now())
                                 .updatedAt(Instant.now())
+                                .status(DatasetStatus.ACTIVE)
                                 .build();
 
                 // 1) createIfNotPresentDatasetMetadata return the mocked dataset
@@ -197,11 +198,7 @@ public class UploadServiceTests {
 
                         return null;
                 }).when(builder).mergeAndFillInferNeededColumns(anySet(), eq(dataset), anyList());
-
-                // 3) saveDataset
-                doNothing().when(builder).saveDataset(eq(dataset), eq(metadataRepo));
-
-                // 4) recordRepo.bulkInsertRecords
+                // 3) recordRepo.bulkInsertRecords
                 doNothing().when(recordRepo).bulkInsertRecords(anyList(), any(DataProps.class));
 
                 // 5) append records
@@ -217,7 +214,7 @@ public class UploadServiceTests {
                 }));
 
                 verify(builder).inferAndfillStagedColumns(eq(dataset), anyList(), anySet());
-                verify(builder).saveDataset(eq(dataset), eq(metadataRepo));
+                verify(metadataRepo).save(eq(dataset));
 
                 assertThat(props.getDatasetId()).isEqualTo(datasetId);
                 assertThat(props.getStagedVersion()).isEqualTo(1L); // current.version(0) + 1

@@ -2,15 +2,18 @@ package com.example.services;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.exception.NotFoundException;
+import com.example.guards.DatasetStateGuard;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadataRepo;
 import com.example.repos.DatasetRecordRepo;
+import com.example.repos.DatasetStatus;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -22,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+@ExtendWith(MockitoExtension.class)
 public class MetadataServiceTests {
 
     @InjectMocks
@@ -33,9 +37,12 @@ public class MetadataServiceTests {
     @Mock
     private DatasetRecordRepo recordRepo;
 
+    DatasetStateGuard stateGuard;
+
     @BeforeEach
     void setup() {
-        MockitoAnnotations.openMocks(this);
+        stateGuard = new DatasetStateGuard(metadataRepo);
+        metadataService = new MetadataService(recordRepo, stateGuard, metadataRepo);
     }
 
     @Test
@@ -79,8 +86,7 @@ public class MetadataServiceTests {
         String datasetName = "my-dataset";
         String setId = "setId";
 
-        DatasetMetadata meta = new DatasetMetadata();
-        meta.setId(setId);
+        DatasetMetadata meta = DatasetMetadata.builder().id(setId).status(DatasetStatus.ACTIVE).build();
 
         when(metadataRepo.findByUserIdAndDatasetName(userId, datasetName))
                 .thenReturn(Optional.of(meta));

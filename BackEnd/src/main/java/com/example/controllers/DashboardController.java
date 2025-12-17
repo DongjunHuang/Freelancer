@@ -51,7 +51,9 @@ public class DashboardController {
         Long userId = ((JwtUserDetails) auth.getPrincipal()).getId();
         logger.info("Handle the fetch datapoints request from user {} with request {}", userId, req);
 
+        // Prepare props
         FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(req);
+
         FetchRecordsResp resp = dashboardService.queryDatapoints(userId, props);
         return ResponseEntity.ok(resp);
     }

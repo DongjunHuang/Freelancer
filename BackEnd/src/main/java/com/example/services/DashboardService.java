@@ -1,17 +1,14 @@
 package com.example.services;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
+import com.example.guards.DatasetAction;
+import com.example.guards.DatasetStateGuard;
 import com.example.models.FetchRecordsProps;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadataRepo;
@@ -35,6 +32,7 @@ public class DashboardService {
 
     private final DatasetMetadataRepo datasetRepo;
     private final DatasetRecordRepo recordRepo;
+    private final DatasetStateGuard datasetGuard;
 
     /**
      * Get user datastss.
@@ -55,11 +53,10 @@ public class DashboardService {
      * @return
      */
     public FetchRecordsResp queryDatapoints(Long userId, FetchRecordsProps props) {
-        DatasetMetadata meta = datasetRepo.findByUserIdAndDatasetName(userId, props.getDatasetName())
-                .orElseThrow(() -> new NotFoundException(ErrorCode.DATASET_NOT_FOUND));
-
-        String datasetId = meta.getId();
-        Integer version = meta.getCurrent().getVersion();
+        // We only need to check the status not changing the status.
+        DatasetMetadata dataset = datasetGuard.loadAndCheck(userId, props.getDatasetName(), DatasetAction.QUERY);
+        String datasetId = dataset.getId();
+        Integer version = dataset.getCurrent().getVersion();
 
         // parse the symbols to fetch
         List<DatasetRecord> records = null;
@@ -73,14 +70,14 @@ public class DashboardService {
                 props.getStartDate(),
                 props.getEndDate());
         if (props.getSymbols() == null || props.getSymbols().isEmpty()) {
-            records = recordRepo.findByDatasetIdAndVersionAndUploadDateBetween(
+            records = recordRepo.findByDatasetIdAndVersionLteAndRecordDateBetween(
                     datasetId,
                     version,
                     props.getStartDate(),
                     props.getEndDate(),
                     sort);
         } else {
-            records = recordRepo.findByDatasetIdAndVersionAndUploadDateBetweenAndSymbols(
+            records = recordRepo.findByDatasetIdAndVersionLteAndRecordDateBetweenAndSymbols(
                     datasetId,
                     version,
                     props.getStartDate(),

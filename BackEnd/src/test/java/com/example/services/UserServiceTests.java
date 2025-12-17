@@ -1,7 +1,9 @@
 package com.example.services;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -25,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 public class UserServiceTests {
 
         @InjectMocks
@@ -41,11 +44,6 @@ public class UserServiceTests {
 
         @Mock
         private PasswordEncoder encoder;
-
-        @BeforeEach
-        void setup() {
-                MockitoAnnotations.openMocks(this);
-        }
 
         @Test
         void testValidateEmailInvalidToken() {

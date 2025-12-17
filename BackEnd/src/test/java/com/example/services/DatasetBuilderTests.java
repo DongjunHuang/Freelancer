@@ -19,62 +19,59 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.guards.DatasetStateGuard;
 import com.example.models.DataProps;
 import com.example.repos.ColumnType;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.DatasetMetadata.ColumnMeta;
 import com.example.repos.DatasetMetadata.VersionControl;
 import com.example.repos.DatasetMetadataRepo;
+import com.example.repos.DatasetStatus;
+import com.example.utils.ColumnsTypeInfer;
 
+@ExtendWith(MockitoExtension.class)
 public class DatasetBuilderTests {
-        DatasetBuilder builder = new DatasetBuilder();
+        DatasetBuilder builder;
+        DatasetStateGuard guard;
 
-        @Test
-        void testNonNumberTypeAlwaysFalse() {
-                assertFalse(builder.isMetricColumn("price", ColumnType.STRING));
-                assertFalse(builder.isMetricColumn("amount", ColumnType.BOOLEAN));
-                assertFalse(builder.isMetricColumn(null, ColumnType.STRING));
+        @Mock
+        private DatasetMetadataRepo metadataRepo;
+
+        @BeforeEach
+        void setup() {
+                guard = new DatasetStateGuard(metadataRepo);
+                builder = new DatasetBuilder(guard);
         }
 
         @Test
-        void testNumberTypeWithNullHeaderIsMetric() {
-                boolean result = builder.isMetricColumn(null, ColumnType.NUMBER);
+        void testisMetricColumn() {
+                assertFalse(ColumnsTypeInfer.isMetricColumn("user_id", ColumnType.NUMBER));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("  customerId  ", ColumnType.NUMBER));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("order_id_number", ColumnType.NUMBER));
+                assertTrue(ColumnsTypeInfer.isMetricColumn("price", ColumnType.NUMBER));
+                assertTrue(ColumnsTypeInfer.isMetricColumn("  closing_value  ", ColumnType.NUMBER));
+                assertTrue(ColumnsTypeInfer.isMetricColumn("TOTAL_REVENUE", ColumnType.NUMBER));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("price", ColumnType.STRING));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("amount", ColumnType.BOOLEAN));
+                assertFalse(ColumnsTypeInfer.isMetricColumn(null, ColumnType.STRING));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("  TradeDATE  ", ColumnType.NUMBER));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("CREATED_DATE", ColumnType.NUMBER));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("product_code_value", ColumnType.NUMBER));
+                assertFalse(ColumnsTypeInfer.isMetricColumn("CODE_metric", ColumnType.NUMBER));
+
+                boolean result = ColumnsTypeInfer.isMetricColumn(null, ColumnType.NUMBER);
                 assertFalse(result);
         }
 
         @Test
-        void testNumberTypeWithNormalHeaderIsMetric() {
-                assertTrue(builder.isMetricColumn("price", ColumnType.NUMBER));
-                assertTrue(builder.isMetricColumn("  closing_value  ", ColumnType.NUMBER));
-                assertTrue(builder.isMetricColumn("TOTAL_REVENUE", ColumnType.NUMBER));
-        }
-
-        @Test
-        void testNumberTypeWithNonMetricHeaderReturnsFalse() {
-                assertFalse(builder.isMetricColumn("user_id", ColumnType.NUMBER));
-                assertFalse(builder.isMetricColumn("  customerId  ", ColumnType.NUMBER));
-                assertFalse(builder.isMetricColumn("order_id_number", ColumnType.NUMBER));
-        }
-
-        @Test
-        void testHeaderCheckIsCaseInsensitiveAndTrimmed() {
-                assertFalse(builder.isMetricColumn("  TradeDATE  ", ColumnType.NUMBER));
-                assertFalse(builder.isMetricColumn("CREATED_DATE", ColumnType.NUMBER));
-        }
-
-        @Test
-        void testHeaderContainingNonMetricSubstringInMiddleAlsoFalse() {
-                assertFalse(builder.isMetricColumn("product_code_value", ColumnType.NUMBER));
-                assertFalse(builder.isMetricColumn("CODE_metric", ColumnType.NUMBER));
-        }
-
-        @Test
         void testExistingDatasetReturnedWhenNotNew() {
-                DatasetMetadataRepo repo = Mockito.mock(DatasetMetadataRepo.class);
-
                 DataProps props = DataProps.builder()
                                 .newDataset(false)
                                 .userId(1L)
@@ -92,12 +89,13 @@ public class DatasetBuilderTests {
                                                 .headers(new ArrayList<>())
                                                 .rowCount(100L)
                                                 .build())
+                                .status(DatasetStatus.ACTIVE)
                                 .build();
 
-                when(repo.findByUserIdAndDatasetName(1L, "prices")).thenReturn(Optional.of(existing));
+                when(metadataRepo.findByUserIdAndDatasetName(1L, "prices")).thenReturn(Optional.of(existing));
 
                 // --- Act ---
-                DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, repo);
+                DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, metadataRepo);
 
                 // --- Assert ---
                 assertNotNull(result);
@@ -105,7 +103,7 @@ public class DatasetBuilderTests {
                 assertEquals("date", props.getRecordDateColumnName());
                 assertEquals("symbol", props.getRecordSymbolColumnName());
 
-                verify(repo).findByUserIdAndDatasetName(1L, "prices");
+                verify(metadataRepo).findByUserIdAndDatasetName(1L, "prices");
         }
 
         @Test

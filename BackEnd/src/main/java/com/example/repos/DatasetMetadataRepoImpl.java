@@ -23,7 +23,7 @@ public class DatasetMetadataRepoImpl implements DatasetMetadataRepoCustom {
     private final MongoTemplate mongo;
 
     @Override
-    public void updateStagedHeaders(String datasetId, VersionControl staged, MetadataStatus status) {
+    public void updateStagedHeaders(String datasetId, VersionControl staged, DatasetStatus status) {
         Query query = Query.query(Criteria.where(MongoKeys.Common.ID).is(datasetId));
         Update update = new Update()
                 .set(MongoKeys.Dataset.STAGED, staged)
@@ -31,18 +31,19 @@ public class DatasetMetadataRepoImpl implements DatasetMetadataRepoCustom {
                 .set(MongoKeys.Common.UPDATED_AT, Instant.now());
         UpdateResult result = mongo.updateFirst(query, update, DatasetMetadata.class);
         logger.info("[updateStagedHeaders] datasetId={}, matched={}, modified={}",
-        datasetId, result.getMatchedCount(), result.getModifiedCount());
+                datasetId, result.getMatchedCount(), result.getModifiedCount());
     }
 
     @Override
     public void promoteStagedToCurrent(String datasetId) {
         DatasetMetadata meta = mongo.findById(datasetId, DatasetMetadata.class);
-        if (meta == null || meta.getStaged() == null) return;
+        if (meta == null || meta.getStaged() == null)
+            return;
         Query query = Query.query(Criteria.where(MongoKeys.Common.ID).is(datasetId));
         Update update = new Update()
                 .set(MongoKeys.Dataset.CURRENT, meta.getStaged())
                 .set(MongoKeys.Dataset.STAGED, null)
-                .set(MongoKeys.Dataset.STATUS, MetadataStatus.READY)
+                .set(MongoKeys.Dataset.STATUS, DatasetStatus.ACTIVE)
                 .set(MongoKeys.Common.UPDATED_AT, Instant.now());
         mongo.updateFirst(query, update, DatasetMetadata.class);
     }
@@ -52,7 +53,7 @@ public class DatasetMetadataRepoImpl implements DatasetMetadataRepoCustom {
         Query query = Query.query(Criteria.where(MongoKeys.Common.ID).is(datasetId));
         Update update = new Update()
                 .set(MongoKeys.Dataset.STAGED, null)
-                .set(MongoKeys.Dataset.STATUS, MetadataStatus.FAILED)
+                .set(MongoKeys.Dataset.STATUS, DatasetStatus.FAILED)
                 .set(MongoKeys.Common.UPDATED_AT, Instant.now());
         mongo.updateFirst(query, update, DatasetMetadata.class);
     }

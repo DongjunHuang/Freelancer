@@ -3,7 +3,6 @@ package com.example.controllers;
 import com.example.exception.AuthenticationException;
 import com.example.exception.BadRequestException;
 import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
 import com.example.models.DataProps;
 import com.example.repos.DatasetMetadata;
 import com.example.repos.User;
@@ -28,8 +27,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
@@ -69,7 +66,7 @@ public class UploadControllerTests {
 
     @Test
     void testUploadWithNewDatasetWhenFileIsNull() {
-        assertThatThrownBy(() -> controller.uploadWithNewDataset(
+        assertThatThrownBy(() -> controller.uploadCsv(
                 null,
                 datasetReq,
                 authentication))
@@ -81,7 +78,7 @@ public class UploadControllerTests {
     void testUploadWithNewDatasetWhenFileIsEmpty() {
         when(file.isEmpty()).thenReturn(true);
 
-        assertThatThrownBy(() -> controller.uploadWithNewDataset(
+        assertThatThrownBy(() -> controller.uploadCsv(
                 file,
                 datasetReq,
                 authentication))
@@ -93,7 +90,7 @@ public class UploadControllerTests {
     void testUploadWithNewDatasetShouldReturnBadRequest() {
         when(file.isEmpty()).thenReturn(false);
 
-        assertThatThrownBy(() -> controller.uploadWithNewDataset(
+        assertThatThrownBy(() -> controller.uploadCsv(
                 file,
                 datasetReq,
                 authentication))
@@ -113,7 +110,7 @@ public class UploadControllerTests {
         when(authentication.getPrincipal()).thenReturn(user);
         when(uploadService.appendRecords(any(MultipartFile.class), any(DataProps.class))).thenReturn(42L);
 
-        ResponseEntity<?> resp = controller.uploadWithNewDataset(
+        ResponseEntity<?> resp = controller.uploadCsv(
                 file,
                 datasetReq,
                 authentication);

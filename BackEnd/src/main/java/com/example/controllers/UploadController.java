@@ -58,7 +58,7 @@ public class UploadController {
      * @return the result.
      */
     @PostMapping(value = "/uploadCsv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadWithNewDataset(
+    public ResponseEntity<?> uploadCsv(
             @RequestParam("file") MultipartFile file,
             @RequestPart("dataset") DatasetReq req,
             Authentication auth) {
@@ -99,7 +99,8 @@ public class UploadController {
         // Step 2: insert records to the document
         long rowCount = uploadService.appendRecords(file, props);
 
-        // Step 3: update metadata
+        // Step 3: IMPORTANT: COMMIT THE CHANGE,
+        // once commit, user is able to see the data appended
         uploadService.promoteStagedToCurrent(req.getDatasetName(), userId, rowCount);
 
         return ResponseEntity.ok().body(Map.of("Result", "Success"));
@@ -120,6 +121,7 @@ public class UploadController {
         if (metadatas == null) {
             return ResponseEntity.badRequest().body(null);
         }
+
         List<DatasetMetadataResp> responses = new ArrayList<>();
         for (int i = 0; i < metadatas.size(); i++) {
             if (metadatas.get(i) != null) {

@@ -3,10 +3,14 @@ package com.example.repos;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+
+import com.example.exception.ErrorCode;
 
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -22,6 +26,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @CompoundIndex(name = "user_dataset_idx", def = "{'userId': 1, 'datasetName': 1}", unique = true)
+@CompoundIndex(name = "user_updated_at_idx", def = "{'userId': 1, 'updatedAt': -1}")
 public class DatasetMetadata {
     // ==========================================
     @Id
@@ -32,10 +37,12 @@ public class DatasetMetadata {
     private Long userId;
 
     // The creation time of the table
+    @CreatedDate
     @Field(MongoKeys.Common.CREATED_AT)
     private Instant createdAt;
 
     // The last updated time
+    @LastModifiedDate
     @Field(MongoKeys.Common.UPDATED_AT)
     private Instant updatedAt;
 
@@ -44,7 +51,7 @@ public class DatasetMetadata {
 
     @Enumerated(EnumType.STRING)
     @Field(MongoKeys.Dataset.STATUS)
-    private MetadataStatus status;
+    private DatasetStatus status;
 
     @Field(MongoKeys.Dataset.CURRENT)
     private VersionControl current;
@@ -60,6 +67,12 @@ public class DatasetMetadata {
 
     @Field(MongoKeys.Dataset.RECORD_SYMBOL_NAME)
     private String recordSymbolName;
+
+    @Field(MongoKeys.Dataset.LAST_ERROR_CODE)
+    private ErrorCode lastErrorCode;
+
+    @Field(MongoKeys.Dataset.LAST_ERROR_MESSAGE)
+    private String lastErrorMessage;
 
     @Builder
     @Data

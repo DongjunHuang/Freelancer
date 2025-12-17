@@ -50,6 +50,12 @@ public class GlobalExceptionHandler {
         return pd(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getCode(), ex.getMessage());
     }
 
+    @ExceptionHandler(DatasetStatusException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ProblemDetail handleAuth(DatasetStatusException ex) {
+        return pd(HttpStatus.CONFLICT, "Resource Conflict", ex.getCode(), ex.getMessage());
+    }
+
     // ==========================================================
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
