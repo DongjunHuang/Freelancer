@@ -86,7 +86,7 @@ public class UploadController {
         DataProps props = DataProps.builder()
                 .batchId(UUID.randomUUID().toString())
                 .userId(userId)
-                .datasetName(req.getDatasetName())
+                .datasetName(req.getDatasetName().toUpperCase())
                 .recordDateColumnFormat(req.getRecordDateColumnFormat())
                 .recordDateColumnName(dateColumnUpperCase)
                 .recordSymbolColumnName(symbolColumnUpperCase)
@@ -101,7 +101,7 @@ public class UploadController {
 
         // Step 3: IMPORTANT: COMMIT THE CHANGE,
         // once commit, user is able to see the data appended
-        uploadService.promoteStagedToCurrent(req.getDatasetName(), userId, rowCount);
+        uploadService.promoteStagedToCurrent(req.getDatasetName().toUpperCase(), userId, rowCount);
 
         return ResponseEntity.ok().body(Map.of("Result", "Success"));
     }
@@ -115,6 +115,7 @@ public class UploadController {
      */
     @GetMapping("/fetchDatasets")
     public ResponseEntity<List<DatasetMetadataResp>> fetchDatasets(Authentication auth) {
+        // TODO: add check here
         JwtUserDetails user = (JwtUserDetails) auth.getPrincipal();
         Long userId = user.getId();
         List<DatasetMetadata> metadatas = metadataService.getUserDatasets(userId);

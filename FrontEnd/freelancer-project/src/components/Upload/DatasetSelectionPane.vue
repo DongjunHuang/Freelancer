@@ -11,6 +11,7 @@ const props = defineProps<{ state: UploadState, datasets: Dataset[]}>()
 const emit = defineEmits<{
   (e: 'update:state', next: UploadStatePatch): void
   (e: 'delete-dataset', name: string): void
+  (e: 'load-datasets'): void
 }>()
 
 const deleting = ref(false)
@@ -105,7 +106,7 @@ watch(
         type="button"
         class="px-3 py-1 rounded-full"
         :class="usingExisting ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-800'"
-        @click="usingExisting = true">
+        @click="usingExisting = true; emit('load-datasets')">
         Use existing dataset
       </button>
 

@@ -11,14 +11,16 @@ import type { DatasetReq, Dataset } from '@/api/types';
 
 // Import functions
 import { createInitialUploadState } from '@/composables/UploadComposable'
-import { ref, onMounted, computed, reactive } from 'vue'
+import { ref, onMounted, computed, reactive, onBeforeUnmount} from 'vue'
 import { uploadCsv, fetchDatasets, deleteDataset} from '@/api/upload' 
 import { useMessage } from 'naive-ui'
+
 
 // Consts: global params
 const uploadState = reactive<UploadState>(createInitialUploadState())
 const datasets = ref<Dataset[]>([])
 const message = useMessage()
+const uploadStatusEl = ref<HTMLElement | null>(null)
 
 // Consts: UI status
 const loading = ref(false)
@@ -33,6 +35,7 @@ const radius = 16
 const circumference = 2 * Math.PI * radius
 const showProgress = ref(false)
 const isUploading = ref(false)
+const failed = ref<boolean>(false)
 const dashOffset = computed(() =>
   circumference * (1 - progress.value / 100)
 )
@@ -65,6 +68,7 @@ async function startUpload() {
   error.value = ''
   successMsg.value = ''
   abortCtrl = new AbortController();
+  failed.value = false
 
   // Create form data
   const fd = new FormData();
@@ -79,7 +83,6 @@ async function startUpload() {
       return
   }
     
-  //TODO: Change to add new params
   const datasetReq: DatasetReq = {
     datasetName: uploadState.dataset.isNew ? uploadState.dataset.newName 
               : uploadState.dataset.selectedName,
@@ -101,6 +104,7 @@ async function startUpload() {
   } catch (e: any) {
     const detail  = e?.response?.data?.detail
     errorMsg.value = detail
+    failed.value = true
   } finally {
     abortCtrl = null
     isUploading.value = false
@@ -135,7 +139,13 @@ async function loadDatasets() {
     loading.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onGlobalClick)
+})
+
 onMounted(async () => {
+  document.addEventListener('click', onGlobalClick)
   await loadDatasets()
 })
 
@@ -172,17 +182,38 @@ function updateState(next: UploadStatePatch) {
     uploadState.error = next.error
   } 
 }
+
+function clearUploadStatus() {
+  progress.value = 0
+  failed.value = false
+  successMsg.value = ''
+  errorMsg.value = ''
+}
+
+function onGlobalClick(e: MouseEvent) {
+  if (!uploadStatusEl.value) {
+    return
+  }
+    
+  if (!uploadStatusEl.value.contains(e.target as Node)) {
+    clearUploadStatus()
+  }
+}
+
 </script>
 
 <template>
-  <div class="max-w-xl mx-auto">
+  <div
+    ref="uploadStatusEl" 
+    class="max-w-xl mx-auto">
     <!-- Select or add table name-->
     <div>
       <DatasetSelectionPane
         :state="uploadState"
         :datasets="datasets"
         @update:state="updateState"
-        @delete-dataset="handleDeleteDataset"/>
+        @delete-dataset="handleDeleteDataset"
+        @load-datasets="loadDatasets"/>
     </div>
 
     <!-- Drop the files to be uploaded-->
@@ -194,66 +225,52 @@ function updateState(next: UploadStatePatch) {
 
 
     <!--Select required upload file config info--> 
-    <div class="pt-4">
+    <div class="pt-4" v-show="uploadState.dataset.isNew">
       <UploadFileConfigPane
         :state="uploadState"
-        @update:state="updateState"/>
+        @update:state="updateState"/>  
     </div>
     
     <!--Submit button--> 
-    <p v-if="successMsg" class="mt-3 text-sm text-green-600">{{ successMsg }}</p>
-    <div class="pt-4 flex items-center gap-3">
-      <div class="pt-4 flex items-center gap-3">
-        <button     
-          :disabled="!isUploading && !canUpload"
-          @click="isUploading ? cancelUpload() : startUpload()"
-          class="px-4 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-          :class="isUploading
-            ? 'bg-red-500 text-white hover:bg-red-600'
-            : 'bg-black text-white hover:bg-slate-800'">
-          {{ isUploading ? 'Cancel' : 'Upload' }}
-        </button>
-      </div>
-      <p v-if="errorMsg" class="text-red-500 text-sm">
+    <div class="pt-4 flex items-center gap-3 relative">
+      <!-- Upload button -->
+      <button
+        :disabled="!isUploading && !canUpload"
+        @click="isUploading ? cancelUpload() : startUpload()"
+        class="px-4 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+        :class="isUploading
+          ? 'bg-red-500 text-white hover:bg-red-600'
+          : 'bg-black text-white hover:bg-slate-800'">
+        {{ isUploading ? 'Cancel' : 'Upload' }}
+      </button>
+
+      <!-- Status badge -->
+      <span
+        v-if="isUploading || progress > 0 || failed"
+        class="flex items-center justify-center
+              h-5 min-w-[20px] px-1
+              rounded-full text-[11px] font-semibold
+              transition-all duration-300"
+        :class="{
+          'bg-slate-100 text-slate-700': progress < 100 && !failed,
+          'bg-emerald-100 text-emerald-600': progress === 100 && !failed,
+          'bg-red-100 text-red-600 ring-2 ring-red-400': failed
+        }">
+        <template v-if="progress < 100 && !failed">
+          {{ progress }}%
+        </template>
+        <template v-else-if="progress === 100 && !failed">
+          ✓
+        </template>
+        <template v-else>
+          ✕
+        </template>
+      </span>
+
+      <!-- Error message -->
+      <p v-if="errorMsg" class="text-red-500 text-sm ml-2">
         {{ errorMsg }}
       </p>
-      <!-- progress circle -->
-      <div v-if="showProgress"
-          class="relative mt-1 h-10 w-10 flex items-center justify-center">
-        <svg class="h-10 w-10 -rotate-90" viewBox="0 0 40 40">
-          <circle
-            class="text-slate-200"
-            stroke="currentColor"
-            stroke-width="4"
-            fill="transparent"
-            r="16"
-            cx="20"
-            cy="20"
-          />
-          <circle
-            :class="progress === 100 ? 'text-emerald-500' : 'text-sky-500'"
-            stroke="currentColor"
-            stroke-width="4"
-            fill="transparent"
-            r="16"
-            cx="20"
-            cy="20"
-            :stroke-dasharray="circumference"
-            :stroke-dashoffset="dashOffset"
-            stroke-linecap="round"/>
-        </svg>
-
-        <span
-          class="absolute text-[10px] font-semibold"
-          :class="progress === 100 ? 'text-emerald-600' : 'text-slate-800'">
-          <template v-if="progress < 100">
-            {{ progress }}%
-          </template>
-          <template v-else>
-            ✓
-          </template>
-        </span>
-      </div>
     </div>
   </div>
 </template>

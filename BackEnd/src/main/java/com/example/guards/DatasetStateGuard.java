@@ -34,4 +34,9 @@ public class DatasetStateGuard {
 
         return ds;
     }
+
+    public DatasetMetadata check(DatasetAction action, DatasetMetadata dataset) {
+        DatasetRules.assertAllowed(action, dataset.getStatus());
+        return dataset;
+    }
 }

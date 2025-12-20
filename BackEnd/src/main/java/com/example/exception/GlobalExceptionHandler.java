@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
         var first = ex.getBindingResult().getFieldErrors().stream().findFirst();
         String msg = first.map(f -> f.getField() + " " + f.getDefaultMessage()).orElse("Invalid request");
         ProblemDetail p = pd(HttpStatus.BAD_REQUEST, "Validation Failed", "VALIDATION_ERROR", msg);
-        p.setProperty("errors", ex.getBindingResult().getFieldErrors()); // 可裁剪
+        p.setProperty("errors", ex.getBindingResult().getFieldErrors());
         return p;
     }
 

@@ -24,4 +24,5 @@ public class BadRequestException extends RuntimeException {
     public String getCode() {
         return error.getCode();
     }
+
 }

@@ -103,7 +103,7 @@ public class UploadControllerTests {
     void testUploadWithNewDatasetValid() throws Exception {
         String userName = "1234";
         long userId = 123L;
-
+        String datasetName = "MY_TABLE";
         User us = User.builder().username(userName).userId(userId).build();
         JwtUserDetails user = new JwtUserDetails(us, null);
         when(file.isEmpty()).thenReturn(false);
@@ -125,7 +125,7 @@ public class UploadControllerTests {
         DataProps props = propsCaptor.getValue();
 
         assertThat(props.getUserId()).isEqualTo(userId);
-        assertThat(props.getDatasetName()).isEqualTo("my_table");
+        assertThat(props.getDatasetName()).isEqualTo(datasetName);
         assertThat(props.getRecordDateColumnName()).isEqualTo("DATE");
         assertThat(props.getRecordSymbolColumnName()).isEqualTo("SYMBOL");
         assertThat(props.isNewDataset()).isTrue();
@@ -133,7 +133,7 @@ public class UploadControllerTests {
         assertThat(isValidUUID(props.getBatchId())).isTrue();
 
         // promoteStagedToCurrent
-        verify(uploadService).promoteStagedToCurrent("my_table", 123L, 42L);
+        verify(uploadService).promoteStagedToCurrent(datasetName, 123L, 42L);
     }
 
     private boolean isValidUUID(String value) {

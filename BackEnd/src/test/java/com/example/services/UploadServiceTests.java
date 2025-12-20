@@ -1,8 +1,6 @@
 package com.example.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -112,14 +110,10 @@ public class UploadServiceTests {
                                 .rowCount(200L)
                                 .build();
 
-                Instant oldUpdatedAt = Instant.parse("2024-01-01T00:00:00Z");
-
                 DatasetMetadata dataset = DatasetMetadata.builder()
                                 .userId(userId)
                                 .datasetName(datasetName)
                                 .status(DatasetStatus.UPLOADING)
-                                .createdAt(oldUpdatedAt)
-                                .updatedAt(oldUpdatedAt)
                                 .current(current)
                                 .staged(staged)
                                 .build();
@@ -142,10 +136,6 @@ public class UploadServiceTests {
 
                 // 3) change status to ACTIVE
                 assertEquals(DatasetStatus.ACTIVE, dataset.getStatus());
-
-                // 4) updatedAt is updated
-                assertNotNull(dataset.getUpdatedAt());
-                assertNotEquals(oldUpdatedAt, dataset.getUpdatedAt());
 
                 // 5) called save
                 verify(metadataRepo, times(1)).save(dataset);

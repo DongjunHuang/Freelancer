@@ -30,14 +30,16 @@ public enum ErrorCode {
     FILE_READ_FAILED("FILE_READ_FAILED", "Failed to read the file"),
     NOT_VALID_DATE_COLUMN("NOT_VALID_DATE_COLUMN", "Not able to find date column"),
     NOT_VALID_SYMBOL_COLUMN("NOT_VALID_SYMBOL_COLUMN", "Not able to find symbol column"),
+    DATASET_NAME_USED("DATASET_NAME_USED", "The dataset is already existed."),
 
     // Dataset status exception
     DATASET_NOT_AVAILABLE("DATASET_NOT_AVAILABLE", "The dataset is not available, please try again."),
 
     // Dataset Explainable Code
-    UPLOAD_FAILED("UPLOAD_FAILED", "Faile to upload"),
-    DELETE_FAILED("DELETE_FAILED", "Faile to delete the dataset");
+    UPLOAD_FAILED("UPLOAD_FAILED", "Failed to upload"),
+    DELETE_FAILED("DELETE_FAILED", "Failed to delete the dataset");
 
     private final String code;
     private final String message;
+
 }

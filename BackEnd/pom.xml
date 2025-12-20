@@ -137,6 +137,18 @@
 			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+  			<groupId>org.testcontainers</groupId>
+			<artifactId>mysql</artifactId>
+  			<version>1.19.8</version>
+  			<scope>test</scope>
+		</dependency>
+		<dependency>
+  			<groupId>org.testcontainers</groupId>
+  			<artifactId>junit-jupiter</artifactId>
+  			<version>1.19.8</version>
+  			<scope>test</scope>
+		</dependency>
 		<dependency> 
   			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
@@ -145,6 +157,19 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- MockMvc Security -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Embedded Mongo (No Docker) -->
+		<dependency>
+			<groupId>de.flapdoodle.embed</groupId>
+			<artifactId>de.flapdoodle.embed.mongo.spring30x</artifactId>
+			<version>4.11.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -6,12 +6,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.example.exception.BadRequestException;
+import com.example.exception.ErrorCode;
 import com.example.guards.DatasetAction;
 import com.example.guards.DatasetStateGuard;
 import com.example.models.DataProps;
@@ -133,25 +136,36 @@ public class DatasetBuilder {
      * @param props        the props passed to the function.
      * @param metadataRepo the repo
      * @return
-     * @throws Exception
      */
     public DatasetMetadata createIfNotPresentDatasetMetadata(
             DataProps props,
             DatasetMetadataRepo metadataRepo) {
-        if (!props.isNewDataset()) {
-            DatasetMetadata dataset = datasetGuard.loadAndCheck(props.getUserId(), props.getDatasetName(),
-                    DatasetAction.UPLOAD);
+        Optional<DatasetMetadata> datasetOptional = metadataRepo.findByUserIdAndDatasetName(props.getUserId(),
+                props.getDatasetName());
 
-            props.setRecordDateColumnName(dataset.getRecordDateColumnName());
-            props.setRecordSymbolColumnName(dataset.getRecordSymbolName());
-            props.setDatasetId(dataset.getId());
+        // If the dataset is existed.
+        if (datasetOptional.isPresent()) {
+            // If the user requests to create a new dataset, we should not allow for the
+            // same dataset name.
+            // Otherwise, we only need to update the dataset status.
 
-            // The dataset right now should be uploading status
-            dataset.setStatus(DatasetStatus.UPLOADING);
-            return dataset;
+            if (props.isNewDataset()) {
+                throw new BadRequestException(ErrorCode.DATASET_NAME_USED);
+            } else {
+                DatasetMetadata dataset = datasetOptional.get();
+                datasetGuard.check(DatasetAction.UPLOAD, dataset);
+
+                dataset.setStatus(DatasetStatus.UPLOADING);
+
+                // When the dataset exists, the important fields props to update should come
+                // from the dataset queried from the mongo db
+                props.setRecordDateColumnName(dataset.getRecordDateColumnName());
+                props.setRecordSymbolColumnName(dataset.getRecordSymbolName());
+                props.setDatasetId(dataset.getId());
+                return dataset;
+            }
         }
 
-        Instant now = Instant.now();
         // Newly created metadata
         VersionControl current = VersionControl.builder()
                 .version(0)
@@ -160,18 +174,16 @@ public class DatasetBuilder {
                 .build();
 
         // Receive indexes
-        DatasetMetadata dataset = DatasetMetadata.builder()
+        DatasetMetadata newDataset = DatasetMetadata.builder()
                 .userId(props.getUserId())
                 .datasetName(props.getDatasetName())
                 .status(DatasetStatus.UPLOADING)
-                .createdAt(now)
-                .updatedAt(now)
                 .current(current)
                 .staged(null)
                 .recordDateColumnName(props.getRecordDateColumnName())
                 .recordSymbolName(props.getRecordSymbolColumnName())
                 .build();
         logger.info("Find or created dataset for datasetname {}", props.getDatasetName());
-        return dataset;
+        return newDataset;
     }
 }

@@ -4,9 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.guards.DatasetStateGuard;
@@ -72,6 +68,17 @@ public class DatasetBuilderTests {
 
         @Test
         void testExistingDatasetReturnedWhenNotNew() {
+
+                /*
+                 * DatasetMetadata dataset = DatasetMetadata.builder()
+                 * .userId(userId)
+                 * .id(datasetId)
+                 * .datasetName(datasetName)
+                 * .recordDateColumnName(dateColumn)
+                 * .recordSymbolName(symbolColumn)
+                 * .status(DatasetStatus.ACTIVE)
+                 * .build();
+                 */
                 DataProps props = DataProps.builder()
                                 .newDataset(false)
                                 .userId(1L)
@@ -108,32 +115,35 @@ public class DatasetBuilderTests {
 
         @Test
         void testNewDatasetCreatedWhenPropsIsNew() {
-                // --- Arrange ---
-                DatasetMetadataRepo repo = Mockito.mock(DatasetMetadataRepo.class);
+                Long userId = 1L;
+                String datasetName = "dataset";
+                String dateColumn = "date";
+                String symbolColumn = "symbol";
 
+                // --- Arrange ---
                 DataProps props = DataProps.builder()
                                 .newDataset(true)
-                                .userId(1L)
-                                .datasetName("new_prices")
-                                .recordDateColumnName("date")
-                                .recordSymbolColumnName("code")
+                                .userId(userId)
+                                .datasetName(datasetName)
+                                .recordDateColumnName(dateColumn)
+                                .recordSymbolColumnName(symbolColumn)
                                 .build();
+                when(metadataRepo.findByUserIdAndDatasetName(userId, datasetName)).thenReturn(Optional.empty());
 
                 // --- Act ---
-                DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, repo);
+                DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, metadataRepo);
 
                 // --- Assert ---
                 assertNotNull(result);
-                assertEquals("new_prices", result.getDatasetName());
-                assertEquals("date", result.getRecordDateColumnName());
-                assertEquals("code", result.getRecordSymbolName());
+                assertEquals(datasetName, result.getDatasetName());
+                assertEquals(dateColumn, result.getRecordDateColumnName());
+                assertEquals(symbolColumn, result.getRecordSymbolName());
+                assertEquals(DatasetStatus.UPLOADING, result.getStatus());
 
                 assertNotNull(result.getCurrent());
                 assertEquals(0, result.getCurrent().getVersion());
                 assertEquals(0, result.getCurrent().getRowCount());
                 assertTrue(result.getCurrent().getHeaders().isEmpty());
-
-                verify(repo, never()).findByUserIdAndDatasetName(anyLong(), anyString());
         }
 
         @Test

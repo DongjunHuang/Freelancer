@@ -149,6 +149,22 @@ public class UploadService {
 
             return totalInserted;
 
+        } catch (BadRequestException bex) {
+            if (dataset != null) {
+                dataset.setStatus(DatasetStatus.FAILED);
+                dataset.setLastErrorCode(bex.getError());
+                dataset.setLastErrorMessage(bex.getMessage());
+                metadataRepo.save(dataset);
+            }
+            throw bex;
+        } catch (IOException ioex) {
+            if (dataset != null) {
+                dataset.setStatus(DatasetStatus.FAILED);
+                dataset.setLastErrorCode(ErrorCode.FILE_READ_FAILED);
+                dataset.setLastErrorMessage(ioex.getMessage());
+                metadataRepo.save(dataset);
+            }
+            throw new BadRequestException(ErrorCode.FILE_READ_FAILED);
         } catch (Exception e) {
             if (dataset != null) {
                 dataset.setStatus(DatasetStatus.FAILED);
@@ -171,7 +187,6 @@ public class UploadService {
         current.setHeaders(new ArrayList<>(staged.getHeaders()));
         current.setRowCount(staged.getRowCount() + importedRows);
 
-        dataset.setUpdatedAt(Instant.now());
         dataset.setStatus(DatasetStatus.ACTIVE);
         dataset.setStaged(null);
 
