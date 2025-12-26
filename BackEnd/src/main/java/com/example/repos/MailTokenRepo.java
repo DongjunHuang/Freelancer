@@ -27,6 +27,15 @@ public interface MailTokenRepo extends JpaRepository<MailToken, Long> {
     Optional<MailToken> findByUserId(Long userId);
 
     /**
+     * Find by email
+     * 
+     * @param email the email.
+     * 
+     * @return the token.
+     */
+    Optional<MailToken> findByEmail(String email);
+
+    /**
      * delete mailtoken according to email.
      * 
      * @param email the email address.

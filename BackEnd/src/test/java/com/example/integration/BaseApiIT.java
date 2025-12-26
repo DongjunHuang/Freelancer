@@ -1,26 +1,49 @@
 package com.example.integration;
 
+import com.example.repos.DatasetMetadataRepo;
+import com.example.repos.DatasetRecordRepo;
+import com.example.repos.MailTokenRepo;
+import com.example.repos.UserRepo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.AfterEach;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestMailConfig.class)
 public abstract class BaseApiIT {
 
         @Autowired
         protected MockMvc mvc;
+
         @Autowired
         protected ObjectMapper om;
+
+        @Autowired
+        MailTokenRepo mailTokenRepo;
+
+        @Autowired
+        UserRepo userRepo;
+
+        @Autowired
+        DatasetMetadataRepo metadataRepo;
+
+        @Autowired
+        DatasetRecordRepo recordRepo;
 
         protected String bearer(String token) {
                 return "Bearer " + token;
@@ -35,7 +58,15 @@ public abstract class BaseApiIT {
                                                 """.formatted(username, email, password)))
                                 .andExpect(status().is2xxSuccessful());
 
-                // 2) signin
+                // 2) write to mail token
+                var tok = mailTokenRepo.findByEmail(email)
+                                .orElseThrow(() -> new IllegalStateException("No mail token created for " + email));
+
+                // 3). verify the token
+                mvc.perform(get("/auth/verify").param("token", tok.getToken()))
+                                .andExpect(status().is2xxSuccessful());
+
+                // 4). signin
                 var res = mvc.perform(post("/auth/signin")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
@@ -48,5 +79,12 @@ public abstract class BaseApiIT {
 
                 JsonNode root = om.readTree(res);
                 return root.path("accessToken").asText();
+        }
+
+        @AfterEach
+        void cleanup() {
+                recordRepo.deleteAll();
+                metadataRepo.deleteAll();
+                userRepo.deleteAll();
         }
 }

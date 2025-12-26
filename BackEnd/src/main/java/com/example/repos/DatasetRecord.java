@@ -68,12 +68,14 @@ public class DatasetRecord {
 
         for (String col : columns) {
             String value = record.getData().get(col);
-            out.add(DataPoint.builder()
-                    .recordDate(record.getRecordDate())
-                    .symbol(record.getSymbol())
-                    .column(col)
-                    .value(Double.parseDouble(value))
-                    .build());
+            if (value != null) {
+                out.add(DataPoint.builder()
+                        .recordDate(record.getRecordDate())
+                        .symbol(record.getSymbol())
+                        .column(col)
+                        .value(Double.parseDouble(value))
+                        .build());
+            }
         }
 
         return out;

@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -25,10 +26,10 @@ import lombok.RequiredArgsConstructor;
 public class VerificationMailListener {
     private static final Logger logger = LoggerFactory.getLogger(VerificationMailListener.class);
 
-    @Value("${app.frontendBaseUrl}")
+    @Value("${app.frontendBaseUrl:}")
     private String feBaseUrl;
 
-    @Value("${app.sendingEmail}")
+    @Value("${app.sendingEmail:}")
     private String sendingEmail;
 
     private final JavaMailSender mail;
