@@ -2,7 +2,7 @@ package com.example.services;
 
 import org.junit.jupiter.api.Test;
 
-import com.example.repos.ColumnType;
+import com.example.upload.domain.ColumnType;
 import com.example.utils.ColumnsTypeInfer;
 import java.util.Arrays;
 import java.util.Collections;

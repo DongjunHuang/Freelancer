@@ -22,14 +22,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.common.dataset.domain.DataProps;
+import com.example.common.dataset.domain.DatasetMetadata;
+import com.example.common.dataset.domain.DatasetMetadata.ColumnMeta;
+import com.example.common.dataset.domain.DatasetMetadata.VersionControl;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.guards.DatasetStateGuard;
-import com.example.models.DataProps;
-import com.example.repos.ColumnType;
-import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadata.ColumnMeta;
-import com.example.repos.DatasetMetadata.VersionControl;
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetStatus;
+import com.example.upload.app.DatasetBuilder;
+import com.example.upload.domain.ColumnType;
+import com.example.upload.domain.DatasetStatus;
 import com.example.utils.ColumnsTypeInfer;
 
 @ExtendWith(MockitoExtension.class)

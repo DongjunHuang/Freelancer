@@ -10,9 +10,11 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.example.auth.infra.jpa.UserRepo;
+
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
-import com.example.repos.UserRepo;
 
 /**
  * Basic verification for mocked H2 database to be successfully used in

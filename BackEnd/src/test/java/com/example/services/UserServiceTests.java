@@ -7,17 +7,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.example.auth.app.UserService;
+import com.example.auth.domain.MailToken;
+import com.example.auth.domain.SignupReq;
+import com.example.auth.domain.User;
+import com.example.auth.domain.UserStatus;
+import com.example.auth.domain.VerificationCreatedEvent;
+import com.example.auth.infra.jpa.MailTokenRepo;
+import com.example.auth.infra.jpa.UserRepo;
 import com.example.exception.BusinessRuleException;
 import com.example.exception.ConflictException;
 import com.example.exception.ErrorCode;
 import com.example.exception.NotFoundException;
-import com.example.listeners.VerificationCreatedEvent;
-import com.example.repos.MailToken;
-import com.example.repos.MailTokenRepo;
-import com.example.repos.User;
-import com.example.repos.UserRepo;
-import com.example.repos.UserStatus;
-import com.example.requests.SignupReq;
 
 import java.time.LocalDateTime;
 import java.util.Optional;

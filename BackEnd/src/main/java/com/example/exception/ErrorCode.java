@@ -23,6 +23,7 @@ public enum ErrorCode {
     NOT_FOUND("NOT_FOUND", "Resource not found"),
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
     DATASET_NOT_FOUND("DATASET_NOT_FOUND", "Dataset not found"),
+    FEEDBACK_THREAD_NOT_FOUND("FEEDBACK_THREAD_NOT_FOUND", "The feedback thread not found."),
 
     // Bad request exception
     NOT_VALID_FILE("NOT_VALID_FILE", "The file is not valid"),

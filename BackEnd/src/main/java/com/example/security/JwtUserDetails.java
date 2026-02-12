@@ -5,8 +5,8 @@ import java.util.Collection;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.example.repos.User;
-import com.example.repos.UserStatus;
+import com.example.auth.domain.User;
+import com.example.auth.domain.UserStatus;
 
 import lombok.Data;
 

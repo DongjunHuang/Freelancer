@@ -8,12 +8,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.common.dataset.domain.DatasetMetadata;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
 import com.example.exception.NotFoundException;
 import com.example.guards.DatasetStateGuard;
-import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetRecordRepo;
-import com.example.repos.DatasetStatus;
+import com.example.upload.app.MetadataService;
+import com.example.upload.domain.DatasetStatus;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;

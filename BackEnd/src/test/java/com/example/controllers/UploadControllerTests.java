@@ -1,16 +1,18 @@
 package com.example.controllers;
 
+import com.example.auth.domain.User;
+import com.example.common.dataset.domain.DataProps;
+import com.example.common.dataset.domain.DatasetMetadata;
+import com.example.dashboard.domain.DatasetMetadataResp;
 import com.example.exception.AuthenticationException;
 import com.example.exception.BadRequestException;
 import com.example.exception.ErrorCode;
-import com.example.models.DataProps;
-import com.example.repos.DatasetMetadata;
-import com.example.repos.User;
-import com.example.requests.DatasetMetadataResp;
-import com.example.requests.DatasetReq;
 import com.example.security.JwtUserDetails;
-import com.example.services.MetadataService;
-import com.example.services.UploadService;
+import com.example.upload.app.MetadataService;
+import com.example.upload.app.UploadService;
+import com.example.upload.domain.DatasetReq;
+import com.example.upload.interfaces.UploadController;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -69,7 +70,7 @@ public class UploadControllerTests {
         assertThatThrownBy(() -> controller.uploadCsv(
                 null,
                 datasetReq,
-                authentication))
+                userDetails))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage(ErrorCode.NOT_VALID_FILE.getMessage());
     }
@@ -81,39 +82,24 @@ public class UploadControllerTests {
         assertThatThrownBy(() -> controller.uploadCsv(
                 file,
                 datasetReq,
-                authentication))
+                userDetails))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage(ErrorCode.NOT_VALID_FILE.getMessage());
     }
 
     @Test
-    void testUploadWithNewDatasetShouldReturnBadRequest() {
-        when(file.isEmpty()).thenReturn(false);
-
-        assertThatThrownBy(() -> controller.uploadCsv(
-                file,
-                datasetReq,
-                authentication))
-                .isInstanceOf(AuthenticationException.class)
-                .hasMessage(ErrorCode.NOT_VALID_USER.getMessage());
-
-    }
-
-    @Test
     void testUploadWithNewDatasetValid() throws Exception {
-        String userName = "1234";
         long userId = 123L;
         String datasetName = "MY_TABLE";
-        User us = User.builder().username(userName).userId(userId).build();
-        JwtUserDetails user = new JwtUserDetails(us, null);
+        JwtUserDetails user = mock(JwtUserDetails.class);
+        when(user.getId()).thenReturn(userId);
         when(file.isEmpty()).thenReturn(false);
-        when(authentication.getPrincipal()).thenReturn(user);
         when(uploadService.appendRecords(any(MultipartFile.class), any(DataProps.class))).thenReturn(42L);
 
         ResponseEntity<?> resp = controller.uploadCsv(
                 file,
                 datasetReq,
-                authentication);
+                user);
 
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
         @SuppressWarnings("unchecked")
@@ -147,14 +133,12 @@ public class UploadControllerTests {
 
     @Test
     void testFetchDatasetsValid() {
-        String userName = "1234";
         long userId = 123L;
 
-        User us = User.builder().username(userName).userId(userId).build();
-        JwtUserDetails user = new JwtUserDetails(us, null);
+        JwtUserDetails user = mock(JwtUserDetails.class);
+
         // given
-        when(authentication.getPrincipal()).thenReturn(userDetails);
-        when(userDetails.getId()).thenReturn(userId);
+        when(user.getId()).thenReturn(userId);
 
         DatasetMetadata meta1 = DatasetMetadata.builder()
                 .id("ds-1")
@@ -176,7 +160,7 @@ public class UploadControllerTests {
         when(metadataService.getUserDatasets(userId)).thenReturn(list);
 
         // when
-        ResponseEntity<List<DatasetMetadataResp>> resp = controller.fetchDatasets(authentication);
+        ResponseEntity<List<DatasetMetadataResp>> resp = controller.fetchDatasets(user);
 
         // then
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
@@ -202,12 +186,15 @@ public class UploadControllerTests {
     void testFetchDatasetsWhenNoDatasets() {
         // given
         Long userId = 123L;
-        when(authentication.getPrincipal()).thenReturn(userDetails);
-        when(userDetails.getId()).thenReturn(userId);
+
+        JwtUserDetails user = mock(JwtUserDetails.class);
+
+        // given
+        when(user.getId()).thenReturn(userId);
         when(metadataService.getUserDatasets(userId)).thenReturn(List.of());
 
         // when
-        ResponseEntity<List<DatasetMetadataResp>> resp = controller.fetchDatasets(authentication);
+        ResponseEntity<List<DatasetMetadataResp>> resp = controller.fetchDatasets(user);
 
         // then
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();

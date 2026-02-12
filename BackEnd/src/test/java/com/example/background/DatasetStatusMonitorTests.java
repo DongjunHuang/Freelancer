@@ -10,8 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetStatus;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.upload.domain.DatasetStatus;
 
 class DatasetStatusMonitorTests {
 

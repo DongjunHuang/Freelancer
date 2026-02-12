@@ -32,14 +32,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
-import com.example.models.DataProps;
-import com.example.repos.ColumnType;
-import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadata.ColumnMeta;
-import com.example.repos.DatasetMetadata.VersionControl;
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetRecordRepo;
-import com.example.repos.DatasetStatus;
+import com.example.common.dataset.domain.DataProps;
+import com.example.common.dataset.domain.DatasetMetadata;
+import com.example.common.dataset.domain.DatasetMetadata.ColumnMeta;
+import com.example.common.dataset.domain.DatasetMetadata.VersionControl;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
+import com.example.upload.app.DatasetBuilder;
+import com.example.upload.app.UploadService;
+import com.example.upload.domain.ColumnType;
+import com.example.upload.domain.DatasetStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UploadServiceTests {

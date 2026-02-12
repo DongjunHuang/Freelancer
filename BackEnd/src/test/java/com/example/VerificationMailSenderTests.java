@@ -8,8 +8,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+
+import com.example.auth.infra.jpa.VerificationMailListener;
+
 import static org.mockito.Mockito.verify;
-import com.example.listeners.VerificationMailListener;
 
 public class VerificationMailSenderTests {
 

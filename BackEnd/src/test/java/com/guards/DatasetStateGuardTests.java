@@ -10,13 +10,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.common.dataset.domain.DatasetMetadata;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.exception.DatasetStatusException;
 import com.example.exception.ErrorCode;
 import com.example.guards.DatasetAction;
 import com.example.guards.DatasetStateGuard;
-import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetStatus;
+import com.example.upload.domain.DatasetStatus;
 
 import static org.assertj.core.api.Assertions.*;
 

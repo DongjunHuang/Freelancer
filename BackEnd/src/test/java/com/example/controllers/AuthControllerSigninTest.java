@@ -1,11 +1,13 @@
 package com.example.controllers;
 
-import com.example.repos.RefreshToken;
-import com.example.requests.SigninReq;
+import com.example.auth.app.RefreshTokenService;
+import com.example.auth.domain.RefreshToken;
+import com.example.auth.domain.SigninReq;
+import com.example.auth.interfaces.AuthController;
 import com.example.security.JwtUserDetails;
 import com.example.security.SecretService;
 import com.example.security.TokenInfo;
-import com.example.services.RefreshTokenService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

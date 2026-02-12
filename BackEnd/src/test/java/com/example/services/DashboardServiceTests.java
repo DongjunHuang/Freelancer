@@ -22,18 +22,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
+import com.example.common.dataset.domain.DatasetMetadata;
+import com.example.common.dataset.domain.DatasetMetadata.VersionControl;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
+import com.example.dashboard.app.DashboardService;
+import com.example.dashboard.domain.DataPoint;
+import com.example.dashboard.domain.DatasetRecord;
+import com.example.dashboard.domain.FetchRecordsProps;
+import com.example.dashboard.domain.FetchRecordsResp;
 import com.example.exception.ErrorCode;
 import com.example.exception.NotFoundException;
 import com.example.guards.DatasetStateGuard;
-import com.example.models.FetchRecordsProps;
-import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadata.VersionControl;
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetRecord;
-import com.example.repos.DatasetRecordRepo;
-import com.example.repos.DatasetStatus;
-import com.example.requests.DataPoint;
-import com.example.requests.FetchRecordsResp;
+import com.example.upload.domain.DatasetStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class DashboardServiceTests {

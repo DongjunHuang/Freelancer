@@ -1,10 +1,11 @@
 package com.example.controllers;
 
-import com.example.models.FetchRecordsProps;
-import com.example.requests.FetchRecordsReq;
-import com.example.requests.FetchRecordsResp;
+import com.example.dashboard.app.DashboardService;
+import com.example.dashboard.domain.FetchRecordsProps;
+import com.example.dashboard.domain.FetchRecordsReq;
+import com.example.dashboard.domain.FetchRecordsResp;
+import com.example.dashboard.interfaces.DashboardController;
 import com.example.security.JwtUserDetails;
-import com.example.services.DashboardService;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,10 +30,7 @@ public class DashboardControllerTests {
     private DashboardService dashboardService;
 
     @Mock
-    private Authentication authentication;
-
-    @Mock
-    private JwtUserDetails principal;
+    private JwtUserDetails jwtUserDetails;
 
     @InjectMocks
     private DashboardController controller;
@@ -42,8 +39,7 @@ public class DashboardControllerTests {
     void testQueryDatapointsShouldUseUserIdFromAuthentication() throws Exception {
         Long userId = 123L;
 
-        when(authentication.getPrincipal()).thenReturn(principal);
-        when(principal.getId()).thenReturn(userId);
+        when(jwtUserDetails.getId()).thenReturn(userId);
 
         FetchRecordsReq req = new FetchRecordsReq();
 
@@ -58,7 +54,7 @@ public class DashboardControllerTests {
         when(dashboardService.queryDatapoints(eq(userId), propsCaptor.capture())).thenReturn(serviceResp);
 
         // when
-        ResponseEntity<FetchRecordsResp> response = controller.queryDatapoints(authentication, req);
+        ResponseEntity<FetchRecordsResp> response = controller.queryDatapoints(req, jwtUserDetails);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(serviceResp, response.getBody());
@@ -68,9 +64,5 @@ public class DashboardControllerTests {
 
         FetchRecordsProps capturedProps = propsCaptor.getValue();
         assertNotNull(capturedProps);
-
-        verify(authentication).getPrincipal();
-        verify(principal).getId();
-        verifyNoMoreInteractions(dashboardService, authentication, principal);
     }
 }

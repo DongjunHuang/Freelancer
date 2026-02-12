@@ -1,7 +1,8 @@
 package com.example.services;
 
-import com.example.repos.RefreshToken;
-import com.example.repos.RefreshTokenRepo;
+import com.example.auth.app.RefreshTokenService;
+import com.example.auth.domain.RefreshToken;
+import com.example.auth.infra.jpa.RefreshTokenRepo;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

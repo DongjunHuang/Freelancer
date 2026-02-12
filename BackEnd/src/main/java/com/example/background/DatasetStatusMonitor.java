@@ -8,9 +8,9 @@ import java.util.List;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.example.repos.DatasetMetadata;
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetStatus;
+import com.example.common.dataset.domain.DatasetMetadata;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.upload.domain.DatasetStatus;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

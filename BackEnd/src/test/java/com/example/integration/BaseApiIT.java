@@ -1,18 +1,16 @@
 package com.example.integration;
 
-import com.example.repos.DatasetMetadataRepo;
-import com.example.repos.DatasetRecordRepo;
-import com.example.repos.MailTokenRepo;
-import com.example.repos.UserRepo;
+import com.example.auth.infra.jpa.MailTokenRepo;
+import com.example.auth.infra.jpa.UserRepo;
+import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

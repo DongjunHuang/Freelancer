@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import com.example.repos.ColumnType;
+import com.example.upload.domain.ColumnType;
 
 /**
  * The utility class to infer the type of the columns.
