@@ -12,7 +12,7 @@ const route = useRoute()
       <AppHeader v-show="route.meta.layout !== 'blank'" />
 
       <!-- the main part-->
-      <main class="pt-16">  
+      <main>  
         <n-message-provider>
           <RouterView />
         </n-message-provider>

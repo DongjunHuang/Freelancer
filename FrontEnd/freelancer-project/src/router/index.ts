@@ -7,6 +7,7 @@ import Dashboard from '@/views/Dashboard.vue';
 import Verify from '@/views/Verify.vue'
 import Upload from '@/views/Upload.vue'
 import FeedBack from '@/views/Feedback.vue'
+import Home from '@/views/Home.vue'
 
 import { useAuth } from '@/stores/auth'
 
@@ -15,6 +16,12 @@ const router =  createRouter({
   history: createWebHistory(BASE),
   routes: [
     // testing only
+    {
+      path: '/',
+      name: 'home',
+      component: Home,
+      meta: { requiresAuth: false } 
+    },
     { 
       path: "/signin", 
       component: Signin, 
@@ -50,7 +57,7 @@ const router =  createRouter({
     { 
       path: '/feedback(not ready)', 
       component: FeedBack,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: false }
     }, 
   ]
 })
