@@ -17,7 +17,7 @@ export const uploadCsv = (
     new Blob([JSON.stringify(dataset)], { type: 'application/json' }),
   );
   
-  return http.post('/upload/uploadCsv', formData, {
+  return http.post(`/upload/uploadCsv`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -33,7 +33,7 @@ export const uploadCsv = (
 
 // The api to fetch datasets for the user
 export async function fetchDatasets(): Promise<Dataset[]> {
-  const res = await http.get<Dataset[]>('/dashboard/fetchDatasets') 
+  const res = await http.get<Dataset[]>(`/dashboard/fetchDatasets`) 
   return res.data
 }
 

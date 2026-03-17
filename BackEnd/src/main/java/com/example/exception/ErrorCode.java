@@ -18,6 +18,7 @@ public enum ErrorCode {
     TOKEN_INVALID("TOKEN_INVALID", "The token is not valid."),
 
     NOT_VALID_USER("NOT_VALID_USER", "The user is not valid"),
+    NOT_VALID_ADMIN("NOT_VALID_ADMIN", "The user is not valid admin"),
 
     // Not found exception
     NOT_FOUND("NOT_FOUND", "Resource not found"),

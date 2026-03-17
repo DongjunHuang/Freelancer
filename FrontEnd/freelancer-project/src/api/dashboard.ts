@@ -5,7 +5,7 @@ import type { Dataset, FetchRecordsResp } from '@/api/types'
 export const refreshAccessTokenRequest = () => http.get(`/dashboard/getNumberSql`)
 
 export async function fetchDatasets(): Promise<Dataset[]> {
-    const res = await http.get<Dataset[]>('/dashboard/fetchDatasets') 
+    const res = await http.get<Dataset[]>(`/dashboard/fetchDatasets`) 
     return res.data
 }
 
@@ -19,7 +19,7 @@ export interface FetchRecordsParams {
 
 export const fetchDatapoints = (params: FetchRecordsParams) => {
     return http.post<FetchRecordsResp>(
-        '/dashboard/queryDatapoints', 
+        `/dashboard/queryDatapoints`, 
         params
     )
 }

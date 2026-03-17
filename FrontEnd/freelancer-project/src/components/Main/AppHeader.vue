@@ -38,7 +38,7 @@ async function signOut () {
           Dashboard
         </RouterLink>
         <RouterLink
-          to="/feedback"
+          to="/issue"
           class="hover:text-blue-700 transition-colors"
           active-class="text-blue-800 font-semibold">
           Feedback

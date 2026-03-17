@@ -32,6 +32,9 @@ public class SecretService {
     // Refresh Token TTL
     private final long REFRESH_EXPIRATION = 1000L * 60 * 60 * 24 * 7;
 
+    // Access Token TTL for admin, 2 hours
+    private final long ADMIN_ACCESS_EXPIRATION = 1000 * 60 * 60 * 2;
+
     // The generated key according to private key string
     private String privateKeyBase64;
     private Key key;
@@ -66,6 +69,14 @@ public class SecretService {
         Map<String, String> map = new HashMap<String, String>();
         map.put("email", email);
         return generateToken(map, username, ACCESS_EXPIRATION);
+    }
+
+    public String generateAdminAccessToken(String username) {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("role", "ADMIN");
+        map.put("type", "ADMIN_ACCESS");
+        map.put("iss", "freelancer-admin");
+        return generateToken(map, username, ADMIN_ACCESS_EXPIRATION);
     }
 
 

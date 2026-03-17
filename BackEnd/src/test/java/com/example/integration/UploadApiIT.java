@@ -8,8 +8,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 
-import com.example.auth.domain.User;
-import com.example.auth.domain.UserStatus;
+import com.example.auth.domain.user.User;
+import com.example.auth.domain.user.UserStatus;
 import com.example.auth.infra.jpa.UserRepo;
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;

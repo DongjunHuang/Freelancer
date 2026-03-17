@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 
+// The normal user log in.
 type User = { username: string; email: string }
 export const useAuth = defineStore('auth', {
   state: () => ({

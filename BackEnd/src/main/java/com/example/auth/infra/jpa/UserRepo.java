@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.auth.domain.User;
+import com.example.auth.domain.user.User;
 
 public interface UserRepo extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);

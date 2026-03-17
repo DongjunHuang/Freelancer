@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .userDetailsService(customUserDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/**", "/admin/auth/**").permitAll()
                         .anyRequest()
                         .authenticated())
                 .exceptionHandling(e -> e

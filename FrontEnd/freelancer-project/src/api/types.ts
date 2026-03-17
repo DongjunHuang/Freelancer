@@ -37,7 +37,7 @@ export interface FetchRecordsResp {
 
 export interface Series { 
     key: string; 
-    label: string; 
+    label: string;
     points: Array<number | null> 
 }
 
@@ -45,4 +45,4 @@ export interface ChartData {
     labels: string[]
     symbols: string[]
     seriesMap: Record<string, Array<number | null>>
-  }
+}

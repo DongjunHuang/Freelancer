@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.example.auth.domain.VerificationCreatedEvent;
+import com.example.auth.domain.user.VerificationCreatedEvent;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

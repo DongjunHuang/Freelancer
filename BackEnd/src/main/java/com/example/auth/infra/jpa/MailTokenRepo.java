@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.auth.domain.MailToken;
+import com.example.auth.domain.user.MailToken;
 
 /**
  * The mail token repo to issue mail token to user.

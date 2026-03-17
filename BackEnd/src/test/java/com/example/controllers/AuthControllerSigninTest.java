@@ -1,9 +1,9 @@
 package com.example.controllers;
 
-import com.example.auth.app.RefreshTokenService;
-import com.example.auth.domain.RefreshToken;
-import com.example.auth.domain.SigninReq;
-import com.example.auth.interfaces.AuthController;
+import com.example.auth.app.user.RefreshTokenService;
+import com.example.auth.domain.user.RefreshToken;
+import com.example.auth.domain.user.SigninReq;
+import com.example.auth.interfaces.UserAuthController;
 import com.example.security.JwtUserDetails;
 import com.example.security.SecretService;
 import com.example.security.TokenInfo;
@@ -56,7 +56,7 @@ public class AuthControllerSigninTest {
     HttpServletRequest request;
 
     @InjectMocks
-    AuthController controller;
+    UserAuthController controller;
 
     @Test
     void testSigninValid() {
