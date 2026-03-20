@@ -2,15 +2,13 @@
 import type { DashboardFilters } from '@/composables/DashboardState'
 
 const props = defineProps<{
-  filters: DashboardFilters,
+  filters: DashboardFilters
 }>()
 </script>
 
 <template>
   <div class="rounded-2xl bg-white p-4 shadow-sm">
-    <h3 class="text-sm font-semibold text-slate-900">
-      Current dataset
-    </h3>
+    <h3 class="text-sm font-semibold text-slate-900">Current dataset</h3>
     <div class="mt-3 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
       <p>
         Name：
@@ -31,23 +29,20 @@ const props = defineProps<{
   </div>
 
   <div class="rounded-2xl bg-white p-4 shadow-sm">
-    <h3 class="text-sm font-semibold text-slate-900">
-      Normal view
-    </h3>
+    <h3 class="text-sm font-semibold text-slate-900">Normal view</h3>
     <p class="mt-1 text-xs text-slate-500">
       TODO: save normal combination of dataset + columns + time
     </p>
     <button
       type="button"
-      class="mt-3 w-full rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 hover:border-slate-400">
-        + Save current view
+      class="mt-3 w-full rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 hover:border-slate-400"
+    >
+      + Save current view
     </button>
   </div>
 
   <div class="rounded-2xl bg-white p-4 shadow-sm">
-    <h3 class="text-sm font-semibold text-slate-900">
-      Tips
-    </h3>
+    <h3 class="text-sm font-semibold text-slate-900">Tips</h3>
     <ul class="mt-2 space-y-1 text-xs text-slate-500">
       <li>First select dataset，then select columns and date。</li>
     </ul>

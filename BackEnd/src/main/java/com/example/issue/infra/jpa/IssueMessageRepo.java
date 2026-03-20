@@ -2,7 +2,7 @@ package com.example.issue.infra.jpa;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.issue.domain.IssueMessage;
+import com.example.issue.domain.common.IssueMessage;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 

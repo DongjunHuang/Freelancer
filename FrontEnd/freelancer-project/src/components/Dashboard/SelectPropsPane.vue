@@ -7,8 +7,8 @@ import type { DashboardFilters } from '@/composables/DashboardState'
 import type { ColumnMeta } from '@/api/types'
 
 // Only read
-const props = defineProps<{filters: DashboardFilters, metricColumns: ColumnMeta[]}>()
-const emit = defineEmits<{'update:filters': [DashboardFilters], 'generate': []}>()
+const props = defineProps<{ filters: DashboardFilters; metricColumns: ColumnMeta[] }>()
+const emit = defineEmits<{ 'update:filters': [DashboardFilters]; generate: [] }>()
 
 // Preset time
 // ========================================
@@ -56,9 +56,7 @@ function onToggleColumn(name: string, event: Event) {
   const checked = (event.target as HTMLInputElement).checked
   const current = props.filters.selectedColumns
 
-  const next = checked
-    ? [...current, name]                       
-    : current.filter((col) => col !== name) 
+  const next = checked ? [...current, name] : current.filter((col) => col !== name)
 
   emit(DashboardEvents.UpdateFilters, {
     ...props.filters,
@@ -68,8 +66,7 @@ function onToggleColumn(name: string, event: Event) {
 
 function isColumnDisabled(name: string) {
   const current = props.filters.selectedColumns
-  if (current.includes(name)) 
-    return false
+  if (current.includes(name)) return false
   return current.length >= MAX_SELECTED
 }
 
@@ -78,28 +75,21 @@ function updateSymbolString(event: Event) {
 
   emit(DashboardEvents.UpdateFilters, {
     ...props.filters,
-    symbols: value
+    symbols: value,
   })
 }
-
 </script>
 
 <template>
   <div class="rounded-2xl bg-white p-5 shadow-sm">
     <div class="mb-3">
-      <h2 class="text-base font-semibold text-slate-900">
-        Select columns and data range
-      </h2>
-      <p class="mt-1 text-xs text-slate-500">
-        select at most 2 columns，then select time range
-      </p>
+      <h2 class="text-base font-semibold text-slate-900">Select columns and data range</h2>
+      <p class="mt-1 text-xs text-slate-500">select at most 2 columns，then select time range</p>
     </div>
 
     <!-- 🔹 Symbols -->
     <div class="mb-4">
-      <label class="text-xs font-medium text-slate-700">
-        Symbols
-      </label>
+      <label class="text-xs font-medium text-slate-700"> Symbols </label>
       <input
         :value="filters.symbols"
         @input="updateSymbolString($event)"
@@ -108,21 +98,22 @@ function updateSymbolString(event: Event) {
         placeholder="e.g. AAPL, MSFT, SPX"
       />
       <p class="mt-1 text-[11px] text-slate-400">
-        Use comma or space to separate multiple symbols. 
+        Use comma or space to separate multiple symbols.
       </p>
     </div>
 
     <!-- Columns selection -->
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <label class="text-xs font-medium text-slate-700">
-          Columns（at most 2）
-        </label>
-        <div class="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
+        <label class="text-xs font-medium text-slate-700"> Columns（at most 2） </label>
+        <div
+          class="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2"
+        >
           <label
             v-for="col in metricColumns"
             :key="col.columnName"
-            class="flex cursor-pointer items-center justify-between rounded-lg px-2 py-1 text-xs hover:bg-slate-100">
+            class="flex cursor-pointer items-center justify-between rounded-lg px-2 py-1 text-xs hover:bg-slate-100"
+          >
             <div class="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -141,21 +132,18 @@ function updateSymbolString(event: Event) {
             </span>
           </label>
 
-          <p v-if="metricColumns.length === 0"
-            class="py-2 text-center text-xs text-slate-400">
+          <p v-if="metricColumns.length === 0" class="py-2 text-center text-xs text-slate-400">
             Current dataset does not have Metric columns
           </p>
         </div>
         <p class="mt-1 text-[11px] text-slate-400">
-          Selected {{ filters.selectedColumns?.length ?? 0}}/2
+          Selected {{ filters.selectedColumns?.length ?? 0 }}/2
         </p>
       </div>
 
       <!-- Time range -->
       <div>
-        <label class="text-xs font-medium text-slate-700">
-          Date range
-        </label>
+        <label class="text-xs font-medium text-slate-700"> Date range </label>
 
         <div class="mt-1 flex flex-wrap gap-2">
           <button

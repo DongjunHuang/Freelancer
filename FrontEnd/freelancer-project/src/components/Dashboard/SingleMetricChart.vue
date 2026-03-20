@@ -6,7 +6,7 @@ const props = defineProps<{
   selectedKeys: string[]
   seriesMap: Record<string, Array<number | null>>
 }>()
-import { ref, watch, onMounted, onBeforeUnmount,computed, nextTick} from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
 
 const onResize = () => chart?.resize()
@@ -14,7 +14,7 @@ const chartEl = ref<HTMLElement | null>(null)
 let chart: echarts.ECharts | null = null
 
 function buildOption(): echarts.EChartsOption {
-  const series = props.selectedKeys.map(sym => ({
+  const series = props.selectedKeys.map((sym) => ({
     name: sym,
     type: 'line' as const,
     showSymbol: false,
@@ -30,26 +30,26 @@ function buildOption(): echarts.EChartsOption {
 
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'line' }
+      axisPointer: { type: 'line' },
     },
 
     xAxis: {
       type: 'time',
-      axisLabel: { hideOverlap: true }
+      axisLabel: { hideOverlap: true },
     },
 
     yAxis: {
       type: 'value',
       name: props.column,
-      nameGap: 18
+      nameGap: 18,
     },
 
     dataZoom: [
       { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true },
-      { type: 'slider', xAxisIndex: 0, height: 18, bottom: 12 }
+      { type: 'slider', xAxisIndex: 0, height: 18, bottom: 12 },
     ],
 
-    series
+    series,
   }
 }
 
@@ -88,7 +88,7 @@ onBeforeUnmount(() => {
 watch(
   () => [props.labels, props.selectedKeys, props.seriesMap, props.column],
   () => render(),
-  { deep: true, immediate: true }
+  { deep: true, immediate: true },
 )
 
 const emit = defineEmits<{
@@ -97,7 +97,7 @@ const emit = defineEmits<{
 
 const selectedKeysModel = computed<string[]>({
   get: () => props.selectedKeys ?? [],
-  set: (v) => emit('update:selectedKeys', v)
+  set: (v) => emit('update:selectedKeys', v),
 })
 
 function selectAll() {
@@ -127,8 +127,8 @@ function unselectAll() {
       <!-- left: diagram -->
       <div class="flex-1">
         <div
-          class="h-[360px] md:h-[480px] rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
-          
+          class="h-[360px] md:h-[480px] rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3"
+        >
           <p v-if="!labels.length" class="text-xs text-slate-500">
             No data. Please generate records first.
           </p>
@@ -142,27 +142,27 @@ function unselectAll() {
       <div class="w-full md:w-48">
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-2">
           <div class="mb-1 flex items-center justify-between">
-            <span class="text-[11px] font-medium text-slate-700">
-              Symbols
-            </span>
+            <span class="text-[11px] font-medium text-slate-700"> Symbols </span>
             <div class="flex items-center gap-2">
               <button
                 type="button"
                 class="text-[10px] text-slate-500 hover:text-slate-900"
-                @click="selectAll">
+                @click="selectAll"
+              >
                 All
               </button>
 
               <button
                 type="button"
                 class="text-[10px] text-slate-500 hover:text-slate-900"
-                @click="unselectAll">
+                @click="unselectAll"
+              >
                 None
               </button>
 
               <span class="text-[10px] text-slate-400">
                 {{ symbols.length }}
-              </span>  
+              </span>
             </div>
           </div>
 
@@ -174,12 +174,14 @@ function unselectAll() {
             <label
               v-for="sym in symbols"
               :key="sym"
-              class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-slate-100">
+              class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-slate-100"
+            >
               <input
                 type="checkbox"
                 class="h-3 w-3 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
                 :value="sym"
-                v-model="selectedKeysModel"/>
+                v-model="selectedKeysModel"
+              />
               <span class="truncate text-slate-800" :title="sym">
                 {{ sym }}
               </span>

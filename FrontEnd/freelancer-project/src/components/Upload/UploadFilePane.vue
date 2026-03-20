@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import {ref} from 'vue'
+import { ref } from 'vue'
 import { UploadEvents } from '@/constants/events'
-import type { UploadState, UploadStatePatch} from '@/composables/UploadComposable'
+import type { UploadState, UploadStatePatch } from '@/composables/UploadComposable'
 
 // Only read props
 const props = defineProps<{
-  state: UploadState,
+  state: UploadState
 }>()
 
 // Change events
@@ -17,25 +17,27 @@ function emitPatch(patch: UploadStatePatch) {
   emit(UploadEvents.UpdateState, patch)
 }
 
-const isDragging = ref(false)  
+const isDragging = ref(false)
 const error = ref('')
 const uploading = ref(false)
 
-
 // The action to upload files
-function onDragOver() { isDragging.value = true }
-function onDragLeave() { isDragging.value = false }
+function onDragOver() {
+  isDragging.value = true
+}
+function onDragLeave() {
+  isDragging.value = false
+}
 function onDrop(e: DragEvent) {
   isDragging.value = false
   const f = e.dataTransfer?.files?.[0]
-  if (f) 
-    handleFile(f)
+  if (f) handleFile(f)
 }
 
 const fileInput = ref<HTMLInputElement | null>(null)
 
 function onFileChange(e: Event) {
-  const target = e.target as HTMLInputElement  
+  const target = e.target as HTMLInputElement
   const f = target.files?.[0]
   if (f) {
     handleFile(f)
@@ -48,7 +50,7 @@ async function handleFile(f: File) {
     emitPatch({
       error: 'Please select a CSV file',
       file: null,
-      config: { headers: [] }
+      config: { headers: [] },
     })
     return
   }
@@ -58,7 +60,7 @@ async function handleFile(f: File) {
     emitPatch({
       error: 'File too large (max 5MB)',
       file: null,
-      config: { headers: [] }
+      config: { headers: [] },
     })
     return
   }
@@ -66,14 +68,14 @@ async function handleFile(f: File) {
   // Clear error + set file
   emitPatch({
     error: '',
-    file: f
+    file: f,
   })
 
   const extracted = await extractHeaders(f)
 
-  // Set headers (✅ 在 config 里)
+  // Set headers
   emitPatch({
-    config: { headers: extracted }
+    config: { headers: extracted },
   })
 
   if (fileInput.value) {
@@ -85,7 +87,7 @@ function clearFile() {
   emitPatch({
     file: null,
     error: '',
-    config: { headers: [] }
+    config: { headers: [] },
   })
 
   if (fileInput.value) {
@@ -95,34 +97,38 @@ function clearFile() {
 
 // Extract headers from the corresponding datasets
 async function extractHeaders(file: File): Promise<string[]> {
-  const text = await file.text();
+  const text = await file.text()
 
-  const firstLine = text.split(/\r?\n/)[0];
+  const firstLine = text.split(/\r?\n/)[0]
 
   const headers = firstLine
     .split(',')
-    .map(h => h.trim())
-    .filter(h => h.length > 0);
-    return [...headers];
+    .map((h) => h.trim())
+    .filter((h) => h.length > 0)
+  return [...headers]
 }
 </script>
 
 <template>
   <label
     class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-2xl cursor-pointer transition bg-white hover:bg-gray-50"
-    :class="[isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300', error ? 'border-red-500' : '']"
+    :class="[
+      isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300',
+      error ? 'border-red-500' : '',
+    ]"
     @dragover.prevent="onDragOver"
     @dragleave.prevent="onDragLeave"
     @drop.prevent="onDrop"
     role="button"
-    tabindex="0">
-
+    tabindex="0"
+  >
     <input
       ref="fileInput"
       type="file"
       class="hidden"
       accept=".csv,text/csv"
-      @change="onFileChange"/>
+      @change="onFileChange"
+    />
 
     <div class="text-center px-6">
       <div class="text-sm text-gray-700">
@@ -133,19 +139,21 @@ async function extractHeaders(file: File): Promise<string[]> {
 
       <div
         v-if="props.state.file"
-        class="mt-4 flex items-center justify-center gap-3 bg-gray-50 border rounded-lg py-2 px-4 shadow-sm">
+        class="mt-4 flex items-center justify-center gap-3 bg-gray-50 border rounded-lg py-2 px-4 shadow-sm"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-8 w-8 text-blue-600"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          stroke-width="2">
-        
+          stroke-width="2"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
-            d="M7 21h10a2 2 0 002-2V7l-5-5H7a2 2 0 00-2 2v16a2 2 0 002 2z"/>
+            d="M7 21h10a2 2 0 002-2V7l-5-5H7a2 2 0 00-2 2v16a2 2 0 002 2z"
+          />
         </svg>
 
         <div class="text-left">
@@ -164,11 +172,8 @@ async function extractHeaders(file: File): Promise<string[]> {
 
   <!-- The uploading progress bar-->
   <div class="mt-4 flex items-center gap-3">
-    <button
-    class="px-3 py-2 rounded-xl border"
-    :disabled="uploading"
-    @click="clearFile">
-    Clear
+    <button class="px-3 py-2 rounded-xl border" :disabled="uploading" @click="clearFile">
+      Clear
     </button>
   </div>
 </template>

@@ -1,4 +1,4 @@
-package com.example.issue.domain;
+package com.example.issue.domain.user;
 
 import lombok.Builder;
 import lombok.Data;

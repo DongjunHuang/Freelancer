@@ -1,4 +1,4 @@
-package com.example.issue.domain;
+package com.example.issue.domain.common;
 
 public enum IssueType {
     BUG,

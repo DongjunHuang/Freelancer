@@ -1,53 +1,68 @@
-export type ThreadStatus =
-  | "WAITING_USER"
-  | "WAITING_ADMIN"
-  | "RESOLVED";
-
-export type ThreadFilterStatus =
-  | "OPEN"
-  | "WAITING_USER"
-  | "WAITING_ADMIN"
-  | "RESOLVED";
-
-export type UserType = "USER" | "ADMIN";
-
-export type ThreadType = "BUG" | "PERFORMANCE" |  "UX" | "SUGGESTION";
-  
-export interface ThreadItem {
-  id: number;
-  title: string;
-  status: ThreadStatus;
-  type: ThreadType;
-  lastMessageAt: string;
-  createdAt: string;
-  unreadByUser: number;
-  unreadByAdmin: number;
+export enum ThreadStatus {
+  WAITING_ADMIN = 'WAITING_ADMIN',
+  WAITING_USER = 'WAITING_USER',
+  RESOLVED = 'RESOLVED',
 }
 
-export interface ThreadPageResp {
-  items: ThreadItem[];
-  nextCursor: string | null;
-  hasMore: boolean;
+export enum ThreadFilterStatus {
+  OPEN = 'OPEN',
+  WAITING_ADMIN = 'WAITING_ADMIN',
+  WAITING_USER = 'WAITING_USER',
+  RESOLVED = 'RESOLVED',
+}
+
+export enum ThreadType {
+  BUG = 'BUG',
+  PERFORMANCE = 'PERFORMANCE',
+  UX = 'UX',
+  SUGGESTION = 'SUGGESTION',
+}
+
+export interface Thread {
+  id: number
+  title: string
+  status: ThreadStatus
+  type: ThreadType
+  lastMessageAt: string
+  createdAt: string
+  unreadByUser: number
+  unreadByAdmin: number
 }
 
 export interface GetThreadsParams {
-  status?: string;
-  size?: number;
-  cursor?: string | null;
+  status?: string
+  size?: number
+  cursor?: string | null
 }
 
-export type ThreadMessageDto = {
-    id: number;
-    threadId: number;
-    userType: UserType;
-    senderId: number;
-    body: string;
-    isInternal: boolean;
-    createdAt: string;
-  };
+export interface ThreadPageResp {
+  items: Thread[]
+  nextCursor: string | null
+  hasMore: boolean
+}
 
-  export type MessagePageResp = {
-    items: ThreadMessageDto[];
-    nextCursor: string | null;
-    hasMore: boolean;
-  };
+export type AdminThreadStatsResp = {
+  all: number
+  waitingAdmin: number
+  waitingUser: number
+  resolved: number
+  open: number
+}
+
+export type AdminThread = {
+  id: number
+  userId: number
+  title: string
+  status: ThreadStatus
+  type: ThreadType
+  createdAt: string
+  lastMessageAt: string
+  unreadByUser: number
+  unreadByAdmin: number
+}
+
+export interface AdminThreadPageResp {
+  items: AdminThread[]
+  nextCursor: string | null
+  hasMore: boolean
+}

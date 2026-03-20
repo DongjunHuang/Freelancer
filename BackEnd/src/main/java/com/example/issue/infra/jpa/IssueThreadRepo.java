@@ -3,8 +3,8 @@ package com.example.issue.infra.jpa;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
-import com.example.issue.domain.IssueThread;
-import com.example.issue.domain.ThreadStatus;
+import com.example.issue.domain.user.IssueThread;
+import com.example.issue.domain.common.ThreadStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -63,29 +63,63 @@ public interface IssueThreadRepo extends JpaRepository<IssueThread, Long> {
             @Param("cursorId") Long cursorId,
             @Param("size") int size);
 
+    // ===================== Admin separator ===================================
     @Query(value = """
-            SELECT * FROM issue_thread
-            WHERE (:status IS NULL OR status = :status)
-            ORDER BY last_message_at DESC, id DESC
-            LIMIT ？
-            """, nativeQuery = true)
-    List<IssueThread> listAdminFirstPage(
-            @Param("status") ThreadStatus status,
-            int size);
+        SELECT *
+        FROM issue_thread
+        ORDER BY last_message_at DESC, id DESC
+        LIMIT :size
+        """, nativeQuery = true)
+    List<IssueThread> listAdminFirstPage(@Param("size") int size);
 
     @Query(value = """
-            SELECT * FROM issue_thread
-            WHERE (:status IS NULL OR status = :status)
-              AND (
-                last_message_at < :cursorTime
-                OR (last_message_at = :cursorTime AND id < :cursorId)
-              )
-            ORDER BY last_message_at DESC, id DESC
-            LIMIT ？
-            """, nativeQuery = true)
-    List<IssueThread> listAdminNextPage(
-            @Param("status") String status,
+        SELECT *
+        FROM issue_thread
+        WHERE status IN (:statuses)
+        ORDER BY last_message_at DESC, id DESC
+        LIMIT :size
+        """, nativeQuery = true)
+    List<IssueThread> listAdminFirstPageByStatuses(
+            @Param("statuses") List<String> statuses,
+            @Param("size") int size);
+
+    @Query(value = """
+    SELECT * FROM issue_thread
+    WHERE status IN (:statuses)
+      AND (
+        last_message_at < :cursorTime
+        OR (last_message_at = :cursorTime AND id < :cursorId)
+      )
+    ORDER BY last_message_at DESC, id DESC
+    LIMIT :size
+    """, nativeQuery = true)
+    List<IssueThread> listAdminNextPageByStatuses(
+            @Param("statuses") List<String> statuses,
             @Param("cursorTime") Instant cursorTime,
             @Param("cursorId") Long cursorId,
-            int size);
+            @Param("size") int size);
+
+    @Query(value = """
+    SELECT * FROM issue_thread
+    WHERE (
+        last_message_at < :cursorTime
+        OR (last_message_at = :cursorTime AND id < :cursorId)
+    )
+    ORDER BY last_message_at DESC, id DESC
+    LIMIT :size
+    """, nativeQuery = true)
+    List<IssueThread> listAdminNextPage(
+            @Param("cursorTime") Instant cursorTime,
+            @Param("cursorId") Long cursorId,
+            @Param("size") int size);
+
+    @Query(value = "SELECT COUNT(*) FROM issue_thread", nativeQuery = true)
+    long countAllThreads();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM issue_thread
+            WHERE status = :status
+            """, nativeQuery = true)
+    long countByStatus(@Param("status") String status);
 }

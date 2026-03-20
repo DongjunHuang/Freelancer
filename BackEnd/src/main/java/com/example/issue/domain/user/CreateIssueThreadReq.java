@@ -1,5 +1,6 @@
-package com.example.issue.domain;
+package com.example.issue.domain.user;
 
+import com.example.issue.domain.common.IssueType;
 import lombok.*;
 
 @Data

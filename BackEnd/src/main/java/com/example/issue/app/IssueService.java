@@ -2,7 +2,8 @@ package com.example.issue.app;
 
 import com.example.exception.ErrorCode;
 import com.example.exception.NotFoundException;
-import com.example.issue.domain.*;
+import com.example.issue.domain.common.*;
+import com.example.issue.domain.user.*;
 import com.example.issue.infra.jpa.IssueMessageRepo;
 import com.example.issue.infra.jpa.IssueThreadRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,37 +86,6 @@ public class IssueService {
         thread.setStatus(ThreadStatus.WAITING_ADMIN);
         thread.setLastMessageAt(now);
         thread.setUnreadByAdmin(thread.getUnreadByAdmin() + 1);
-        threadRepo.save(thread);
-    }
-
-    @Transactional
-    public void postMessageByAdmin(Long adminId, Long threadId, PostMessageReq req) {
-        var thread = threadRepo.findById(threadId)
-                .orElseThrow(() -> new RuntimeException("Thread not found"));
-
-        var now = Instant.now();
-        messageRepo.save(IssueMessage.builder()
-                .threadId(threadId)
-                .userType(UserType.ADMIN)
-                .senderId(adminId)
-                .body(req.getBody())
-                .createdAt(now)
-                .isInternal(req.isInternal())
-                .build());
-
-        if (!req.isInternal()) {
-            thread.setStatus(ThreadStatus.WAITING_USER);
-            thread.setUnreadByUser(thread.getUnreadByUser() + 1);
-        }
-        thread.setLastMessageAt(now);
-        threadRepo.save(thread);
-    }
-
-    @Transactional
-    public void updateMessageStatusByAdmin(Long threadId, ThreadStatus status) {
-        var thread = threadRepo.findById(threadId)
-                .orElseThrow(() -> new RuntimeException("Thread not found"));
-        thread.setStatus(status);
         threadRepo.save(thread);
     }
 
@@ -210,13 +180,13 @@ public class IssueService {
         }
 
         List<ThreadMessageDto> items = rows.stream()
-                .map(this::toThreadMessageDto)
+                .map(ThreadMessageDto::toThreadMessageDto)
                 .toList();
 
         String nextCursor = null;
         if (hasMore && !rows.isEmpty()) {
             IssueMessage last = rows.get(rows.size() - 1);
-            nextCursor = encodeMessageCursor(last.getCreatedAt(), last.getId());
+            nextCursor = Utils.encodeMessageCursor(last.getCreatedAt(), last.getId());
         }
 
         return MessagePageResp.builder()
@@ -224,31 +194,6 @@ public class IssueService {
                 .nextCursor(nextCursor)
                 .hasMore(hasMore)
                 .build();
-    }
-
-    private ThreadMessageDto toThreadMessageDto(IssueMessage message) {
-        return ThreadMessageDto.builder()
-                .id(message.getId())
-                .threadId(message.getThreadId())
-                .userType(message.getUserType())
-                .senderId(message.getSenderId())
-                .body(message.getBody())
-                .isInternal(message.isInternal())
-                .createdAt(message.getCreatedAt())
-                .build();
-    }
-
-
-    private String encodeMessageCursor(Instant createdAt, Long id) {
-        try {
-            String json = objectMapper.writeValueAsString(Map.of(
-                    "createdAt", createdAt.toString(),
-                    "id", id
-            ));
-            return Base64.getUrlEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to encode cursor", e);
-        }
     }
 
     @Transactional

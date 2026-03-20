@@ -1,7 +1,7 @@
 import http from './http'
 
 // Test Insert metric to mysql
-export const insertMetricMysql = (value: number) => http.post(`/tests/insert`, { value });
+export const insertMetricMysql = (value: number) => http.post(`/tests/insert`, { value })
 
 // Test Fetch number of items in mysql metric tabkles
 export const fetchCountMysql = () => http.get(`/tests/getNumber`)

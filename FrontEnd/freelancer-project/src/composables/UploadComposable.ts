@@ -1,9 +1,9 @@
 export interface UploadState {
   // data set
   dataset: {
-    isNew: boolean          
+    isNew: boolean
     selectedName: string
-    newName: string        
+    newName: string
   }
 
   // File upload
@@ -24,21 +24,21 @@ export interface UploadState {
 export function createInitialUploadState(): UploadState {
   return {
     dataset: {
-      isNew: true,            // Default：create new dataset
-      selectedName: '',     // Select existed
-      newName: ''             // User input
+      isNew: true, // Default：create new dataset
+      selectedName: '', // Select existed
+      newName: '', // User input
     },
-    file: null,               // Not select file
-    error: '',                // No error
+    file: null, // Not select file
+    error: '', // No error
 
     config: {
-      delimiter: ',',         // The separator of CSV file
-      hasHeader: true,        // The first row is header
-      recordDateColumn: '',   // User select
-      recordDateFormat: '',   // User select
-      symbol: '',             // User select
-      headers: []             // Headers
-    }
+      delimiter: ',', // The separator of CSV file
+      hasHeader: true, // The first row is header
+      recordDateColumn: '', // User select
+      recordDateFormat: '', // User select
+      symbol: '', // User select
+      headers: [], // Headers
+    },
   }
 }
 

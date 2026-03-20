@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Import necessarry dependencies
-import { computed, ref, onMounted, watch} from 'vue'
-import { fetchDatasets, fetchDatapoints} from '@/api/dashboard'  
+import { computed, ref, onMounted, watch } from 'vue'
+import { fetchDatasets, fetchDatapoints } from '@/api/dashboard'
 import { useDashboardState } from '@/composables/DashboardState'
 
 // Imports components
@@ -12,14 +12,16 @@ import DisplayDetailsPane from '@/components/Dashboard/DisplayDetailsPane.vue'
 import RightSidePane from '@/components/Dashboard/RightSidePane.vue'
 
 // Import types
-import type { ColumnMeta, FetchRecordsResp, DataPoint, ChartData} from '@/api/types'
+import type { ColumnMeta, FetchRecordsResp, DataPoint, ChartData } from '@/api/types'
 
-const { filters, datasets} = useDashboardState()
+const { filters, datasets } = useDashboardState()
 const error = ref('')
 const loading = ref(false)
 const resp = ref<FetchRecordsResp | null>(null)
 
-const selectedDataset = computed(() => datasets.value.find((d) => d.datasetName === filters.selectedDatasetName) || null)
+const selectedDataset = computed(
+  () => datasets.value.find((d) => d.datasetName === filters.selectedDatasetName) || null,
+)
 
 // Load data when mounted
 onMounted(loadData)
@@ -33,7 +35,7 @@ function buildLabelsForColumn(points: DataPoint[], col: string): string[] {
     if (p.column === col) {
       set.add(p.recordDate)
     }
-  } 
+  }
   return Array.from(set).sort((a, b) => +new Date(a) - +new Date(b))
 }
 
@@ -63,7 +65,7 @@ function buildSeriesMapForColumn(points: DataPoint[], col: string, labels: strin
 
   const out: Record<string, Array<number>> = {}
   for (const [sym, dateMap] of bySym.entries()) {
-    out[sym] = labels.map(d => dateMap.get(d) ?? 0)
+    out[sym] = labels.map((d) => dateMap.get(d) ?? 0)
   }
   return out
 }
@@ -93,16 +95,14 @@ watch(
       }
     }
   },
-  { immediate: true, deep: false }
+  { immediate: true, deep: false },
 )
 
 // ================================
 // Mounted to call, load the datasets metadata from the client
 // Available metric columns
 const availableMetricColumns = computed<ColumnMeta[]>(() => {
-  return selectedDataset.value
-    ? selectedDataset.value.headers.filter(h => h.metric)
-    : []
+  return selectedDataset.value ? selectedDataset.value.headers.filter((h) => h.metric) : []
 })
 
 async function loadData() {
@@ -120,25 +120,25 @@ async function loadData() {
 // Fetch the datapoints from the backend
 async function generate() {
   if (!filters.selectedDatasetName) {
-    console.log("Not able to find selectedDatasetName")
+    console.log('Not able to find selectedDatasetName')
     return
   }
-    
+
   try {
     loading.value = true
     error.value = ''
-    console.log("Prepare request {}", filters)
+    console.log('Prepare request {}', filters)
 
     const res = await fetchDatapoints({
       datasetName: filters.selectedDatasetName,
       startDate: filters.startDate,
       endDate: filters.endDate,
       columns: filters.selectedColumns,
-      symbols: filters.symbols
+      symbols: filters.symbols,
     })
 
-    resp.value = res.data 
-    console.log("[Resp] ", resp)
+    resp.value = res.data
+    console.log('[Resp] ', resp)
   } catch (e) {
     console.error(e)
     error.value = 'Failed to load'
@@ -154,7 +154,6 @@ const canLoad = computed(
     !!filters.startDate &&
     !!filters.endDate,
 )
-
 </script>
 
 <template>
@@ -165,7 +164,7 @@ const canLoad = computed(
           <SelectDatasetsPane
             :filters="filters"
             :datasets="datasets"
-            @update:filters="next => Object.assign(filters, next)"
+            @update:filters="(next) => Object.assign(filters, next)"
           />
         </div>
 
@@ -174,15 +173,14 @@ const canLoad = computed(
           <SelectPropsPane
             :filters="filters"
             :metricColumns="availableMetricColumns"
-            @update:filters="(next) => Object.assign(filters, next)"/>
+            @update:filters="(next) => Object.assign(filters, next)"
+          />
         </div>
 
         <!-- graph show -->
         <div class="space-y-4">
           <div class="flex items-center justify-between">
-            <h2 class="text-base font-semibold text-slate-900">
-              Data diagram
-            </h2>
+            <h2 class="text-base font-semibold text-slate-900">Data diagram</h2>
             <span class="text-[11px] text-slate-400">
               {{ resp ? Object.values(resp.datapoints ?? {}).flat().length : 0 }} records
             </span>
@@ -194,7 +192,7 @@ const canLoad = computed(
 
           <div v-else class="flex flex-col gap-4">
             <SingleMetricChart
-              v-for="col in (resp?.columns ?? [])"
+              v-for="col in resp?.columns ?? []"
               :key="col"
               :labels="chartsByCol[col]?.labels ?? []"
               :column="col"
@@ -204,27 +202,29 @@ const canLoad = computed(
               @update:selectedKeys="(v) => (selectedKeysByCol[col] = v)"
             />
           </div>
-        </div>  
+        </div>
         <!-- Simply showcase -->
         <div>
-          <DisplayDetailsPane 
-            :filters="filters" />
+          <DisplayDetailsPane :filters="filters" />
         </div>
       </section>
 
       <aside class="hidden w-72 flex-none space-y-4 lg:block">
         <RightSidePane :filters="filters" />
-        
+
         <!-- Generate graph button -->
         <div>
           <button
             type="button"
-            @click="generate" :disabled="!canLoad"
+            @click="generate"
+            :disabled="!canLoad"
             class="rounded-full px-4 py-2 text-xs font-medium"
             :class="
               canLoad
                 ? 'bg-slate-900 text-white hover:bg-slate-800'
-                : 'cursor-not-allowed bg-slate-200 text-slate-400'">
+                : 'cursor-not-allowed bg-slate-200 text-slate-400'
+            "
+          >
             Generate graph
           </button>
         </div>

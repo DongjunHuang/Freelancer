@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref } from 'vue'
 import { useMessage } from 'naive-ui'
-import { createIssueThread } from '@/api/issue'  
+import { createIssueThread } from '@/api/issue'
 
 import {
   NCard,
@@ -14,44 +14,46 @@ import {
   NButton,
   NDivider,
   type FormInst,
-  type FormRules
-} from "naive-ui";
+  type FormRules,
+} from 'naive-ui'
 
-const activeTab = ref<"issue">("issue");
+const activeTab = ref<'issue'>('issue')
 
-const issueFormRef = ref<FormInst | null>(null);
+const issueFormRef = ref<FormInst | null>(null)
 const message = useMessage()
 const issueModel = reactive({
-  title: "",
-  description: "",
-  type: "",
-  impact: "",
-});
+  title: '',
+  description: '',
+  type: '',
+  impact: '',
+})
 
 // The types of the issues
 const issueTypeOptions = [
-  { label: "Bug", value: "BUG" },
-  { label: "Performance", value: "PERFORMANCE" },
-  { label: "UX", value: "UX" },
-  { label: "Suggestion", value: "SUGGESTION" },
-];
+  { label: 'Bug', value: 'BUG' },
+  { label: 'Performance', value: 'PERFORMANCE' },
+  { label: 'UX', value: 'UX' },
+  { label: 'Suggestion', value: 'SUGGESTION' },
+]
 
 // Check rules
 const issueRules: FormRules = {
   title: [
-    { required: true, message: "Please enter a title", trigger: ["input", "blur"] },
-    { min: 6, message: "Title should be at least 6 characters", trigger: ["input", "blur"] }
+    { required: true, message: 'Please enter a title', trigger: ['input', 'blur'] },
+    { min: 6, message: 'Title should be at least 6 characters', trigger: ['input', 'blur'] },
   ],
-  description: [{ required: true, message: "Please provide descriptions.", trigger: ["input", "blur"] }]
-};
+  description: [
+    { required: true, message: 'Please provide descriptions.', trigger: ['input', 'blur'] },
+  ],
+}
 
 function resetIssue() {
   Object.assign(issueModel, {
-    title: "",
-    type: "bug",
-    url: "",
-    impact: ""
-  });
+    title: '',
+    type: 'bug',
+    url: '',
+    impact: '',
+  })
 }
 
 const onSubmitIssue = () => {
@@ -63,13 +65,12 @@ const onSubmitIssue = () => {
         issueModel.title,
         issueModel.description,
         issueModel.impact,
-        issueModel.type
+        issueModel.type,
       )
-      message.success("Submit successful.")
+      message.success('Submit successful.')
       resetIssue()
-
     } catch (err) {
-      message.error("Submit failed")
+      message.error('Submit failed')
     }
   })
 }
@@ -98,13 +99,15 @@ const onSubmitIssue = () => {
               :model="issueModel"
               :rules="issueRules"
               label-placement="top"
-              size="large">
+              size="large"
+            >
               <!-- First row-->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <NFormItem label="Title" path="title">
-                  <NInput 
-                    v-model:value="issueModel.title" 
-                    placeholder="e.g. Chart breaks on large CSV" />
+                  <NInput
+                    v-model:value="issueModel.title"
+                    placeholder="e.g. Chart breaks on large CSV"
+                  />
                 </NFormItem>
                 <NFormItem label="Type" path="type">
                   <NSelect v-model:value="issueModel.type" :options="issueTypeOptions" />
@@ -117,7 +120,8 @@ const onSubmitIssue = () => {
                   v-model:value="issueModel.description"
                   type="textarea"
                   :autosize="{ minRows: 4, maxRows: 10 }"
-                  placeholder="Please describe what you experienced..."/>
+                  placeholder="Please describe what you experienced..."
+                />
               </NFormItem>
 
               <!-- Third row-->
@@ -126,7 +130,8 @@ const onSubmitIssue = () => {
                   v-model:value="issueModel.impact"
                   type="textarea"
                   :autosize="{ minRows: 4, maxRows: 10 }"
-                  placeholder="What is the impact..."/>
+                  placeholder="What is the impact..."
+                />
               </NFormItem>
 
               <div class="mt-4 flex gap-3">

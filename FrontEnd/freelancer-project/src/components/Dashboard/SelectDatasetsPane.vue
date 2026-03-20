@@ -22,21 +22,18 @@ const selectedDatasetName = computed({
 })
 
 const datasetOptions = computed(() =>
-  props.datasets.map(ds => ({
+  props.datasets.map((ds) => ({
     label: `${ds.datasetName} (${ds.rowCount} rows)`,
     value: ds.datasetName,
-  }))
+  })),
 )
-
 </script>
 
 <template>
   <div class="rounded-2xl bg-white p-5 shadow-sm">
     <div class="mb-3 flex items-center justify-between">
       <div>
-        <h2 class="text-base font-semibold text-slate-900">
-          Select (Dataset)
-        </h2>
+        <h2 class="text-base font-semibold text-slate-900">Select (Dataset)</h2>
       </div>
     </div>
 
@@ -48,7 +45,8 @@ const datasetOptions = computed(() =>
         placeholder="Select"
         filterable
         clearable
-        class="mt-1 w-full"/>
+        class="mt-1 w-full"
+      />
     </div>
   </div>
 </template>

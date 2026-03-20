@@ -14,7 +14,7 @@ const filters = reactive<DashboardFilters>({
   selectedColumns: [],
   startDate: '',
   endDate: '',
-  symbols: ''
+  symbols: '',
 })
 
 const datasets = ref<Dataset[]>([])

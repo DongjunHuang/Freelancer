@@ -1,6 +1,8 @@
 package com.example.issue.interfaces;
 
-import com.example.issue.domain.*;
+import com.example.issue.domain.common.MessagePageResp;
+import com.example.issue.domain.common.PostMessageReq;
+import com.example.issue.domain.user.*;
 import lombok.RequiredArgsConstructor;
 
 import org.slf4j.Logger;

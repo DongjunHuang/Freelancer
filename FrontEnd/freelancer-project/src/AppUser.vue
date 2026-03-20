@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppHeader from '@/components/Main/AppHeader.vue'
 import AppFooter from '@/components/Main/AppFooter.vue'
-import { NMessageProvider } from 'naive-ui';
+import { NMessageProvider } from 'naive-ui'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 </script>
@@ -12,7 +12,7 @@ const route = useRoute()
     <AppHeader v-show="route.meta.layout !== 'blank'" />
 
     <!-- the main part-->
-    <main>  
+    <main>
       <n-message-provider>
         <RouterView />
       </n-message-provider>

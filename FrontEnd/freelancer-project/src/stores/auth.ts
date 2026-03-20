@@ -11,11 +11,17 @@ export const useAuth = defineStore('auth', {
     isLoggedIn: (s) => !!s.accessToken,
   },
   actions: {
-    setToken(token: string) { this.accessToken = token },
-    setUser(u: User | null) { this.user = u },
-    clear() { this.$reset() },  
+    setToken(token: string) {
+      this.accessToken = token
+    },
+    setUser(u: User | null) {
+      this.user = u
+    },
+    clear() {
+      this.$reset()
+    },
   },
   persist: {
-    key: 'auth'
+    key: 'auth',
   },
 })

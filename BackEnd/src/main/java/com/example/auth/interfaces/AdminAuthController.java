@@ -26,12 +26,4 @@ public class AdminAuthController {
         AdminSigninResp resp = adminAuthService.signin(req);
         return ResponseEntity.ok(resp);
     }
-
-    @PostMapping("/signout")
-    public ResponseEntity<Void> signout(
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @CookieValue(value = "refreshToken", required = false) String refreshCookie,
-            @CookieValue(value = "deviceid", required = false) String deviceId) {
-        return null;
-    }
 }

@@ -4,8 +4,8 @@ export enum DashboardEvents {
 }
 
 export enum UploadEvents {
-  UpdateState = 'update:state', 
-  StartUpload = 'upload:start',   
-  CancelUpload = 'upload:cancel', 
-  RetryUpload = 'upload:retry',   
+  UpdateState = 'update:state',
+  StartUpload = 'upload:start',
+  CancelUpload = 'upload:cancel',
+  RetryUpload = 'upload:retry',
 }

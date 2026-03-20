@@ -1,7 +1,8 @@
-package com.example.issue.domain;
+package com.example.issue.domain.user;
 
 import java.time.Instant;
 
+import com.example.issue.domain.common.ThreadStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

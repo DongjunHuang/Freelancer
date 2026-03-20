@@ -4,11 +4,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Tests from '@/views/Tests.vue'
 import Home from '@/views/Home.vue'
 
-import Signin from '@/views/auth/Signin.vue';
-import Signup from '@/views/auth/Signup.vue';
+import Signin from '@/views/auth/Signin.vue'
+import Signup from '@/views/auth/Signup.vue'
 import Verify from '@/views/auth/Verify.vue'
 
-import Dashboard from '@/views/dashboard/Dashboard.vue';
+import Dashboard from '@/views/dashboard/Dashboard.vue'
 
 import Upload from '@/views/upload/Upload.vue'
 
@@ -37,12 +37,12 @@ const router = createRouter({
       children: [
         {
           path: '',
-          component: Home
+          component: Home,
         },
         {
           path: 'dashboard',
           component: Dashboard,
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: 'signin',
@@ -59,28 +59,28 @@ const router = createRouter({
         {
           path: 'upload',
           component: Upload,
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: 'tests',
-          component: Tests
+          component: Tests,
         },
         {
           path: 'issue',
           component: Issue,
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: 'issue/new',
           component: IssuePost,
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: 'issue/details/:id',
           component: IssueDetails,
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
-      ]
+      ],
     },
     {
       path: '/admin',
@@ -89,22 +89,21 @@ const router = createRouter({
         {
           path: '',
           component: AdminHome,
-          meta: { requiresAdmin: true }
+          meta: { requiresAdmin: true },
         },
         {
           path: 'issues',
           component: AdminIssues,
-          meta: { requiresAdmin: true }
+          meta: { requiresAdmin: true },
         },
-        {
-          path: 'login',
-          component: AdminLogin,
-        }
-      ]
-    }
-  ]
+      ],
+    },
+    {
+      path: '/admin/login',
+      component: AdminLogin,
+    },
+  ],
 })
-
 
 router.beforeEach((to, from, next) => {
   const auth = useAuth()
@@ -113,8 +112,8 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAdmin) {
     if (!adminAuth.isLoggedIn) {
       next({
-        path: "/admin/login",
-        query: { redirect: to.fullPath }
+        path: '/admin/login',
+        query: { redirect: to.fullPath },
       })
       return
     }
@@ -126,8 +125,8 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth) {
     if (!auth.isLoggedIn) {
       next({
-        path: "/signin",
-        query: { redirect: to.fullPath }
+        path: '/signin',
+        query: { redirect: to.fullPath },
       })
       return
     }
