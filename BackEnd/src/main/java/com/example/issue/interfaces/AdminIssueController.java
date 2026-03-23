@@ -66,7 +66,7 @@ public class AdminIssueController {
             @AuthenticationPrincipal JwtUserDetails admin) {
         logger.info("Get the message information for user {} and thread id {}", admin.getId(), threadId);
         int pageSize = Math.min(Math.max(size, 1), 50);
-        MessagePageResp resp = issueService.getMessages(admin.getId(), threadId, pageSize, cursor, false);
+        MessagePageResp resp = issueService.getMessages(UserType.ADMIN, null, threadId, pageSize, cursor, false);
         return ResponseEntity.ok(resp);
     }
 

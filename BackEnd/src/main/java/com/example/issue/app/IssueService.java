@@ -1,5 +1,6 @@
 package com.example.issue.app;
 
+import com.example.exception.BadRequestException;
 import com.example.exception.ErrorCode;
 import com.example.exception.NotFoundException;
 import com.example.issue.domain.*;
@@ -53,21 +54,27 @@ public class IssueService {
                 .senderId(userId)
                 .body(req.getDescription())
                 .createdAt(now)
-                .isInternal(false)
+                .isInternal(false)  // TODO: in case if there is any case we need internal
                 .build());
     }
 
     /**
      * Post mesasge to the corresponding thread from user side.
      *
-     * @param userId   the user id.
+     * @param userId   the user id,according to user type to determine whether user id or admin id.
      * @param threadId the thread id.
      * @param req      the request.
      */
     @Transactional
     public void postMessage(Long userId, Long threadId, PostMessageReq req, UserType type) {
-        var thread = threadRepo.findByIdAndUserId(threadId, userId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.FEEDBACK_THREAD_NOT_FOUND));
+        IssueThread thread;
+        if (type == UserType.USER) {
+            thread = threadRepo.findByIdAndUserId(threadId, userId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        } else {
+            thread = threadRepo.findById(threadId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        }
 
         var now = Instant.now();
         messageRepo.save(IssueMessage.builder()
@@ -130,7 +137,7 @@ public class IssueService {
         return ThreadItem.from(thread);
     }
 
-    private List<String> mapStatuses(String status) {
+    public List<String> mapStatuses(String status) {
         if (status == null || status.isBlank() || "ALL".equals(status)) {
             return null;
         }
@@ -146,6 +153,11 @@ public class IssueService {
         };
     }
 
+    /**
+     * To return the summaization of the threads, used by ADMIN.
+     *
+     * @return the status of the threads returned.
+     */
     @Transactional(readOnly = true)
     public ThreadStatsResp getThreadStats() {
         long all = threadRepo.countAllThreads();
@@ -162,20 +174,28 @@ public class IssueService {
                 .build();
     }
 
-    @Transactional
-    public void updateMessageStatus(Long threadId, ThreadStatus status) {
-        var thread = threadRepo.findById(threadId)
-                .orElseThrow(() -> new RuntimeException("Thread not found"));
-        thread.setStatus(status);
-        threadRepo.save(thread);
-    }
-
+    /**
+     * To fetch messages for the corresponding thread id.
+     *
+     * @param userId the user id, not admin id.
+     * @param threadId the thread id.
+     * @param size the size.
+     * @param cursor the cursor pointing to the next page.
+     * @param isInternal whether the message is internal (for now is false)
+     *
+     * @return the message fetched.
+     */
     @Transactional(readOnly = true)
-    public MessagePageResp getMessages(Long userId, Long threadId, int size, String cursor, boolean isInternal) {
+    public MessagePageResp getMessages(UserType userType, Long userId, Long threadId, int size, String cursor, boolean isInternal) {
         int pageSize = Math.min(Math.max(size, 1), 50);
 
-        threadRepo.findByIdAndUserId(threadId, userId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        if (userType == UserType.ADMIN) {
+            threadRepo.findById(threadId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        } else {
+            threadRepo.findByIdAndUserId(threadId, userId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        }
 
         List<IssueMessage> rows;
         if (cursor == null || cursor.isBlank()) {
@@ -213,19 +233,38 @@ public class IssueService {
                 .build();
     }
 
+    /**
+     * Update the thread status by user.
+     *
+     * @param userId the user id.
+     * @param threadId the thread id.
+     * @param newStatus the status.
+     */
     @Transactional
     public void updateUserThreadStatus(Long userId, Long threadId, ThreadStatus newStatus) {
+        if (newStatus == null) {
+            throw new BadRequestException(ErrorCode.NOT_VALID_THREAD_STATUS);
+        }
+
         IssueThread thread = threadRepo.findByIdAndUserId(threadId, userId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
 
-        if (newStatus == null) {
-            throw new IllegalArgumentException("status cannot be null");
-        }
+
 
         thread.setStatus(newStatus);
         threadRepo.save(thread);
     }
 
+    /**
+     * According to different requirements to fetch list of threads.
+     *
+     * @param userId the user id.
+     * @param size the size of the page.
+     * @param userType the user type.
+     * @param cursor the cursor.
+     * @param statuses the status.
+     * @return the threads found.
+     */
     public List<IssueThread> listThreads(
             Long userId,
             int size,

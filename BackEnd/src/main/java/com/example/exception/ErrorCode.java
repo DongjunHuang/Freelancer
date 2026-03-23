@@ -33,6 +33,7 @@ public enum ErrorCode {
     NOT_VALID_DATE_COLUMN("NOT_VALID_DATE_COLUMN", "Not able to find date column"),
     NOT_VALID_SYMBOL_COLUMN("NOT_VALID_SYMBOL_COLUMN", "Not able to find symbol column"),
     DATASET_NAME_USED("DATASET_NAME_USED", "The dataset is already existed."),
+    NOT_VALID_THREAD_STATUS("NOT_VALUD_THREAD_STATUS", "The thread status is not valid."),
 
     // Dataset status exception
     DATASET_NOT_AVAILABLE("DATASET_NOT_AVAILABLE", "The dataset is not available, please try again."),

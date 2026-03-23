@@ -79,7 +79,6 @@ public interface IssueThreadRepo extends JpaRepository<IssueThread, Long> {
             @Param("cursorId") Long cursorId,
             @Param("size") int size);
 
-    // ===================== Admin separator ===================================
     @Query(value = """
         SELECT *
         FROM issue_thread

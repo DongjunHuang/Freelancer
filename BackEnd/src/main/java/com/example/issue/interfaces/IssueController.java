@@ -80,7 +80,7 @@ public class IssueController {
         logger.info("Get the message information for user {} and thread id {}", user.getId(), threadId);
         int pageSize = Math.min(Math.max(size, 1), 50);
         // TODO: is internal could be used in the future
-        MessagePageResp resp = service.getMessages(user.getId(), threadId, pageSize, cursor, false);
+        MessagePageResp resp = service.getMessages(UserType.USER, user.getId(), threadId, pageSize, cursor, false);
         return ResponseEntity.ok(resp);
     }
 
