@@ -18,17 +18,6 @@ export enum ThreadType {
   SUGGESTION = 'SUGGESTION',
 }
 
-export interface Thread {
-  id: number
-  title: string
-  status: ThreadStatus
-  type: ThreadType
-  lastMessageAt: string
-  createdAt: string
-  unreadByUser: number
-  unreadByAdmin: number
-}
-
 export interface GetThreadsParams {
   status?: string
   size?: number
@@ -41,7 +30,7 @@ export interface ThreadPageResp {
   hasMore: boolean
 }
 
-export type AdminThreadStatsResp = {
+export type ThreadStatsResp = {
   all: number
   waitingAdmin: number
   waitingUser: number
@@ -49,7 +38,7 @@ export type AdminThreadStatsResp = {
   open: number
 }
 
-export type AdminThread = {
+export type Thread = {
   id: number
   userId: number
   title: string
@@ -59,10 +48,4 @@ export type AdminThread = {
   lastMessageAt: string
   unreadByUser: number
   unreadByAdmin: number
-}
-
-export interface AdminThreadPageResp {
-  items: AdminThread[]
-  nextCursor: string | null
-  hasMore: boolean
 }

@@ -1,7 +1,5 @@
-package com.example.issue.domain.user;
+package com.example.issue.domain;
 
-import com.example.issue.domain.common.IssueType;
-import com.example.issue.domain.common.ThreadStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

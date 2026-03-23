@@ -1,8 +1,6 @@
 package com.example.issue.interfaces;
 
-import com.example.issue.domain.common.MessagePageResp;
-import com.example.issue.domain.common.PostMessageReq;
-import com.example.issue.domain.user.*;
+import com.example.issue.domain.*;
 import lombok.RequiredArgsConstructor;
 
 import org.slf4j.Logger;
@@ -54,53 +52,53 @@ public class IssueController {
         // 20 is the default.
         int pageSize = Math.min(Math.max(size, 1), 20);
 
-        CursorPageDto<ThreadItem> cursorPageDto = service.listUserThreads(
+        CursorPageDto<ThreadItem> cursorPageDto = service.getThreads(
                 user.getId(),
                 status,
                 pageSize,
-                cursor);
+                cursor,
+                UserType.USER);
         ThreadPageResp resp = ThreadPageResp.fromCursorPageDto(cursorPageDto);
-        logger.info("Respond with {}", resp);
         return ResponseEntity.ok(resp);
     }
 
-    @PostMapping("/{threadId}/messages")
+    @PostMapping("/{threadId}/postMessage")
     public ResponseEntity<?> postMessage(
             @PathVariable Long threadId,
             @RequestBody PostMessageReq req,
             @AuthenticationPrincipal JwtUserDetails user) {
-        service.postMessageByUser(user.getId(), threadId, req);
+        service.postMessage(user.getId(), threadId, req, UserType.USER);
         return ResponseEntity.ok().body(Map.of("Result", "Success"));
     }
 
-
-    @GetMapping("/{threadId}/messages")
-    public ResponseEntity<MessagePageResp> getThreadMessages(
+    @GetMapping("/{threadId}/getMessages")
+    public ResponseEntity<MessagePageResp> getMessages(
             @PathVariable Long threadId,
             @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String cursor,
             @AuthenticationPrincipal JwtUserDetails user) {
         logger.info("Get the message information for user {} and thread id {}", user.getId(), threadId);
         int pageSize = Math.min(Math.max(size, 1), 50);
-        MessagePageResp resp = service.getUserThreadMessages(user.getId(), threadId, pageSize);
+        // TODO: is internal could be used in the future
+        MessagePageResp resp = service.getMessages(user.getId(), threadId, pageSize, cursor, false);
         return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/{threadId}")
-    public ResponseEntity<ThreadDto> getThread(
+    public ResponseEntity<ThreadItem> getThread(
             @PathVariable Long threadId,
             @AuthenticationPrincipal JwtUserDetails user) {
         logger.info("Get the thread information for user {} and thread id {}", user.getId(), threadId);
-        ThreadDto resp = service.getUserThreadDetail(user.getId(), threadId);
+        ThreadItem resp = service.getUserThreadDetail(user.getId(), threadId);
         return ResponseEntity.ok(resp);
     }
 
     @PatchMapping("/{threadId}/status")
     public ResponseEntity<Void> updateThreadStatus(
             @PathVariable Long threadId,
-            @RequestBody UpdateThreadStatusReq req,
+            @RequestBody ThreadStatus status,
             @AuthenticationPrincipal JwtUserDetails user) {
-
-        service.updateUserThreadStatus(user.getId(), threadId, req);
+        service.updateUserThreadStatus(user.getId(), threadId, status);
         return ResponseEntity.ok().build();
     }
 }

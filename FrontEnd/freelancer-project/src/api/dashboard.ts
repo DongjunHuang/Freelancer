@@ -1,5 +1,5 @@
-import http from './http'
-import type { Dataset, FetchRecordsResp } from '@/api/types'
+import http from '@/api/httpuser'
+import type { Dataset, FetchRecordsResp } from '@/types/user'
 
 // The api to request for refresh token
 export const refreshAccessTokenRequest = () => http.get(`/dashboard/getNumberSql`)

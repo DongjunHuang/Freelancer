@@ -1,6 +1,5 @@
-package com.example.issue.domain.common;
+package com.example.issue.domain;
 
-import com.example.issue.domain.user.UserType;
 import jakarta.persistence.*;
 import lombok.*;
 

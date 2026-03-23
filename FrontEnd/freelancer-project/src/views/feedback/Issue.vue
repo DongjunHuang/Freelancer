@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { UserType } from '@/types/user'
 import { getThreads } from '@/api/issue'
+
 import type { Thread, ThreadFilterStatus } from '@/types/thread'
 
 const threads = ref<Thread[]>([])
@@ -22,7 +24,6 @@ const statusTabs = [
 async function setStatus(s: string) {
   status.value = s
   page.value = 0
-  // await syncUrlQuery()
   await fetchList()
 }
 
@@ -30,7 +31,7 @@ async function fetchList() {
   loading.value = true
 
   try {
-    const resp = await getThreads({
+    const resp = await getThreads(UserType.USER, {
       status: status.value,
       size: 20,
       cursor: null,
@@ -53,7 +54,7 @@ async function loadMore() {
   loading.value = true
 
   try {
-    const resp = await getThreads({
+    const resp = await getThreads(UserType.USER, {
       status: filterStatus.value,
       size: 20,
       cursor: nextCursor.value,
@@ -154,34 +155,6 @@ watch(
     anchor.value = String(route.query.anchor ?? '')
   },
 )
-
-// TODO : add paging for the request
-/*
-const threads = ref<ThreadItem[]>([])
-const nextCursor = ref<string | null>(null)
-const hasMore = ref(false)
-
-
-async function fetchFirstPage() {
-  const resp = await getThreads({ size: 20 })
-  threads.value = resp.items
-  nextCursor.value = resp.nextCursor
-  hasMore.value = resp.hasMore
-}
-
-async function loadMore() {
-  if (!hasMore.value || !nextCursor.value) return
-
-  const resp = await getThreads({
-    size: 20,
-    cursor: nextCursor.value
-  })
-
-  threads.value.push(...resp.items)
-  nextCursor.value = resp.nextCursor
-  hasMore.value = resp.hasMore
-}
-*/
 </script>
 
 <template>

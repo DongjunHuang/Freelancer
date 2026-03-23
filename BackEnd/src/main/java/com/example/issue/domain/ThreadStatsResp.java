@@ -1,10 +1,10 @@
-package com.example.issue.domain.admin;
+package com.example.issue.domain;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class AdminThreadStatsResp {
+public class ThreadStatsResp {
     private long all;
     private long waitingAdmin;
     private long waitingUser;

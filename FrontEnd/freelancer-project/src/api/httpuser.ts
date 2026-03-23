@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 import { useAuth } from '@/stores/auth'
 
-const whiteList = [
+const userWhiteList = [
   '/auth/signin',
   '/auth/signup',
   '/auth/verify',
@@ -9,7 +9,7 @@ const whiteList = [
   '/auth/resendEmail',
 ]
 
-const http: AxiosInstance = axios.create({
+export const http: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
   timeout: 10000,
   withCredentials: true,
@@ -18,7 +18,7 @@ const http: AxiosInstance = axios.create({
 http.interceptors.request.use(
   (config) => {
     const url = config.url || ''
-    const isNotAuth = whiteList.some((path) => url.startsWith(path))
+    const isNotAuth = userWhiteList.some((path) => url.startsWith(path))
 
     if (!isNotAuth) {
       const auth = useAuth()

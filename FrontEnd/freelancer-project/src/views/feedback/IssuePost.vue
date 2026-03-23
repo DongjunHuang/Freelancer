@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useMessage } from 'naive-ui'
-import { createIssueThread } from '@/api/issue'
+import { createThread } from '@/api/issue'
 
 import {
   NCard,
@@ -61,7 +61,7 @@ const onSubmitIssue = () => {
     if (errors) return
 
     try {
-      const res = await createIssueThread(
+      const res = await createThread(
         issueModel.title,
         issueModel.description,
         issueModel.impact,

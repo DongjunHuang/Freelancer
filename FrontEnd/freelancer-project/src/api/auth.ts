@@ -1,4 +1,4 @@
-import http from './http'
+import http from '@/api/httpuser'
 
 // The log in API
 export const signin = (data: { username: string; password: string }) =>

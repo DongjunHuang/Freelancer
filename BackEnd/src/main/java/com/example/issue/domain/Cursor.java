@@ -1,4 +1,4 @@
-package com.example.issue.domain.user;
+package com.example.issue.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
@@ -13,11 +13,11 @@ import java.util.Base64;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ThreadCursor {
+public class Cursor {
     private Instant lastMessageAt;
     private Long id;
 
-    public static String encode(ObjectMapper om, ThreadCursor c) {
+    public static String encode(ObjectMapper om, Cursor c) {
         try {
             String json = om.writeValueAsString(c);
             return Base64.getUrlEncoder().withoutPadding()
@@ -27,10 +27,10 @@ public class ThreadCursor {
         }
     }
 
-    public static ThreadCursor decode(ObjectMapper om, String cursor) {
+    public static Cursor decode(ObjectMapper om, String cursor) {
         try {
             byte[] bytes = Base64.getUrlDecoder().decode(cursor);
-            return om.readValue(new String(bytes, StandardCharsets.UTF_8), ThreadCursor.class);
+            return om.readValue(new String(bytes, StandardCharsets.UTF_8), Cursor.class);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid cursor decode", e);
         }

@@ -1,10 +1,7 @@
 package com.example.issue.interfaces;
 
-import com.example.issue.app.AdminIssueService;
-import com.example.issue.domain.admin.AdminThreadPageResp;
-import com.example.issue.domain.admin.AdminThreadStatsResp;
-import com.example.issue.domain.common.MessagePageResp;
-import com.example.issue.domain.common.PostMessageReq;
+import com.example.issue.app.IssueService;
+import com.example.issue.domain.*;
 import com.example.security.JwtUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -20,53 +17,73 @@ import java.util.Map;
 @RequestMapping("/admin/issues")
 public class AdminIssueController {
     private static final Logger logger = LoggerFactory.getLogger(AdminIssueController.class);
-
-    private final AdminIssueService issueAdminService;
+    private final IssueService issueService;
 
     @GetMapping("/getThreads")
-    public ResponseEntity<AdminThreadPageResp> getThreads(
+    public ResponseEntity<ThreadPageResp> getThreads(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String cursor,
             @AuthenticationPrincipal JwtUserDetails admin) {
-        logger.info("Get message thread for user {} for status {}", admin.getId(), status);
+        logger.info("Get thread for admin {} for status {}", admin.getId(), status);
         int pageSize = Math.min(Math.max(size, 1), 50);
 
-        AdminThreadPageResp resp = issueAdminService.getAdminThreads(
+        CursorPageDto<ThreadItem> cursorPageDto = issueService.getThreads(
+                admin.getId(),
                 status,
                 pageSize,
-                cursor
+                cursor,
+                UserType.ADMIN
         );
-
+        ThreadPageResp resp = ThreadPageResp.fromCursorPageDto(cursorPageDto);
         return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/thread-stats")
-    public ResponseEntity<AdminThreadStatsResp> getThreadStats(
+    public ResponseEntity<ThreadStatsResp> getThreadStats(
             @AuthenticationPrincipal JwtUserDetails admin) {
-        AdminThreadStatsResp resp = issueAdminService.getThreadStats(admin.getId());
+        logger.info("Admin {} to fetch all threads status", admin.getId());
+        ThreadStatsResp resp = issueService.getThreadStats();
         return ResponseEntity.ok(resp);
     }
 
-    @PostMapping("/{threadId}/messages")
+    @PostMapping("/{threadId}/postMessage")
     public ResponseEntity<?> postMessage(
             @PathVariable Long threadId,
             @RequestBody PostMessageReq req,
             @AuthenticationPrincipal JwtUserDetails admin) {
         logger.info("Post by admin for message thread id {}", threadId);
-        issueAdminService.postMessageByAdmin(admin.getId(), threadId, req);
+        issueService.postMessage(admin.getId(), threadId, req, UserType.ADMIN);
         return ResponseEntity.ok().body(Map.of("Result", "Success"));
     }
 
 
-    @GetMapping("/{threadId}/messages")
-    public ResponseEntity<MessagePageResp> getThreadMessages(
+    @GetMapping("/{threadId}/getMessages")
+    public ResponseEntity<MessagePageResp> getMessages(
             @PathVariable Long threadId,
             @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String cursor,
             @AuthenticationPrincipal JwtUserDetails admin) {
         logger.info("Get the message information for user {} and thread id {}", admin.getId(), threadId);
         int pageSize = Math.min(Math.max(size, 1), 50);
-        MessagePageResp resp = issueAdminService.getAdminThreadMessages(admin.getId(), threadId, pageSize);
+        MessagePageResp resp = issueService.getMessages(admin.getId(), threadId, pageSize, cursor, false);
+        return ResponseEntity.ok(resp);
+    }
+
+    @PatchMapping("/{threadId}/status")
+    public ResponseEntity<Void> updateThreadStatus(
+            @PathVariable Long threadId,
+            @RequestBody UpdateThreadStatusReq req,
+            @AuthenticationPrincipal JwtUserDetails admin) {
+        issueService.updateUserThreadStatus(admin.getId(), threadId, req.getStatus());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{threadId}")
+    public ResponseEntity<ThreadItem> getThread(
+            @PathVariable Long threadId,
+            @AuthenticationPrincipal JwtUserDetails admin) {
+        ThreadItem resp = issueService.getAdminThreadDetail(threadId);
         return ResponseEntity.ok(resp);
     }
 }

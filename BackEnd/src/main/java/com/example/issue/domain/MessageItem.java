@@ -1,6 +1,5 @@
-package com.example.issue.domain.common;
+package com.example.issue.domain;
 
-import com.example.issue.domain.user.UserType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,7 +7,7 @@ import java.time.Instant;
 
 @Data
 @Builder
-public class ThreadMessageDto {
+public class MessageItem {
     private Long id;
     private Long threadId;
     private UserType userType;
@@ -17,8 +16,8 @@ public class ThreadMessageDto {
     private Boolean isInternal;
     private Instant createdAt;
 
-    public static ThreadMessageDto toThreadMessageDto(IssueMessage message) {
-        return ThreadMessageDto.builder()
+    public static MessageItem toMessageItem(IssueMessage message) {
+        return MessageItem.builder()
                 .id(message.getId())
                 .threadId(message.getThreadId())
                 .userType(message.getUserType())

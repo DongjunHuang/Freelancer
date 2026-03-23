@@ -1,5 +1,5 @@
-import http from './http'
-import type { DatasetReq, Dataset } from '@/api/types'
+import http from '@/api/httpuser'
+import type { DatasetReq, Dataset } from '@/types/user'
 
 // The api to upload csv file
 export const uploadCsv = (

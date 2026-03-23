@@ -4,13 +4,13 @@ import router from '@/router'
 
 const whiteList = ['/admin/auth/signin']
 
-const adminHttp: AxiosInstance = axios.create({
+const httpa: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
   timeout: 10000,
   withCredentials: true,
 })
 
-adminHttp.interceptors.request.use(
+httpa.interceptors.request.use(
   (config) => {
     const url = config.url || ''
     const isNotAuth = whiteList.some((path) => url.startsWith(path))
@@ -30,7 +30,7 @@ adminHttp.interceptors.request.use(
 )
 
 let isRedirecting = false
-adminHttp.interceptors.response.use(
+httpa.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     const status = error.response?.status
@@ -52,4 +52,4 @@ adminHttp.interceptors.response.use(
     return Promise.reject(error)
   },
 )
-export default adminHttp
+export default httpa

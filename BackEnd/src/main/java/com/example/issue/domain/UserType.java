@@ -1,4 +1,4 @@
-package com.example.issue.domain.user;
+package com.example.issue.domain;
 
 public enum UserType {
     USER,

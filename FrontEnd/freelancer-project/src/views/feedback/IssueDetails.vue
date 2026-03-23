@@ -2,259 +2,148 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ThreadStatus } from '@/types/thread'
-import { getThread, getThreadMessages, postThreadMessage, updateThreadStatus } from '@/api/issue'
+import { UserType } from '@/types/user'
+import { NCard } from 'naive-ui'
+import { getThread, getMessages, postMessage, updateThreadStatus } from '@/api/issue'
+import { toDialogueMessage } from '@/mappers/messageMapper'
+import MessageDialogue from '@/components/issues/MessageDialogue.vue'
 import type { Thread } from '@/types/thread'
 import type { Message } from '@/types/message'
 
-import {
-  NCard,
-  NTag,
-  NButton,
-  NInput,
-  NDivider,
-  NSpin,
-  useMessage,
-  type SelectOption,
-} from 'naive-ui'
-
 const route = useRoute()
-const thread = ref<Thread | null>(null)
+const selectedThread = ref<Thread | null>(null)
 const messages = ref<Message[]>([])
-
+const detailLoading = ref(false)
+const loading = ref(false)
+const loadingMore = ref(false)
+const sending = ref(false)
+const replyText = ref('')
 const nextCursor = ref<string | null>(null)
 const hasMore = ref(false)
+const selectedStatus = ref<ThreadStatus>(ThreadStatus.WAITING_ADMIN)
 
-const canReply = ref(true)
+onMounted(async () => {
+  const threadId = Number(route.params.id)
+  fetchThread(threadId)
+  fetchMessages(threadId)
+})
 
-async function fetchPage() {
+async function fetchThread(threadId: number) {
   try {
-    const threadId = Number(route.params.id)
-    console.log('Thread id is {}', threadId)
-
-    const threadResp = await getThread(threadId)
-    thread.value = threadResp.data
-
-    const msgResp = await getThreadMessages(threadId, { size: 20 })
-
-    messages.value = msgResp.data.items
-    nextCursor.value = msgResp.data.nextCursor
-    hasMore.value = msgResp.data.hasMore
+    const messageResp = await getThread(UserType.USER, threadId)
+    selectedThread.value = messageResp.data
+    console.log(messageResp)
+    selectedStatus.value = messageResp.data.status
   } finally {
+    detailLoading.value = false
   }
 }
 
-/*
-async function loadOlderMessages() {
-  if (!hasMore.value || !nextCursor.value) return;
-
-  const threadId = Number(route.params.threadId);
-
-  const resp = await getThreadMessages(threadId, {
-    size: 20,
-    cursor: nextCursor.value
-  });
-
-  messages.value = [...resp.items, ...messages.value];
-
-  nextCursor.value = resp.nextCursor;
-  hasMore.value = resp.hasMore;
-}*/
-
-onMounted(() => {
-  fetchPage()
-  console.log('Page loaded')
-})
+async function fetchMessages(threadId: number) {
+  detailLoading.value = true
+  try {
+    const messageResp = await getMessages(UserType.USER, threadId)
+    messages.value = messageResp.data.items
+  } finally {
+    detailLoading.value = false
+  }
+}
 
 async function submitReply() {
-  const content = reply.content.trim()
+  const content = replyText.value.trim()
+
   if (!content) {
-    message.warning('Please enter your reply.')
-    return
-  }
-  if (!canReply.value) {
-    message.warning('This issue is resolved. Re-open it to reply.')
     return
   }
 
   sending.value = true
   try {
-    if (thread.value) {
-      await postThreadMessage(thread.value.id, content)
-      const threadResp = await getThread(thread.value.id)
-      const messageResp = await getThreadMessages(thread.value.id, { size: 20 })
+    if (selectedThread.value) {
+      await postMessage(UserType.USER, selectedThread.value.id, content)
+      const [threadResp, messageResp] = await Promise.all([
+        getThread(UserType.USER, selectedThread.value.id),
+        getMessages(UserType.USER, selectedThread.value.id, { size: 20 }),
+      ])
 
-      thread.value = threadResp.data
+      selectedThread.value = threadResp.data
       messages.value = messageResp.data.items
       nextCursor.value = messageResp.data.nextCursor
       hasMore.value = messageResp.data.hasMore
     }
   } finally {
     sending.value = false
-    reply.content = ''
+    replyText.value = ''
   }
 }
 
-function fmtTime(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleString()
-}
+const dialogueMessages = computed(() => messages.value.map(toDialogueMessage))
 
-async function changeStatus(status: ThreadStatus) {
-  if (!thread.value) return
+async function loadMoreMessages() {
+  if (loadingMore.value || !hasMore.value || !selectedThread.value) return
 
   try {
-    await updateThreadStatus(thread.value.id, status)
+    loadingMore.value = true
 
-    const resp = await getThread(thread.value.id)
-    thread.value = resp.data
-  } catch (e) {
-    console.error('failed to update status', e)
-  }
-}
+    const oldestMessage = messages.value[0]
 
-// ============================
-/*
-async function fetchMessages() {
-  loading.value = true;
-
-  try {
-    const resp = await getThreadMessages(threadId, {
+    const resp = await getMessages(UserType.USER, selectedThread.value.id, {
       size: 20,
-      cursor: null,
-    });
+      cursor: oldestMessage?.createdAt,
+    })
 
-    messages.value = resp.items;
-    nextCursor.value = resp.nextCursor;
-    hasMore.value = resp.hasMore;
+    const olderMessages = resp.data.items ?? []
+
+    if (!olderMessages.length) {
+      hasMore.value = false
+      return
+    }
+
+    messages.value = [...olderMessages, ...messages.value]
+    hasMore.value = resp.data.hasMore
+  } catch (error) {
+    console.error('Failed to load more messages:', error)
   } finally {
-    loading.value = false;
+    loadingMore.value = false
   }
-}*/
-
-const message = useMessage()
-
-const issueId = computed(() => String(route.params.id))
-
-const sending = ref(false)
-const updatingStatus = ref(false)
-
-const reply = reactive({
-  content: '',
-})
-
-// TODO: add paging
-/* 
-const messages = ref<ThreadMessageDto[]>([])
-const olderCursor = ref<string | null>(null)
-const hasOlder = ref(false)
-
-async function fetchLatestMessages(threadId: number) {
-  const resp = await getThreadMessages(threadId, { size: 20 })
-  messages.value = resp.items
-  olderCursor.value = resp.nextCursor
-  hasOlder.value = resp.hasMore
 }
 
-async function loadOlderMessages(threadId: number) {
-  if (!hasOlder.value || !olderCursor.value) return
+async function handleChangeStatus(status: string) {
+  if (!selectedThread.value) {
+    return
+  }
 
-  const resp = await getThreadMessages(threadId, {
-    size: 20,
-    cursor: olderCursor.value
-  })
+  const st = status as ThreadStatus
 
-  messages.value = [...resp.items, ...messages.value]
-  olderCursor.value = resp.nextCursor
-  hasOlder.value = resp.hasMore
-}*/
+  try {
+    await updateThreadStatus(UserType.ADMIN, selectedThread.value.id, st)
+
+    selectedThread.value.status = st
+  } catch (e) {
+    console.error(e)
+  }
+}
 </script>
 
 <template>
   <div class="max-w-5xl mx-auto px-6 py-8">
-    <NCard v-if="thread" class="shadow-sm">
-      <!-- header -->
-      <div class="flex items-start justify-between gap-6 flex-wrap">
-        <div class="min-w-0">
-          <div class="flex items-center gap-3 flex-wrap">
-            <div class="text-2xl font-semibold truncate">
-              {{ thread.title }}
-            </div>
-            <NTag type="info" size="small">{{ thread.status?.toUpperCase() }}</NTag>
-            <NTag type="info" size="small">{{ thread.type?.toUpperCase() }}</NTag>
-          </div>
-          <div class="mt-2 text-gray-500 text-sm">
-            Issue #{{ thread.id }} · Updated {{ fmtTime(thread.lastMessageAt) }}
-          </div>
-        </div>
-      </div>
-
-      <NDivider class="my-5" />
-
-      <!-- messages -->
-      <div class="space-y-4">
-        <div
-          v-for="m in messages"
-          :key="m.id"
-          class="flex"
-          :class="m.userType === 'USER' ? 'justify-end' : 'justify-start'"
-        >
-          <div
-            class="max-w-[820px] rounded-2xl px-4 py-3 border"
-            :class="
-              m.userType === 'USER'
-                ? 'bg-blue-600/10 border-blue-600/20'
-                : 'bg-gray-50 border-gray-200'
-            "
-          >
-            <div class="flex items-center gap-2 mb-1">
-              <span
-                class="text-xs font-medium"
-                :class="m.userType === 'USER' ? 'text-blue-700' : 'text-gray-700'"
-              >
-                {{ m.userType === 'USER' ? 'You' : 'Admin' }}
-              </span>
-              <span class="text-xs text-gray-400">{{ fmtTime(m.createdAt) }}</span>
-            </div>
-            <div class="whitespace-pre-wrap text-sm text-gray-900">
-              {{ m.body }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <NDivider class="my-6" />
-
-      <!-- reply -->
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="font-medium">Reply</div>
-          <div v-if="!canReply" class="text-sm text-gray-500">
-            This issue is resolved. Switch status to <span class="font-medium">Open</span> to reply.
-          </div>
-        </div>
-
-        <NInput
-          v-model:value="reply.content"
-          type="textarea"
-          :autosize="{ minRows: 4, maxRows: 10 }"
-          placeholder="Write your reply..."
-          :disabled="!canReply || sending"
-        />
-
-        <div class="flex gap-3">
-          <NButton type="primary" :loading="sending" :disabled="!canReply" @click="submitReply">
-            Send Reply
-          </NButton>
-
-          <NButton
-            secondary
-            :disabled="updatingStatus || thread.status === ThreadStatus.RESOLVED"
-            @click="changeStatus(ThreadStatus.RESOLVED)"
-          >
-            Mark Resolved
-          </NButton>
-        </div>
-      </div>
+    <NCard v-if="selectedThread" class="shadow-sm">
+      <MessageDialogue
+        :messages="dialogueMessages"
+        :loading="detailLoading"
+        :loading-more="loadingMore"
+        :sending="sending"
+        :can-reply="selectedThread.status !== 'RESOLVED'"
+        :has-more="hasMore"
+        :reply-text="replyText"
+        :title="selectedThread.title"
+        :subtitle="`Thread #${selectedThread.id}`"
+        :thread-status="selectedThread?.status"
+        current-actor="user"
+        @update:reply-text="replyText = $event"
+        @send="submitReply"
+        @load-more="loadMoreMessages"
+        @change-status="handleChangeStatus"
+      />
     </NCard>
   </div>
 </template>

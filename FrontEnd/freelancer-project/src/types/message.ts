@@ -1,7 +1,4 @@
-export enum UserType {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-}
+import { UserType } from '@/types/user'
 
 export type Message = {
   id: number
@@ -19,6 +16,7 @@ export type MessagePageResp = {
   hasMore: boolean
 }
 
-export type GetThreadMessagesParams = {
+export type GetMessagesParams = {
   size?: number
+  cursor?: string | null
 }

@@ -1,4 +1,4 @@
-package com.example.issue.domain.user;
+package com.example.issue.domain;
 
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +11,6 @@ public class ThreadPageResp {
     List<ThreadItem> items;
     private String nextCursor;
     private boolean hasMore;
-    private ThreadDto thread;
 
     public static ThreadPageResp fromCursorPageDto(CursorPageDto<ThreadItem> cursorPageDto) {
         return ThreadPageResp.builder()

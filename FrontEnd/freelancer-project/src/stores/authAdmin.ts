@@ -1,6 +1,4 @@
 import { defineStore } from 'pinia'
-
-// The administration login.
 const ADMIN_ACCESS_TOKEN_KEY = 'admin_access_token'
 type Admin = { username: string }
 
@@ -19,14 +17,14 @@ export const useAdminAuth = defineStore('adminAuth', {
       this.accessToken = token
       localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, token)
     },
-    setAdmin(u: Admin | null) {
-      this.admin = u
+    setAdmin(admin: Admin | null) {
+      this.admin = admin
     },
-    logout() {
-      this.accessToken = ''
-      localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY)
+    clear() {
+      this.$reset()
     },
   },
+
   persist: {
     key: 'admin',
   },

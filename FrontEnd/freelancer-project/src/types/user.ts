@@ -1,3 +1,8 @@
+export enum UserType {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
+
 // Data sets data types
 export interface DatasetReq {
   datasetName: string

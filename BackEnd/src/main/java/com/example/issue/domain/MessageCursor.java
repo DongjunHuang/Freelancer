@@ -1,6 +1,5 @@
-package com.example.issue.domain.common;
+package com.example.issue.domain;
 
-import com.example.issue.domain.user.ThreadCursor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
@@ -11,7 +10,7 @@ public class MessageCursor {
     private Instant lastMessageAt;
     private Long id;
 
-    public static String encode(ObjectMapper om, ThreadCursor c) {
+    public static String encode(ObjectMapper om, Cursor c) {
         try {
             String json = om.writeValueAsString(c);
             return Base64.getUrlEncoder().withoutPadding()

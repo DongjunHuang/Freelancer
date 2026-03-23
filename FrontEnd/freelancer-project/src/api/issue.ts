@@ -1,17 +1,38 @@
-import http from './http'
-import type { ThreadStatus, Thread, GetThreadsParams, ThreadPageResp } from '@/types/thread'
-import type { MessagePageResp, GetThreadMessagesParams } from '@/types/message'
+import http from '@/api/httpuser'
+import httpa from '@/api/httpadmin'
+import { MessagePageResp, GetMessagesParams } from '@/types/message'
+import { UserType } from '@/types/user'
 
-export const getThreads = (params: GetThreadsParams) =>
-  http.get<ThreadPageResp>(`/issues/getThreads`, {
-    params: {
-      status: params.status,
-      size: params.size,
-      cursor: params.cursor ?? undefined,
-    },
-  })
+import type { AxiosInstance } from 'axios'
+import type {
+  ThreadStatus,
+  Thread,
+  GetThreadsParams,
+  ThreadPageResp,
+  ThreadStatsResp,
+} from '@/types/thread'
 
-export const createIssueThread = (
+type ApiContext = {
+  client: AxiosInstance
+  prefix: string
+}
+
+function getApiContext(userType: UserType = UserType.USER): ApiContext {
+  if (userType === UserType.ADMIN) {
+    return {
+      client: httpa,
+      prefix: '/admin',
+    }
+  }
+
+  return {
+    client: http,
+    prefix: '',
+  }
+}
+
+// USER API to create feedback thread
+export const createThread = (
   title: string,
   description: string,
   impact: string | null,
@@ -24,21 +45,61 @@ export const createIssueThread = (
     type,
   })
 
-export const postThreadMessage = (threadId: number, body: string) =>
-  http.post(`/issues/${threadId}/messages`, {
+// USER/ADMIN API to post messages
+export const postMessage = (userType: UserType, threadId: number, body: string) => {
+  const apiContext = getApiContext(userType)
+  return apiContext.client.post(`${apiContext.prefix}/issues/${threadId}/postMessage`, {
     body,
   })
+}
 
-export const getThreadMessages = (threadId: number, params: GetThreadMessagesParams = {}) =>
-  http.get<MessagePageResp>(`/issues/${threadId}/messages`, {
+// USER/ADMIN API to get messages
+export const getMessages = (
+  userType: UserType,
+  threadId: number,
+  params: GetMessagesParams = {},
+) => {
+  const apiContext = getApiContext(userType)
+
+  return apiContext.client.get<MessagePageResp>(
+    `${apiContext.prefix}/issues/${threadId}/getMessages`,
+    {
+      params: {
+        size: params.size ?? 20,
+        cursor: params.cursor ?? undefined,
+      },
+    },
+  )
+}
+
+// USER/ADMIN API to get single thread
+export const getThread = (userType: UserType, threadId: number) => {
+  const apiContext = getApiContext(userType)
+  return apiContext.client.get<Thread>(`${apiContext.prefix}/issues/${threadId}`)
+}
+
+// USER/ADMIN API to update thread status
+export const updateThreadStatus = (userType: UserType, threadId: number, status: ThreadStatus) => {
+  const apiContext = getApiContext(userType)
+
+  return apiContext.client.patch(`${apiContext.prefix}/issues/${threadId}/status`, { status })
+}
+
+// USER/ADMIN API to get threads
+export const getThreads = (userType: UserType, params: GetThreadsParams = {}) => {
+  const apiContext = getApiContext(userType)
+
+  return apiContext.client.get<ThreadPageResp>(`${apiContext.prefix}/issues/getThreads`, {
     params: {
+      status: params.status ?? undefined,
       size: params.size ?? 20,
+      cursor: params.cursor ?? undefined,
     },
   })
+}
 
-export const getThread = (threadId: number) => http.get<Thread>(`/issues/${threadId}`)
-
-export const updateThreadStatus = (threadId: number, status: ThreadStatus) =>
-  http.patch(`/issues/${threadId}/status`, {
-    status,
-  })
+// USER/ADMIN API to get thread stats
+export const getThreadStats = (userType: UserType) => {
+  const apiContext = getApiContext(userType)
+  return apiContext.client.get<ThreadStatsResp>(`${apiContext.prefix}/issues/thread-stats`)
+}

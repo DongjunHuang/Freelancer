@@ -1,4 +1,4 @@
-import http from './http'
+import http from '@/api/httpuser'
 
 // Test Insert metric to mysql
 export const insertMetricMysql = (value: number) => http.post(`/tests/insert`, { value })

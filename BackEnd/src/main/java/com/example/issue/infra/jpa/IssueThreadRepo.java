@@ -3,8 +3,7 @@ package com.example.issue.infra.jpa;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
-import com.example.issue.domain.user.IssueThread;
-import com.example.issue.domain.common.ThreadStatus;
+import com.example.issue.domain.IssueThread;
 
 import java.time.Instant;
 import java.util.List;
@@ -48,7 +47,6 @@ public interface IssueThreadRepo extends JpaRepository<IssueThread, Long> {
         SELECT *
         FROM issue_thread
         WHERE user_id = :userId
-          AND (:statuses IS NULL OR status IN (:statuses))
           AND (
             last_message_at < :cursorTime
             OR (last_message_at = :cursorTime AND id < :cursorId)
@@ -57,6 +55,24 @@ public interface IssueThreadRepo extends JpaRepository<IssueThread, Long> {
         LIMIT :size
         """, nativeQuery = true)
     List<IssueThread> listUserNextPage(
+            @Param("userId") Long userId,
+            @Param("cursorTime") Instant cursorTime,
+            @Param("cursorId") Long cursorId,
+            @Param("size") int size);
+
+    @Query(value = """
+        SELECT *
+        FROM issue_thread
+        WHERE user_id = :userId
+          AND status IN (:statuses)
+          AND (
+            last_message_at < :cursorTime
+            OR (last_message_at = :cursorTime AND id < :cursorId)
+          )
+        ORDER BY last_message_at DESC, id DESC
+        LIMIT :size
+    """, nativeQuery = true)
+    List<IssueThread> listUserNextPageByStatuses(
             @Param("userId") Long userId,
             @Param("statuses") List<String> statuses,
             @Param("cursorTime") Instant cursorTime,
@@ -84,7 +100,8 @@ public interface IssueThreadRepo extends JpaRepository<IssueThread, Long> {
             @Param("size") int size);
 
     @Query(value = """
-    SELECT * FROM issue_thread
+    SELECT *
+    FROM issue_thread
     WHERE status IN (:statuses)
       AND (
         last_message_at < :cursorTime
@@ -100,7 +117,8 @@ public interface IssueThreadRepo extends JpaRepository<IssueThread, Long> {
             @Param("size") int size);
 
     @Query(value = """
-    SELECT * FROM issue_thread
+    SELECT *
+    FROM issue_thread
     WHERE (
         last_message_at < :cursorTime
         OR (last_message_at = :cursorTime AND id < :cursorId)
@@ -112,6 +130,7 @@ public interface IssueThreadRepo extends JpaRepository<IssueThread, Long> {
             @Param("cursorTime") Instant cursorTime,
             @Param("cursorId") Long cursorId,
             @Param("size") int size);
+
 
     @Query(value = "SELECT COUNT(*) FROM issue_thread", nativeQuery = true)
     long countAllThreads();
