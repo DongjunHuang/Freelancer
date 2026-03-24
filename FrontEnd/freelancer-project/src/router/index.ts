@@ -1,18 +1,17 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Tests from '@/views/Tests.vue'
-import Home from '@/views/Home.vue'
+import Tests from '@/views/tests.vue'
+import Home from '@/views/home.vue'
 
 import Signin from '@/views/auth/sign-in.vue'
 import Signup from '@/views/auth/sign-up.vue'
-import Verify from '@/views/auth/verify.vue'
+import Verify from '@/views/auth/verify-email.vue'
 
-import Dashboard from '@/views/dashboard/dashboard.vue'
+import Dashboard from '@/views/dashboard/dashboard-main.vue'
+import Upload from '@/views/upload/upload-main.vue'
 
-import Upload from '@/views/upload/upload.vue'
-
-import Issue from '@/views/feedback/issue.vue'
+import Issue from '@/views/feedback/issue-main.vue'
 import IssuePost from '@/views/feedback/issue-post.vue'
 import IssueDetails from '@/views/feedback/issue-details.vue'
 
@@ -20,11 +19,11 @@ import AdminLogin from '@/views/admin/admin-login.vue'
 import AdminHome from '@/views/admin/admin-home.vue'
 import AdminIssues from '@/views/admin/admin-issues.vue'
 
-import { useAuth } from '@/stores/auth'
-import { useAdminAuth } from '@/stores/auth-admin'
-
 import AppAdmin from '@/app-admin.vue'
 import AppUser from '@/app-user.vue'
+
+import { useAuth } from '@/stores/auth'
+import { useAdminAuth } from '@/stores/auth-admin'
 
 const BASE = import.meta.env.BASE_URL
 
