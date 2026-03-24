@@ -20,6 +20,10 @@ export const useAdminAuth = defineStore('adminAuth', {
     setAdmin(admin: Admin | null) {
       this.admin = admin
     },
+    logout() {
+      this.accessToken = ''
+      localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY)
+    },
     clear() {
       this.$reset()
     },

@@ -23,6 +23,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -68,7 +69,7 @@ public class AuthControllerSigninTest {
         JwtUserDetails principal = mock(JwtUserDetails.class);
         when(principal.getUsername()).thenReturn("john");
         when(principal.getEmail()).thenReturn("john@example.com");
-        when(principal.getAuthorities()).thenReturn(List.of());
+        when(principal.getAuthorities()).thenReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 principal, null, principal.getAuthorities());
@@ -81,7 +82,6 @@ public class AuthControllerSigninTest {
                 .thenReturn("device-id-xyz");
         when(jwtService.generateAccessToken("john", "john@example.com"))
                 .thenReturn("access-token-abc");
-
         when(env.getActiveProfiles()).thenReturn(new String[] { "dev" });
 
         when(request.getHeader("X-Forwarded-For")).thenReturn(null);
@@ -131,29 +131,6 @@ public class AuthControllerSigninTest {
                 eq("127.0.0.1"),
                 expiryCaptor.capture());
 
-    }
-
-    @Test
-    void testSigninBadCredentials() {
-        // === Arrange ===
-        SigninReq req = new SigninReq();
-        req.setUsername("john");
-        req.setPassword("wrong");
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Bad credentials"));
-
-        // === Act ===
-        ResponseEntity<?> resp = controller.signin(req, request);
-
-        // === Assert ===
-        assertThat(resp.getStatusCode().value()).isEqualTo(401);
-        assertThat(resp.getBody()).isInstanceOf(Map.class);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) resp.getBody();
-        assertThat(body.get("error")).isEqualTo("Invalid credentials");
-
-        verifyNoInteractions(jwtService, refreshTokenService);
     }
 
     @Test

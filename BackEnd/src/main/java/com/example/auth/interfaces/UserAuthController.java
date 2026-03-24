@@ -7,6 +7,10 @@ import com.example.auth.app.user.UserService;
 import com.example.auth.domain.user.SigninReq;
 import com.example.auth.domain.user.SignupReq;
 import com.example.auth.domain.user.UserStatus;
+import com.example.exception.ErrorCode;
+import com.example.exception.NotFoundException;
+import com.example.exception.AuthenticationException;
+
 import com.example.security.SecretService;
 import com.example.security.JwtUserDetails;
 import com.example.security.TokenInfo;
@@ -37,7 +41,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 
 /**
  * Auth controller handles user related activities, including sign in, sign up,
@@ -97,61 +100,60 @@ public class UserAuthController {
     public ResponseEntity<?> signin(
             @RequestBody SigninReq req,
             HttpServletRequest request) {
-        try {
-            logger.info("Signin for user {}", req.getUsername());
-            Authentication auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
+        logger.info("Signin for user {}", req.getUsername());
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
 
-            JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();
-            if (principal.getStatus() == UserStatus.PENDING) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of(
-                                "error", "EMAIL_NOT_VERIFIED",
-                                "message", "The account not validated"));
-            }
-
-            String refreshToken = jwtService.generateRefreshToken(principal.getUsername(), principal.getEmail());
-            String deviceId = jwtService.generateSignedDeviceId();
-            String ipAddress = getClientIp(request);
-
-            // Create and save refresh token
-            refreshTokenService.createAndSaveRefreshToken(principal.getUsername(),
-                    refreshToken,
-                    deviceId,
-                    ipAddress,
-                    LocalDateTime.now().plusDays(REFRESH_TOKEN_TTL_IN_DAYS));
-
-            boolean isProd = List.of(env.getActiveProfiles()).contains("prod");
-
-            // Generate cookie sending back to the client.
-            ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
-                    .httpOnly(true)
-                    .secure(isProd)
-                    .path("/auth")
-                    .maxAge(Duration.ofDays(REFRESH_TOKEN_TTL_IN_DAYS))
-                    .sameSite("Strict")
-                    .build();
-
-            ResponseCookie did = ResponseCookie.from("deviceid", deviceId)
-                    .httpOnly(true)
-                    .secure(isProd)
-                    .sameSite("Strict")
-                    .path("/")
-                    .maxAge(Duration.ofDays(400))
-                    .build();
-
-            var accessToken = jwtService.generateAccessToken(principal.getUsername(), principal.getEmail());
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, cookie.toString(), did.toString())
-                    .body(Map.of(
-                            "accessToken", accessToken,
-                            "user", Map.of(
-                                    "username", principal.getUsername(),
-                                    "email", principal.getEmail())));
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid credentials"));
+        JwtUserDetails principal = (JwtUserDetails) auth.getPrincipal();
+        if (principal.getStatus() == UserStatus.PENDING) {
+            throw new AuthenticationException(ErrorCode.USER_IS_NOT_VERIFIED);
         }
+
+        boolean isUser = principal.getAuthorities().stream().anyMatch(a -> "ROLE_USER".equals(a.getAuthority()));
+
+        if (!isUser) {
+            throw new AuthenticationException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        String refreshToken = jwtService.generateRefreshToken(principal.getUsername(), principal.getEmail());
+        String deviceId = jwtService.generateSignedDeviceId();
+        String ipAddress = getClientIp(request);
+
+        // Create and save refresh token
+        refreshTokenService.createAndSaveRefreshToken(principal.getUsername(),
+                refreshToken,
+                deviceId,
+                ipAddress,
+                LocalDateTime.now().plusDays(REFRESH_TOKEN_TTL_IN_DAYS));
+
+        boolean isProd = List.of(env.getActiveProfiles()).contains("prod");
+
+        // Generate cookie sending back to the client.
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(isProd)
+                .path("/auth")
+                .maxAge(Duration.ofDays(REFRESH_TOKEN_TTL_IN_DAYS))
+                .sameSite("Strict")
+                .build();
+
+        ResponseCookie did = ResponseCookie.from("deviceid", deviceId)
+                .httpOnly(true)
+                .secure(isProd)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ofDays(400))
+                .build();
+
+        var accessToken = jwtService.generateAccessToken(principal.getUsername(), principal.getEmail());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString(), did.toString())
+                .body(Map.of(
+                        "accessToken", accessToken,
+                        "user", Map.of(
+                                "username", principal.getUsername(),
+                                "email", principal.getEmail())));
+
     }
 
     @PostMapping("/refresh")

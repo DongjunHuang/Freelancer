@@ -40,8 +40,11 @@ public enum ErrorCode {
 
     // Dataset Explainable Code
     UPLOAD_FAILED("UPLOAD_FAILED", "Failed to upload"),
-    DELETE_FAILED("DELETE_FAILED", "Failed to delete the dataset");
+    DELETE_FAILED("DELETE_FAILED", "Failed to delete the dataset"),
 
+    // Authentication
+    USER_IS_NOT_VERIFIED("USER_IS_NOT_VERIFIED", "The user is not verified through email");
+    
     private final String code;
     private final String message;
 
