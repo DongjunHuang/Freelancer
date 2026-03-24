@@ -2,17 +2,17 @@
 // Import necessarry dependencies
 import { computed, ref, onMounted, watch } from 'vue'
 import { fetchDatasets, fetchDatapoints } from '@/api/dashboard'
-import { useDashboardState } from '@/composables/DashboardState'
+import { useDashboardState } from '@/composables/dashboard-state'
 
 // Imports components
-import SelectDatasetsPane from '@/components/Dashboard/SelectDatasetsPane.vue'
-import SelectPropsPane from '@/components/Dashboard/SelectPropsPane.vue'
-import SingleMetricChart from '@/components/Dashboard/SingleMetricChart.vue'
-import DisplayDetailsPane from '@/components/Dashboard/DisplayDetailsPane.vue'
-import RightSidePane from '@/components/Dashboard/RightSidePane.vue'
+import SelectDatasetsPane from '@/components/dashboard/SelectDatasetsPane.vue'
+import SelectPropsPane from '@/components/dashboard/SelectPropsPane.vue'
+import SingleMetricChart from '@/components/dashboard/SingleMetricChart.vue'
+import DisplayDetailsPane from '@/components/dashboard/DisplayDetailsPane.vue'
+import RightSidePane from '@/components/dashboard/RightSidePane.vue'
 
 // Import types
-import type { ColumnMeta, FetchRecordsResp, DataPoint, ChartData } from '@/api/types'
+import type { ColumnMeta, FetchRecordsResp, DataPoint, ChartData } from '@/types/user'
 
 const { filters, datasets } = useDashboardState()
 const error = ref('')

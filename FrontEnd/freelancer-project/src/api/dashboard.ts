@@ -1,4 +1,4 @@
-import http from '@/api/httpuser'
+import http from '@/api/http-user'
 import type { Dataset, FetchRecordsResp } from '@/types/user'
 
 // The api to request for refresh token

@@ -14,7 +14,7 @@ import { Thread, ThreadStatus, ThreadStatsResp } from '@/types/thread'
 import { Message } from '@/types/message'
 import { UserType } from '@/types/user'
 
-import { toDialogueMessage } from '@/mappers/messageMapper'
+import { toDialogueMessage } from '@/mappers/message-mapper'
 import MessageDialogue from '@/components/issues/MessageDialogue.vue'
 
 const selectedStatus = ref<ThreadStatus>(ThreadStatus.WAITING_ADMIN) // Default status

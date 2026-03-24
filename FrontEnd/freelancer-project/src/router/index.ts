@@ -21,7 +21,7 @@ import AdminHome from '@/views/admin/AdminHome.vue'
 import AdminIssues from '@/views/admin/AdminIssues.vue'
 
 import { useAuth } from '@/stores/auth'
-import { useAdminAuth } from '@/stores/authAdmin'
+import { useAdminAuth } from '@/stores/auth-admin'
 
 import AppAdmin from '@/AppAdmin.vue'
 import AppUser from '@/AppUser.vue'

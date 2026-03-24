@@ -1,4 +1,4 @@
-import httpa from '@/api/httpadmin'
+import httpa from '@/api/http-admin'
 
 // The log in API
 export const adminSignin = (data: { username: string; password: string }) =>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdminAuth } from '@/stores/authAdmin'
+import { useAdminAuth } from '@/stores/auth-admin'
 import { NButton, NCard, NTag } from 'naive-ui'
 
 const router = useRouter()

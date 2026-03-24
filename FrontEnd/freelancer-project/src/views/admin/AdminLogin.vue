@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { FormInst, FormRules } from 'naive-ui'
 import { NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
-import { useAdminAuth } from '@/stores/authAdmin'
+import { useAdminAuth } from '@/stores/auth-admin'
 import { adminSignin } from '@/api/admin'
 
 const { setAccessToken, setAdmin } = useAdminAuth()

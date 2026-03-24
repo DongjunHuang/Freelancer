@@ -1,4 +1,4 @@
-import http from '@/api/httpuser'
+import http from '@/api/http-user'
 import type { DatasetReq, Dataset } from '@/types/user'
 
 // The api to upload csv file

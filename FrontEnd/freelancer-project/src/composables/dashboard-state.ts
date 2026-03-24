@@ -1,5 +1,5 @@
 import { reactive, ref } from 'vue'
-import type { Dataset, FetchRecordsResp } from '@/api/types'
+import type { Dataset, FetchRecordsResp } from '@/types/user'
 
 export interface DashboardFilters {
   selectedDatasetName: string

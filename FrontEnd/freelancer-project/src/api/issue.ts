@@ -1,5 +1,5 @@
-import http from '@/api/httpuser'
-import httpa from '@/api/httpadmin'
+import http from '@/api/http-user'
+import httpa from '@/api/http-admin'
 import { MessagePageResp, GetMessagesParams } from '@/types/message'
 import { UserType } from '@/types/user'
 
