@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppHeader from '@/components/main/AppHeader.vue'
-import AppFooter from '@/components/main/AppFooter.vue'
+import AppHeader from '@/components/main/app-header.vue'
+import AppFooter from '@/components/main/app-footer.vue'
 import { NMessageProvider } from 'naive-ui'
 import { useRoute } from 'vue-router'
 const route = useRoute()

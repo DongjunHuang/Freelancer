@@ -5,11 +5,11 @@ import { fetchDatasets, fetchDatapoints } from '@/api/dashboard'
 import { useDashboardState } from '@/composables/dashboard-state'
 
 // Imports components
-import SelectDatasetsPane from '@/components/dashboard/SelectDatasetsPane.vue'
-import SelectPropsPane from '@/components/dashboard/SelectPropsPane.vue'
-import SingleMetricChart from '@/components/dashboard/SingleMetricChart.vue'
-import DisplayDetailsPane from '@/components/dashboard/DisplayDetailsPane.vue'
-import RightSidePane from '@/components/dashboard/RightSidePane.vue'
+import SelectDatasetsPane from '@/components/dashboard/select-datasets-pane.vue'
+import SelectPropsPane from '@/components/dashboard/select-props-pane.vue'
+import SingleMetricChart from '@/components/dashboard/single-metric-chart.vue'
+import DisplayDetailsPane from '@/components/dashboard/display-details-pane.vue'
+import RightSidePane from '@/components/dashboard/right-side-pane.vue'
 
 // Import types
 import type { ColumnMeta, FetchRecordsResp, DataPoint, ChartData } from '@/types/user'

@@ -15,7 +15,7 @@ import { Message } from '@/types/message'
 import { UserType } from '@/types/user'
 
 import { toDialogueMessage } from '@/mappers/message-mapper'
-import MessageDialogue from '@/components/issues/MessageDialogue.vue'
+import MessageDialogue from '@/components/issues/message-dialogue.vue'
 
 const selectedStatus = ref<ThreadStatus>(ThreadStatus.WAITING_ADMIN) // Default status
 const nextCursor = ref<string | null>(null)

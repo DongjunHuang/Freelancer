@@ -6,7 +6,7 @@ import { UserType } from '@/types/user'
 import { NCard } from 'naive-ui'
 import { getThread, getMessages, postMessage, updateThreadStatus } from '@/api/issue'
 import { toDialogueMessage } from '@/mappers/message-mapper'
-import MessageDialogue from '@/components/issues/MessageDialogue.vue'
+import MessageDialogue from '@/components/issues/message-dialogue.vue'
 import type { Thread } from '@/types/thread'
 import type { Message } from '@/types/message'
 

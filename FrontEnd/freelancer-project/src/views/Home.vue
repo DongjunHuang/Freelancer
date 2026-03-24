@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HeroBg from "@/components/home/homebg.vue";
+import HeroBg from '@/components/home/home-bg.vue'
 </script>
 
 <template>

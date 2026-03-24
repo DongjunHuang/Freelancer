@@ -1,9 +1,9 @@
 <!-- Upload.vue -->
 <script setup lang="ts">
 // Import components
-import UploadFileConfigPane from '@/components/upload/UploadFileConfigPane.vue'
-import UploadFilePane from '@/components/upload/UploadFilePane.vue'
-import DatasetSelectionPane from '@/components/upload/DatasetSelectionPane.vue'
+import UploadFileConfigPane from '@/components/upload/upload-file-config-pane.vue'
+import UploadFilePane from '@/components/upload/upload-file-pane.vue'
+import DatasetSelectionPane from '@/components/upload/dataset-selection-pane.vue'
 
 // Import Types
 import type { UploadState, UploadStatePatch } from '@/composables/upload-composable'
