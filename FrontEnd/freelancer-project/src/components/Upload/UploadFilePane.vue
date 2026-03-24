@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { UploadEvents } from '@/constants/events'
-import type { UploadState, UploadStatePatch } from '@/composables/UploadComposable'
+import type { UploadState, UploadStatePatch } from '@/composables/upload-composable'
 
 // Only read props
 const props = defineProps<{

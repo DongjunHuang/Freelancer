@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Dataset } from '@/api/types'
-import type { DashboardFilters } from '@/composables/DashboardState'
+import type { Dataset } from '@/types/user'
+import type { DashboardFilters } from '@/composables/dashboard-state'
 
 const props = defineProps<{
   filters: DashboardFilters

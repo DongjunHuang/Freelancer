@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { UploadState, UploadStatePatch } from '@/composables/UploadComposable'
+import type { UploadState, UploadStatePatch } from '@/composables/upload-composable'
 
 const props = defineProps<{ state: UploadState }>()
 const emit = defineEmits<{
