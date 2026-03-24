@@ -1,8 +1,8 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Tests from '@/views/tests.vue'
-import Home from '@/views/home.vue'
+import Tests from '@/views/tests-main.vue'
+import Home from '@/views/home-main.vue'
 
 import Signin from '@/views/auth/sign-in.vue'
 import Signup from '@/views/auth/sign-up.vue'
