@@ -96,9 +96,9 @@ public class IssueController {
     @PatchMapping("/{threadId}/status")
     public ResponseEntity<Void> updateThreadStatus(
             @PathVariable Long threadId,
-            @RequestBody ThreadStatus status,
+            @RequestBody UpdateThreadStatusReq req,
             @AuthenticationPrincipal JwtUserDetails user) {
-        service.updateUserThreadStatus(user.getId(), threadId, status);
+        service.updateThreadStatus(UserType.USER, user.getId(), threadId, req.getStatus());
         return ResponseEntity.ok().build();
     }
 }

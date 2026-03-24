@@ -8,7 +8,6 @@ import com.example.auth.domain.user.SigninReq;
 import com.example.auth.domain.user.SignupReq;
 import com.example.auth.domain.user.UserStatus;
 import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
 import com.example.exception.AuthenticationException;
 
 import com.example.security.SecretService;

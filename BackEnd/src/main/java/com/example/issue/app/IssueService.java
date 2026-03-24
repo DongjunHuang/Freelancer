@@ -241,15 +241,19 @@ public class IssueService {
      * @param newStatus the status.
      */
     @Transactional
-    public void updateUserThreadStatus(Long userId, Long threadId, ThreadStatus newStatus) {
+    public void updateThreadStatus(UserType userType, Long userId, Long threadId, ThreadStatus newStatus) {
         if (newStatus == null) {
             throw new BadRequestException(ErrorCode.NOT_VALID_THREAD_STATUS);
         }
+        IssueThread thread = null;
 
-        IssueThread thread = threadRepo.findByIdAndUserId(threadId, userId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
-
-
+        if (userType == UserType.ADMIN) {
+            thread = threadRepo.findById(threadId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        } else {
+            thread = threadRepo.findByIdAndUserId(threadId, userId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        }
 
         thread.setStatus(newStatus);
         threadRepo.save(thread);

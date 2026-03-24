@@ -75,7 +75,7 @@ public class AdminIssueController {
             @PathVariable Long threadId,
             @RequestBody UpdateThreadStatusReq req,
             @AuthenticationPrincipal JwtUserDetails admin) {
-        issueService.updateUserThreadStatus(admin.getId(), threadId, req.getStatus());
+        issueService.updateThreadStatus(UserType.ADMIN, null, threadId, req.getStatus());
         return ResponseEntity.ok().build();
     }
 

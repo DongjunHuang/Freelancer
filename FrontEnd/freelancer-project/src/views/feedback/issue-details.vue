@@ -115,7 +115,7 @@ async function handleChangeStatus(status: string) {
   const st = status as ThreadStatus
 
   try {
-    await updateThreadStatus(UserType.ADMIN, selectedThread.value.id, st)
+    await updateThreadStatus(UserType.USER, selectedThread.value.id, st)
 
     selectedThread.value.status = st
   } catch (e) {

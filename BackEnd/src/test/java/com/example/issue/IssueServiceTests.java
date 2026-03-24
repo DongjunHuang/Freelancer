@@ -612,7 +612,7 @@ class IssueServiceTests {
         when(threadRepo.findByIdAndUserId(threadId, userId)).thenReturn(Optional.of(thread));
         when(threadRepo.save(thread)).thenReturn(thread);
 
-        issueThreadService.updateUserThreadStatus(userId, threadId, newStatus);
+        issueThreadService.updateThreadStatus(UserType.USER, userId, threadId, newStatus);
 
         assertEquals(ThreadStatus.RESOLVED, thread.getStatus());
         verify(threadRepo).findByIdAndUserId(threadId, userId);
@@ -629,7 +629,7 @@ class IssueServiceTests {
 
         assertThrows(
                 NotFoundException.class,
-                () -> issueThreadService.updateUserThreadStatus(userId, threadId, ThreadStatus.RESOLVED)
+                () -> issueThreadService.updateThreadStatus(UserType.USER, userId, threadId, ThreadStatus.RESOLVED)
         );
 
         verify(threadRepo).findByIdAndUserId(threadId, userId);
@@ -643,7 +643,7 @@ class IssueServiceTests {
         Long threadId = 100L;
         assertThrows(
                 BadRequestException.class,
-                () -> issueThreadService.updateUserThreadStatus(userId, threadId, null)
+                () -> issueThreadService.updateThreadStatus(UserType.USER, userId, threadId, null)
         );
     }
 
