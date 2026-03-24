@@ -4,7 +4,7 @@ import router from '@/router'
 
 const whiteList = ['/admin/auth/signin']
 
-const httpa: AxiosInstance = axios.create({
+export const httpa: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE,
   timeout: 10000,
   withCredentials: true,
