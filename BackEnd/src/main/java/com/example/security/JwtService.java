@@ -7,7 +7,7 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.nio.charset.StandardCharsets;
@@ -23,24 +24,17 @@ import java.security.Key;
 import java.util.Base64;
 
 @Service
-public class SecretService {
+@ConfigurationProperties(prefix = "jwt")
+public class JwtService {
+    private final JwtProperties jwtProperties;
+    private final SecretKey key;
     private final JwtParser parser;
-    
-    // Access Token TTL    
-    private final long ACCESS_EXPIRATION = 1000 * 60 * 15;
 
-    // Refresh Token TTL
-    private final long REFRESH_EXPIRATION = 1000L * 60 * 60 * 24 * 7;
-
-    // Access Token TTL for admin, 2 hours
-    private final long ADMIN_ACCESS_EXPIRATION = 1000 * 60 * 60 * 2;
-
-    // The generated key according to private key string
-    private String privateKeyBase64;
-    private Key key;
-    public SecretService(@Value("${jwt.private-key}") String privateKeyBase64) {
-        this.privateKeyBase64 = privateKeyBase64;
-        this.key = Keys.hmacShaKeyFor(privateKeyBase64.getBytes(StandardCharsets.UTF_8));
+    public JwtService(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+        this.key = Keys.hmacShaKeyFor(
+                this.jwtProperties.getPrivateKey().getBytes(StandardCharsets.UTF_8)
+        );
         this.parser = Jwts.parserBuilder()
                                 .setSigningKey(this.key)
                                 .setAllowedClockSkewSeconds(60)
@@ -48,38 +42,47 @@ public class SecretService {
     }
 
     /**
-     * Generate refersh token.
-     * @param username
-     * @return
+     * Generate refresh token.
+     * @param username the user name.
+     * @param email the email.
+     * @return the token generated.
      */
     public String generateRefreshToken(String username, String email) {
         Map<String, String> map = new HashMap<String, String>();
         map.put("email", email);
-        return generateToken(map, username, REFRESH_EXPIRATION);
-    }
-    
-    /**
-     * Generate access token.
-     * 
-     * @param username
-     * @return
-     */
-    public String generateAccessToken(String username, 
-                                        String email) {
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("email", email);
-        return generateToken(map, username, ACCESS_EXPIRATION);
+        return generateToken(map, username, this.jwtProperties.getRefreshExpiration());
     }
 
+    /**
+     * Generate access token.
+     * @param username the username.
+     * @param email the email.
+     * @return the token generated.
+     */
+    public String generateAccessToken(String username, String email) {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("email", email);
+        return generateToken(map, username, this.jwtProperties.getAccessExpiration());
+    }
+
+    /**
+     * Generate admin access token.
+     * @param username the admin name.
+     * @return the token generated.
+     */
     public String generateAdminAccessToken(String username) {
         Map<String, String> map = new HashMap<String, String>();
         map.put("role", "ADMIN");
         map.put("type", "ADMIN_ACCESS");
         map.put("iss", "freelancer-admin");
-        return generateToken(map, username, ADMIN_ACCESS_EXPIRATION);
+        return generateToken(map, username, this.jwtProperties.getAdminAccessExpiration());
     }
 
-
+    /**
+     * Check if the token is valid.
+     * @param jwt token
+     * @return whether the token is valid.
+     */
     public boolean isValid(String jwt) {
         try {
             parser.parseClaimsJws(jwt);
@@ -89,6 +92,11 @@ public class SecretService {
         }
     }
 
+    /**
+     * Parse the token.
+     * @param jwt the token
+     * @return the parsed info.
+     */
     public TokenInfo parse(String jwt) {
         TokenInfo jwtToken = new TokenInfo();
         Jws<Claims> jws = parser.parseClaimsJws(jwt);
@@ -115,10 +123,11 @@ public class SecretService {
                 .compact();
     }
 
+
     private String hmacSha256Base64Url(String message) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(this.privateKeyBase64.getBytes(), "HmacSHA256"));
+            mac.init(new SecretKeySpec(this.jwtProperties.getPrivateKey().getBytes(), "HmacSHA256"));
             byte[] sig = mac.doFinal(message.getBytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(sig);
         } catch (Exception e) {

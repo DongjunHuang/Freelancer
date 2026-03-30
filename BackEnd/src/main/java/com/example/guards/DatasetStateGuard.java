@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
+import com.example.exception.types.NotFoundException;
 
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;

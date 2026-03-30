@@ -3,7 +3,7 @@ package com.example.controllers;
 import com.example.common.dataset.domain.DataProps;
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.dashboard.domain.DatasetMetadataResp;
-import com.example.exception.BadRequestException;
+import com.example.exception.types.BadRequestException;
 import com.example.exception.ErrorCode;
 import com.example.security.JwtUserDetails;
 import com.example.upload.app.MetadataService;

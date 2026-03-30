@@ -28,7 +28,7 @@ import com.example.upload.domain.DatasetReq;
 import com.example.common.dataset.domain.DataProps;
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.dashboard.domain.DatasetMetadataResp;
-import com.example.exception.BadRequestException;
+import com.example.exception.types.BadRequestException;
 
 import lombok.RequiredArgsConstructor;
 

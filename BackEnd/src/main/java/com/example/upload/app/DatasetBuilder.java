@@ -17,7 +17,7 @@ import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.common.dataset.domain.DatasetMetadata.ColumnMeta;
 import com.example.common.dataset.domain.DatasetMetadata.VersionControl;
 import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
-import com.example.exception.BadRequestException;
+import com.example.exception.types.BadRequestException;
 import com.example.exception.ErrorCode;
 import com.example.guards.DatasetAction;
 import com.example.guards.DatasetStateGuard;

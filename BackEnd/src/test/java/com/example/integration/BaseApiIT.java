@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,64 +26,64 @@ import org.junit.jupiter.api.AfterEach;
 @Import(TestMailConfig.class)
 public abstract class BaseApiIT {
 
-        @Autowired
-        protected MockMvc mvc;
+    @Autowired
+    protected MockMvc mvc;
 
-        @Autowired
-        protected ObjectMapper om;
+    @Autowired
+    protected ObjectMapper om;
 
-        @Autowired
-        MailTokenRepo mailTokenRepo;
+    @Autowired
+    MailTokenRepo mailTokenRepo;
 
-        @Autowired
-        UserRepo userRepo;
+    @Autowired
+    UserRepo userRepo;
 
-        @Autowired
-        DatasetMetadataRepo metadataRepo;
+    @Autowired
+    DatasetMetadataRepo metadataRepo;
 
-        @Autowired
-        DatasetRecordRepo recordRepo;
+    @Autowired
+    DatasetRecordRepo recordRepo;
 
-        protected String bearer(String token) {
-                return "Bearer " + token;
-        }
+    protected String bearer(String token) {
+        return "Bearer " + token;
+    }
 
-        protected String signupAndSigninGetToken(String username, String email, String password) throws Exception {
-                // 1) signup
-                mvc.perform(post("/auth/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                                  {"username":"%s","email":"%s","password":"%s"}
-                                                """.formatted(username, email, password)))
-                                .andExpect(status().is2xxSuccessful());
+    protected String signupAndSignInGetToken(String username, String email, String password) throws Exception {
+        // 1) signup
+        mvc.perform(post("/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                  {"username":"%s","email":"%s","password":"%s"}
+                                """.formatted(username, email, password)))
+                .andExpect(status().is2xxSuccessful());
 
-                // 2) write to mail token
-                var tok = mailTokenRepo.findByEmail(email)
-                                .orElseThrow(() -> new IllegalStateException("No mail token created for " + email));
+        // 2) write to mail token
+        var tok = mailTokenRepo.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("No mail token created for " + email));
 
-                // 3). verify the token
-                mvc.perform(get("/auth/verify").param("token", tok.getToken()))
-                                .andExpect(status().is2xxSuccessful());
+        // 3). verify the token
+        mvc.perform(get("/auth/verify").param("token", tok.getToken()))
+                .andExpect(status().is2xxSuccessful());
 
-                // 4). signin
-                var res = mvc.perform(post("/auth/signin")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                                  {"username":"%s","password":"%s"}
-                                                """.formatted(username, password)))
-                                .andExpect(status().is2xxSuccessful())
-                                .andReturn()
-                                .getResponse()
-                                .getContentAsString();
+        // 4). signin
+        var res = mvc.perform(post("/auth/signin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                  {"username":"%s","password":"%s"}
+                                """.formatted(username, password)))
+                .andExpect(status().is2xxSuccessful())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-                JsonNode root = om.readTree(res);
-                return root.path("accessToken").asText();
-        }
+        JsonNode root = om.readTree(res);
+        return root.path("accessToken").asText();
+    }
 
-        @AfterEach
-        void cleanup() {
-                recordRepo.deleteAll();
-                metadataRepo.deleteAll();
-                userRepo.deleteAll();
-        }
+    @AfterEach
+    void cleanup() {
+        recordRepo.deleteAll();
+        metadataRepo.deleteAll();
+        userRepo.deleteAll();
+    }
 }

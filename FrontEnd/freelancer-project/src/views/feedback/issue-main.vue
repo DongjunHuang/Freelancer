@@ -4,73 +4,143 @@ import { useRoute, useRouter } from 'vue-router'
 import { UserType } from '@/types/user'
 import { getThreads } from '@/api/issue'
 
-import type { Thread, ThreadFilterStatus } from '@/types/thread'
+import type { Thread } from '@/types/thread'
+
+const route = useRoute()
+const router = useRouter()
+
+type CachedThreadPage = {
+  requestCursor: string | null
+  items: Thread[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+const pageCache = ref<CachedThreadPage[]>([])
+const page = ref<number>(Number(route.query.page ?? 0))
+const size = ref<number>(Number(route.query.size ?? 10))
 
 const threads = ref<Thread[]>([])
 const nextCursor = ref<string | null>(null)
 const hasMore = ref(false)
-const filterStatus = ref<ThreadFilterStatus | undefined>()
 
-const route = useRoute()
-const router = useRouter()
 const status = ref<string>(String(route.query.status ?? 'ALL'))
+const anchor = ref<string>(String(route.query.anchor ?? ''))
 
-const statusTabs = [
-  { key: 'ALL', label: 'All' },
-  { key: 'OPEN', label: 'Open' },
-  { key: 'RESOLVED', label: 'Resolved' },
-]
+const canGoPrev = computed(() => page.value > 0)
+const canGoNext = computed(() => {
+  const current = getCurrentCachedPage()
+  return !!current?.hasMore
+})
 
-async function setStatus(s: string) {
-  status.value = s
-  page.value = 0
-  await fetchList()
+function getCurrentCachedPage() {
+  return pageCache.value[page.value] ?? null
 }
 
-async function fetchList() {
+function applyPageData(cached: CachedThreadPage) {
+  threads.value = cached.items
+  nextCursor.value = cached.nextCursor
+  hasMore.value = cached.hasMore
+}
+
+async function fetchPageByCursor(targetPage: number, cursor: string | null) {
   loading.value = true
+  error.value = ''
 
   try {
     const resp = await getThreads(UserType.USER, {
       status: status.value,
-      size: 20,
-      cursor: null,
+      size: size.value,
+      cursor,
     })
-    console.log(resp)
 
-    threads.value = resp.data.items
-    nextCursor.value = resp.data.nextCursor
-    hasMore.value = resp.data.hasMore
+    const cachedPage: CachedThreadPage = {
+      requestCursor: cursor,
+      items: resp.data.items,
+      nextCursor: resp.data.nextCursor,
+      hasMore: resp.data.hasMore,
+    }
+
+    pageCache.value[targetPage] = cachedPage
+    page.value = targetPage
+    applyPageData(cachedPage)
+
+    await syncUrlQuery()
+  } catch (e: any) {
+    error.value = e?.message ?? 'Failed to load threads'
   } finally {
     loading.value = false
   }
 }
 
-async function loadMore() {
-  if (!hasMore.value || !nextCursor.value) {
+async function loadFirstPage() {
+  pageCache.value = []
+  await fetchPageByCursor(0, null)
+}
+
+async function setStatus(s: string) {
+  if (status.value === s) return
+  status.value = s
+  page.value = 0
+  await loadFirstPage()
+}
+
+async function goNext() {
+  if (loading.value) return
+
+  const current = getCurrentCachedPage()
+  if (!current || !current.hasMore || !current.nextCursor) return
+
+  const targetPage = page.value + 1
+  const cachedNext = pageCache.value[targetPage]
+
+  if (cachedNext) {
+    page.value = targetPage
+    applyPageData(cachedNext)
+    await syncUrlQuery()
     return
   }
 
-  loading.value = true
-
-  try {
-    const resp = await getThreads(UserType.USER, {
-      status: filterStatus.value,
-      size: 20,
-      cursor: nextCursor.value,
-    })
-
-    threads.value.push(...resp.data.items)
-    nextCursor.value = resp.data.nextCursor
-    hasMore.value = resp.data.hasMore
-  } finally {
-    loading.value = false
-  }
+  await fetchPageByCursor(targetPage, current.nextCursor)
 }
 
-onMounted(() => {
-  fetchList()
-  console.log('Page loaded')
+async function goPrev() {
+  if (loading.value) return
+  if (page.value <= 0) return
+
+  const targetPage = page.value - 1
+  const cachedPrev = pageCache.value[targetPage]
+
+  if (!cachedPrev) return
+
+  page.value = targetPage
+  applyPageData(cachedPrev)
+  await syncUrlQuery()
+}
+
+async function goPage(targetPage: number) {
+  if (loading.value) return
+  if (targetPage < 0) return
+  if (targetPage === page.value) return
+
+  const cached = pageCache.value[targetPage]
+  if (cached) {
+    page.value = targetPage
+    applyPageData(cached)
+    await syncUrlQuery()
+    return
+  }
+
+  if (targetPage === page.value + 1) {
+    await goNext()
+    return
+  }
+
+  return
+}
+
+onMounted(async () => {
+  await loadFirstPage()
 })
 
 function openThread(id: number) {
@@ -79,13 +149,6 @@ function openThread(id: number) {
 
 const loading = ref(false)
 const error = ref('')
-
-const page = ref<number>(Number(route.query.page ?? 0))
-const size = ref<number>(Number(route.query.size ?? 20))
-const anchor = ref<string>(String(route.query.anchor ?? ''))
-
-const totalElements = ref<number | null>(null)
-const totalPages = ref<number | null>(null)
 
 async function syncUrlQuery() {
   await router.replace({
@@ -100,33 +163,8 @@ async function syncUrlQuery() {
   })
 }
 
-async function goPage(p: number) {
-  if (p < 0) return
-  if (totalPages.value !== null && p >= totalPages.value) return
-  page.value = p
-  await syncUrlQuery()
-  await fetchList()
-}
-
-async function refresh() {
-  anchor.value = ''
-  page.value = 0
-  await syncUrlQuery()
-  await fetchList()
-}
-
 const pageButtons = computed(() => {
-  const tp = totalPages.value ?? 0
-  if (tp <= 0) return [0]
-  const current = page.value
-  const window = 5
-  const half = Math.floor(window / 2)
-  let start = Math.max(0, current - half)
-  let end = Math.min(tp - 1, start + window - 1)
-  start = Math.max(0, end - window + 1)
-  const arr: number[] = []
-  for (let i = start; i <= end; i++) arr.push(i)
-  return arr
+  return pageCache.value.map((_, index) => index)
 })
 
 function formatDate(iso: string) {
@@ -146,20 +184,29 @@ function statusPillClass(s: string) {
   return 'border-gray-200 text-gray-700'
 }
 
+const statusTabs = [
+  { key: 'ALL', label: 'All' },
+  { key: 'OPEN', label: 'Open' },
+  { key: 'RESOLVED', label: 'Resolved' },
+]
+
 watch(
   () => route.query,
-  () => {
-    page.value = Number(route.query.page ?? 0)
-    size.value = Number(route.query.size ?? 20)
-    status.value = String(route.query.status ?? 'ALL')
-    anchor.value = String(route.query.anchor ?? '')
+  (q) => {
+    const newStatus = String(q.status ?? 'ALL')
+    const newSize = Number(q.size ?? 10)
+
+    if (newStatus !== status.value || newSize !== size.value) {
+      status.value = newStatus
+      size.value = newSize
+      loadFirstPage()
+    }
   },
 )
 </script>
 
 <template>
   <div class="min-h-screen">
-    <!-- Issue Headers -->
     <div class="max-w-5xl mx-auto px-4 py-8">
       <div class="flex items-start justify-between gap-4">
         <div>
@@ -176,7 +223,6 @@ watch(
         </div>
       </div>
 
-      <!-- Issue Filters -->
       <div class="mt-6 flex flex-wrap items-center gap-2">
         <button
           v-for="s in statusTabs"
@@ -190,7 +236,6 @@ watch(
         </button>
       </div>
 
-      <!-- Issue List -->
       <div class="mt-4 border rounded-xl overflow-hidden bg-white">
         <div v-if="loading && threads.length === 0" class="p-6 text-gray-600">Loading...</div>
 
@@ -201,14 +246,13 @@ watch(
         <ul v-else class="divide-y">
           <li
             v-for="it in threads"
-            :key="it.title"
-            class="p-4 hover:bg-gray-50"
+            :key="it.id"
+            class="p-4 hover:bg-gray-50 cursor-pointer"
             @click="openThread(it.id)"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="mt-2 font-medium truncate">
-                  <!-- Selection, you can change to detail page -->
                   {{ it.title }}
                 </div>
                 <div class="mt-1 text-sm text-gray-600">
@@ -232,17 +276,14 @@ watch(
         </ul>
       </div>
 
-      <!--Issue Paging -->
       <div class="mt-6 flex items-center justify-between gap-4">
-        <div class="text-sm text-gray-600">
-          <span v-if="totalElements !== null"> Total: {{ totalElements }} </span>
-        </div>
+        <div class="text-sm text-gray-600">Page {{ page + 1 }}</div>
 
         <div class="flex items-center gap-2">
           <button
             class="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-            @click="goPage(page - 1)"
-            :disabled="loading || page <= 0"
+            @click="goPrev"
+            :disabled="loading || !canGoPrev"
           >
             Prev
           </button>
@@ -260,8 +301,8 @@ watch(
 
           <button
             class="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-            @click="goPage(page + 1)"
-            :disabled="loading || (totalPages !== null && page >= totalPages - 1)"
+            @click="goNext"
+            :disabled="loading || !canGoNext"
           >
             Next
           </button>

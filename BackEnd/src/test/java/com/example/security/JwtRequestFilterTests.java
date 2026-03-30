@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 public class JwtRequestFilterTests {
 
     @Mock
-    SecretService jwtService;
+    JwtService jwtService;
 
     @Mock
     UserDetailsService userDetailsService;

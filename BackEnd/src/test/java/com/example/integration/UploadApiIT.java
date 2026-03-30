@@ -41,6 +41,7 @@ public class UploadApiIT extends BaseApiIT {
             """;
     @Autowired
     DatasetMetadataRepo metadataRepo;
+
     @Autowired
     DatasetRecordRepo recordRepo; // Mongo
 
@@ -52,12 +53,12 @@ public class UploadApiIT extends BaseApiIT {
 
     /**
      * Create a new dataset.
-     * 
+     *
      * @throws Exception
      */
     @Test
     void uploadDatasetHappyPath() throws Exception {
-        String token = signupAndSigninGetToken(USERNAME, EMAIL, PASSWORD);
+        String token = signupAndSignInGetToken(USERNAME, EMAIL, PASSWORD);
         User u = userRepo.findByEmail(EMAIL).orElseThrow();
         Long userId = u.getUserId();
         assertThat(u.getStatus()).isEqualTo(UserStatus.ACTIVE);
@@ -83,9 +84,9 @@ public class UploadApiIT extends BaseApiIT {
                         """.getBytes(StandardCharsets.UTF_8)));
 
         mvc.perform(multipart("/upload/uploadCsv")
-                .file(file)
-                .file(datasetPart)
-                .header("Authorization", bearer(token)))
+                        .file(file)
+                        .file(datasetPart)
+                        .header("Authorization", bearer(token)))
                 .andExpect(status().is2xxSuccessful());
 
         DatasetMetadata meta = metadataRepo
@@ -113,9 +114,9 @@ public class UploadApiIT extends BaseApiIT {
 
         // 2) append
         mvc.perform(multipart("/upload/uploadCsv")
-                .file(file2)
-                .file(datasetPart2)
-                .header("Authorization", bearer(token)))
+                        .file(file2)
+                        .file(datasetPart2)
+                        .header("Authorization", bearer(token)))
                 .andExpect(status().is2xxSuccessful());
     }
 }

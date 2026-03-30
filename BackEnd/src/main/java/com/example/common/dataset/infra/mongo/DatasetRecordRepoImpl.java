@@ -16,7 +16,7 @@ import org.springframework.stereotype.Repository;
 import com.example.common.MongoKeys;
 import com.example.common.dataset.domain.DataProps;
 import com.example.dashboard.domain.DatasetRecord;
-import com.example.exception.BadRequestException;
+import com.example.exception.types.BadRequestException;
 import com.example.exception.ErrorCode;
 import com.example.utils.DateParser;
 import com.mongodb.client.MongoCollection;

@@ -55,11 +55,16 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .userDetailsService(customUserDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/admin/auth/**").permitAll()
+                        .requestMatchers(
+                                "/auth/signin",
+                                "/auth/refresh",
+                                "/auth/signup",
+                                "/auth/verify",
+                                "/admin/auth/**"
+                        ).permitAll()
+                        .requestMatchers("/auth/signout").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .anyRequest()
-                        .authenticated())
+                        .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler))

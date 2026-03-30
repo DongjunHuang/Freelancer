@@ -1,6 +1,6 @@
 package com.example.services;
 
-import com.example.auth.app.user.RefreshTokenService;
+import com.example.auth.app.user.UserService;
 import com.example.auth.domain.user.RefreshToken;
 import com.example.auth.infra.jpa.RefreshTokenRepo;
 
@@ -25,7 +25,7 @@ public class RefreshTokenServiceTests {
     private RefreshTokenRepo repo;
 
     @InjectMocks
-    private RefreshTokenService service;
+    private UserService service;
 
     @Test
     void createAndSaveRefreshToken_shouldDeleteOldAndSaveNew() {

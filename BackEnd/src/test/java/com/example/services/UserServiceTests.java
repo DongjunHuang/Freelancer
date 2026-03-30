@@ -1,29 +1,32 @@
 package com.example.services;
 
+import com.example.auth.domain.user.*;
+import com.example.auth.infra.jpa.RefreshTokenRepo;
+import com.example.security.JwtService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.example.auth.app.user.UserService;
-import com.example.auth.domain.user.MailToken;
-import com.example.auth.domain.user.SignupReq;
-import com.example.auth.domain.user.User;
-import com.example.auth.domain.user.UserStatus;
-import com.example.auth.domain.user.VerificationCreatedEvent;
 import com.example.auth.infra.jpa.MailTokenRepo;
 import com.example.auth.infra.jpa.UserRepo;
-import com.example.exception.BusinessRuleException;
-import com.example.exception.ConflictException;
+import com.example.exception.types.BusinessRuleException;
+import com.example.exception.types.ConflictException;
 import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
+import com.example.exception.types.NotFoundException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -31,275 +34,390 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTests {
 
-        @InjectMocks
-        private UserService userService;
+    @Mock
+    private JwtService jwtService;
 
-        @Mock
-        private MailTokenRepo mailTokenRepo;
+    @InjectMocks
+    private UserService userService;
 
-        @Mock
-        private UserRepo userRepo;
+    @Mock
+    private Environment env;
 
-        @Mock
-        private ApplicationEventPublisher publisher;
+    @Mock
+    private MailTokenRepo mailTokenRepo;
 
-        @Mock
-        private PasswordEncoder encoder;
+    @Mock
+    private UserRepo userRepo;
 
-        @Test
-        void testValidateEmailInvalidToken() {
-                when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.empty());
+    @Mock
+    private ApplicationEventPublisher publisher;
 
-                assertThatThrownBy(() -> userService.validateEmail("abc"))
-                                .isInstanceOf(BusinessRuleException.class)
-                                .hasMessageContaining(ErrorCode.TOKEN_INVALID.getMessage());
+    @Mock
+    private PasswordEncoder encoder;
 
-                verify(mailTokenRepo).findByToken("abc");
-                verifyNoMoreInteractions(mailTokenRepo, userRepo);
-        }
+    @Mock
+    private RefreshTokenRepo refreshTokenRepo;
 
-        @Test
-        void testValidateEmailExpiredToken() {
-                MailToken token = MailToken.builder()
-                                .token("abc")
-                                .userId(1L)
-                                .expiresAt(LocalDateTime.now().minusMinutes(1))
-                                .used(false)
-                                .build();
+    @Test
+    void testValidateEmailInvalidToken() {
+        when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.empty());
 
-                when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
+        assertThatThrownBy(() -> userService.validateEmail("abc"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining(ErrorCode.TOKEN_INVALID.getMessage());
 
-                assertThatThrownBy(() -> userService.validateEmail("abc"))
-                                .isInstanceOf(BusinessRuleException.class)
-                                .hasMessageContaining(ErrorCode.TOKEN_EXPIRED.getMessage());
+        verify(mailTokenRepo).findByToken("abc");
+        verifyNoMoreInteractions(mailTokenRepo, userRepo);
+    }
 
-                verify(mailTokenRepo).findByToken("abc");
-                verifyNoMoreInteractions(mailTokenRepo, userRepo);
-        }
+    @Test
+    void testValidateEmailExpiredToken() {
+        MailToken token = MailToken.builder()
+                .token("abc")
+                .userId(1L)
+                .expiresAt(LocalDateTime.now().minusMinutes(1))
+                .used(false)
+                .build();
 
-        @Test
-        void testValidateEmailTokenUsed() {
-                MailToken token = MailToken.builder()
-                                .token("abc")
-                                .userId(1L)
-                                .expiresAt(LocalDateTime.now().plusMinutes(10))
-                                .used(true)
-                                .build();
+        when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
 
-                when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
+        assertThatThrownBy(() -> userService.validateEmail("abc"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining(ErrorCode.TOKEN_EXPIRED.getMessage());
 
-                assertThatThrownBy(() -> userService.validateEmail("abc"))
-                                .isInstanceOf(BusinessRuleException.class);
+        verify(mailTokenRepo).findByToken("abc");
+        verifyNoMoreInteractions(mailTokenRepo, userRepo);
+    }
 
-                verify(mailTokenRepo).findByToken("abc");
-        }
+    @Test
+    void testValidateEmailTokenUsed() {
+        MailToken token = MailToken.builder()
+                .token("abc")
+                .userId(1L)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .used(true)
+                .build();
 
-        @Test
-        void testValidateEmailUserNotFound() {
-                MailToken token = MailToken.builder()
-                                .token("abc")
-                                .userId(99L)
-                                .expiresAt(LocalDateTime.now().plusMinutes(10))
-                                .used(false)
-                                .build();
+        when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
 
-                when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
-                when(userRepo.findById(99L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> userService.validateEmail("abc"))
+                .isInstanceOf(BusinessRuleException.class);
 
-                assertThatThrownBy(() -> userService.validateEmail("abc"))
-                                .isInstanceOf(RuntimeException.class)
-                                .hasMessageContaining("User not found");
+        verify(mailTokenRepo).findByToken("abc");
+    }
 
-                verify(mailTokenRepo).findByToken("abc");
-                verify(userRepo).findById(99L);
-        }
+    @Test
+    void testValidateEmailUserNotFound() {
+        MailToken token = MailToken.builder()
+                .token("abc")
+                .userId(99L)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .used(false)
+                .build();
 
-        @Test
-        void testValidateEmailValidToken() {
-                MailToken token = MailToken.builder()
-                                .token("abc")
-                                .userId(1L)
-                                .expiresAt(LocalDateTime.now().plusMinutes(10))
-                                .used(false)
-                                .build();
+        when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
+        when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
-                User user = User.builder().userId(1L).status(UserStatus.PENDING).build();
+        assertThatThrownBy(() -> userService.validateEmail("abc"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
 
-                when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
-                when(userRepo.findById(1L)).thenReturn(Optional.of(user));
+        verify(mailTokenRepo).findByToken("abc");
+        verify(userRepo).findById(99L);
+    }
 
-                userService.validateEmail("abc");
+    @Test
+    void testValidateEmailValidToken() {
+        MailToken token = MailToken.builder()
+                .token("abc")
+                .userId(1L)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .used(false)
+                .build();
 
-                assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
+        User user = User.builder().userId(1L).status(UserStatus.PENDING).build();
 
-                assertThat(token.isUsed()).isTrue();
+        when(mailTokenRepo.findByToken("abc")).thenReturn(Optional.of(token));
+        when(userRepo.findById(1L)).thenReturn(Optional.of(user));
 
-                verify(userRepo).save(user);
-                verify(mailTokenRepo).save(token);
-        }
+        userService.validateEmail("abc");
 
-        @Test
-        void testResendEmailShouldGenerateNewTokenAndPublishEvent() {
-                String username = "john";
+        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
 
-                User user = User.builder().userId(100L).username(username).status(UserStatus.PENDING).build();
-                when(userRepo.findByUsername(username)).thenReturn(Optional.of(user));
+        assertThat(token.isUsed()).isTrue();
 
-                LocalDateTime before = LocalDateTime.now();
+        verify(userRepo).save(user);
+        verify(mailTokenRepo).save(token);
+    }
 
-                userService.resendEmail(username);
+    @Test
+    void testResendEmailShouldGenerateNewTokenAndPublishEvent() {
+        String username = "john";
 
-                LocalDateTime after = LocalDateTime.now();
+        User user = User.builder().userId(100L).username(username).status(UserStatus.PENDING).build();
+        when(userRepo.findByUsername(username)).thenReturn(Optional.of(user));
 
-                // The resend should not activate user
-                assertThat(user.getStatus()).isEqualTo(UserStatus.PENDING);
+        LocalDateTime before = LocalDateTime.now();
 
-                ArgumentCaptor<MailToken> tokenCaptor = ArgumentCaptor.forClass(MailToken.class);
-                verify(mailTokenRepo).save(tokenCaptor.capture());
+        userService.resendEmail(username);
 
-                MailToken saved = tokenCaptor.getValue();
-                assertThat(saved.getUserId()).isEqualTo(100L);
-                assertThat(saved.getUsername()).isEqualTo(username);
-                assertThat(saved.getToken()).isNotBlank();
-                assertThat(saved.getExpiresAt()).isAfter(before);
-                assertThat(saved.getExpiresAt()).isBefore(after.plusHours(5));
+        LocalDateTime after = LocalDateTime.now();
 
-                ArgumentCaptor<VerificationCreatedEvent> eventCaptor = ArgumentCaptor
-                                .forClass(VerificationCreatedEvent.class);
-                verify(publisher).publishEvent(eventCaptor.capture());
+        // The resend should not activate user
+        assertThat(user.getStatus()).isEqualTo(UserStatus.PENDING);
 
-                VerificationCreatedEvent evt = eventCaptor.getValue();
-                assertThat(evt.userId()).isEqualTo(100L);
-                assertThat(evt.token()).isEqualTo(saved.getToken());
-        }
+        ArgumentCaptor<MailToken> tokenCaptor = ArgumentCaptor.forClass(MailToken.class);
+        verify(mailTokenRepo).save(tokenCaptor.capture());
 
-        @Test
-        void testResendEmailUserNotFound() {
-                String username = "John";
+        MailToken saved = tokenCaptor.getValue();
+        assertThat(saved.getUserId()).isEqualTo(100L);
+        assertThat(saved.getUsername()).isEqualTo(username);
+        assertThat(saved.getToken()).isNotBlank();
+        assertThat(saved.getExpiresAt()).isAfter(before);
+        assertThat(saved.getExpiresAt()).isBefore(after.plusHours(5));
 
-                when(userRepo.findByUsername(username)).thenReturn(Optional.empty());
+        ArgumentCaptor<VerificationCreatedEvent> eventCaptor = ArgumentCaptor
+                .forClass(VerificationCreatedEvent.class);
+        verify(publisher).publishEvent(eventCaptor.capture());
 
-                assertThatThrownBy(() -> userService.resendEmail(username))
-                                .isInstanceOf(NotFoundException.class)
-                                .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage());
+        VerificationCreatedEvent evt = eventCaptor.getValue();
+        assertThat(evt.userId()).isEqualTo(100L);
+        assertThat(evt.token()).isEqualTo(saved.getToken());
+    }
 
-                verify(mailTokenRepo, never()).save(any());
-                verify(publisher, never()).publishEvent(any());
-        }
+    @Test
+    void testResendEmailUserNotFound() {
+        String username = "John";
 
-        @Test
-        void testResendEmailWhenUserIsNotPending() {
-                String username = "John";
+        when(userRepo.findByUsername(username)).thenReturn(Optional.empty());
 
-                User user = User.builder()
-                                .userId(200L)
-                                .username("tom")
-                                .status(UserStatus.ACTIVE)
-                                .build();
+        assertThatThrownBy(() -> userService.resendEmail(username))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage());
 
-                when(userRepo.findByUsername(username)).thenReturn(Optional.of(user));
+        verify(mailTokenRepo, never()).save(any());
+        verify(publisher, never()).publishEvent(any());
+    }
 
-                assertThatThrownBy(() -> userService.resendEmail(username))
-                                .isInstanceOf(BusinessRuleException.class)
-                                .hasMessage(ErrorCode.USER_IS_NOT_PENDING.getMessage());
+    @Test
+    void testResendEmailWhenUserIsNotPending() {
+        String username = "John";
 
-                verify(userRepo, never()).save(any());
-                verify(mailTokenRepo, never()).save(any());
-                verify(publisher, never()).publishEvent(any());
-        }
+        User user = User.builder()
+                .userId(200L)
+                .username("tom")
+                .status(UserStatus.ACTIVE)
+                .build();
 
-        @Test
-        void testSignupValidEmailAndUsername() {
-                // given
-                SignupReq req = new SignupReq();
-                req.setEmail("test@example.com");
-                req.setUsername("john");
-                req.setPassword("raw-pwd");
+        when(userRepo.findByUsername(username)).thenReturn(Optional.of(user));
 
-                when(userRepo.findByEmail("test@example.com")).thenReturn(Optional.empty());
-                when(userRepo.findByUsername("john")).thenReturn(Optional.empty());
-                when(encoder.encode("raw-pwd")).thenReturn("encoded-pwd");
+        assertThatThrownBy(() -> userService.resendEmail(username))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage(ErrorCode.USER_IS_NOT_PENDING.getMessage());
 
-                ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-                when(userRepo.save(any(User.class))).thenAnswer(invocation -> {
-                        User u = invocation.getArgument(0);
-                        u.setUserId(1L);
-                        return u;
-                });
+        verify(userRepo, never()).save(any());
+        verify(mailTokenRepo, never()).save(any());
+        verify(publisher, never()).publishEvent(any());
+    }
 
-                ArgumentCaptor<MailToken> tokenCaptor = ArgumentCaptor.forClass(MailToken.class);
-                ArgumentCaptor<VerificationCreatedEvent> eventCaptor = ArgumentCaptor
-                                .forClass(VerificationCreatedEvent.class);
+    @Test
+    void testSignupValidEmailAndUsername() {
+        // given
+        SignupReq req = new SignupReq();
+        req.setEmail("test@example.com");
+        req.setUsername("john");
+        req.setPassword("raw-pwd");
 
-                // when
-                userService.signup(req);
+        when(userRepo.findByEmail("test@example.com")).thenReturn(Optional.empty());
+        when(userRepo.findByUsername("john")).thenReturn(Optional.empty());
+        when(encoder.encode("raw-pwd")).thenReturn("encoded-pwd");
 
-                // then
-                verify(userRepo).findByEmail("test@example.com");
-                verify(userRepo).findByUsername("john");
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        when(userRepo.save(any(User.class))).thenAnswer(invocation -> {
+            User u = invocation.getArgument(0);
+            u.setUserId(1L);
+            return u;
+        });
 
-                verify(userRepo).save(userCaptor.capture());
-                User savedUser = userCaptor.getValue();
-                assertThat(savedUser.getUsername()).isEqualTo("john");
-                assertThat(savedUser.getEmail()).isEqualTo("test@example.com");
-                assertThat(savedUser.getPassword()).isEqualTo("encoded-pwd");
-                assertThat(savedUser.getStatus()).isEqualTo(UserStatus.PENDING);
-                assertThat(savedUser.getPublicId()).isNotBlank();
+        ArgumentCaptor<MailToken> tokenCaptor = ArgumentCaptor.forClass(MailToken.class);
+        ArgumentCaptor<VerificationCreatedEvent> eventCaptor = ArgumentCaptor
+                .forClass(VerificationCreatedEvent.class);
 
-                verify(mailTokenRepo).save(tokenCaptor.capture());
-                MailToken savedToken = tokenCaptor.getValue();
-                assertThat(savedToken.getUserId()).isEqualTo(1L);
-                assertThat(savedToken.getEmail()).isEqualTo("test@example.com");
-                assertThat(savedToken.getUsername()).isEqualTo("john");
-                assertThat(savedToken.getToken()).isNotBlank();
-                assertThat(savedToken.getExpiresAt()).isAfter(LocalDateTime.now().minusMinutes(1));
+        // when
+        userService.signup(req);
 
-                verify(publisher).publishEvent(eventCaptor.capture());
-                VerificationCreatedEvent evt = eventCaptor.getValue();
-                assertThat(evt.userId()).isEqualTo(1L);
-                assertThat(evt.email()).isEqualTo("test@example.com");
-                assertThat(evt.token()).isEqualTo(savedToken.getToken());
-        }
+        // then
+        verify(userRepo).findByEmail("test@example.com");
+        verify(userRepo).findByUsername("john");
 
-        @Test
-        void testSignupEmailIsTaken() {
-                // given
-                SignupReq req = new SignupReq();
-                req.setEmail("test@example.com");
-                req.setUsername("john");
-                req.setPassword("raw-pwd");
+        verify(userRepo).save(userCaptor.capture());
+        User savedUser = userCaptor.getValue();
+        assertThat(savedUser.getUsername()).isEqualTo("john");
+        assertThat(savedUser.getEmail()).isEqualTo("test@example.com");
+        assertThat(savedUser.getPassword()).isEqualTo("encoded-pwd");
+        assertThat(savedUser.getStatus()).isEqualTo(UserStatus.PENDING);
+        assertThat(savedUser.getPublicId()).isNotBlank();
 
-                when(userRepo.findByEmail("test@example.com")).thenReturn(Optional.of(User.builder().build()));
+        verify(mailTokenRepo).save(tokenCaptor.capture());
+        MailToken savedToken = tokenCaptor.getValue();
+        assertThat(savedToken.getUserId()).isEqualTo(1L);
+        assertThat(savedToken.getEmail()).isEqualTo("test@example.com");
+        assertThat(savedToken.getUsername()).isEqualTo("john");
+        assertThat(savedToken.getToken()).isNotBlank();
+        assertThat(savedToken.getExpiresAt()).isAfter(LocalDateTime.now().minusMinutes(1));
 
-                // when / then
-                assertThatThrownBy(() -> userService.signup(req))
-                                .isInstanceOf(ConflictException.class)
-                                .hasMessageContaining("Email already registered");
+        verify(publisher).publishEvent(eventCaptor.capture());
+        VerificationCreatedEvent evt = eventCaptor.getValue();
+        assertThat(evt.userId()).isEqualTo(1L);
+        assertThat(evt.email()).isEqualTo("test@example.com");
+        assertThat(evt.token()).isEqualTo(savedToken.getToken());
+    }
 
-                verify(userRepo, never()).findByUsername(anyString());
-                verify(userRepo, never()).save(any());
-                verify(mailTokenRepo, never()).save(any());
-                verify(publisher, never()).publishEvent(any());
-        }
+    @Test
+    void testSignupEmailIsTaken() {
+        // given
+        SignupReq req = new SignupReq();
+        req.setEmail("test@example.com");
+        req.setUsername("john");
+        req.setPassword("raw-pwd");
 
-        @Test
-        void testSignupWhenUsernameIsTaken() {
-                // given
-                SignupReq req = new SignupReq();
-                req.setEmail("test@example.com");
-                req.setUsername("john");
-                req.setPassword("raw-pwd");
+        when(userRepo.findByEmail("test@example.com")).thenReturn(Optional.of(User.builder().build()));
 
-                when(userRepo.findByEmail("test@example.com")).thenReturn(Optional.empty());
-                when(userRepo.findByUsername("john")).thenReturn(Optional.of(User.builder().build()));
+        // when / then
+        assertThatThrownBy(() -> userService.signup(req))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining(ErrorCode.EMAIL_USED.getMessage());
 
-                // when / then
-                assertThatThrownBy(() -> userService.signup(req))
-                                .isInstanceOf(ConflictException.class)
-                                .hasMessageContaining("Username already taken");
+        verify(userRepo, never()).findByUsername(anyString());
+        verify(userRepo, never()).save(any());
+        verify(mailTokenRepo, never()).save(any());
+        verify(publisher, never()).publishEvent(any());
+    }
 
-                verify(userRepo, never()).save(any());
-                verify(mailTokenRepo, never()).save(any());
-                verify(publisher, never()).publishEvent(any());
-        }
+    @Test
+    void testSignupWhenUsernameIsTaken() {
+        // given
+        SignupReq req = new SignupReq();
+        req.setEmail("test@example.com");
+        req.setUsername("john");
+        req.setPassword("raw-pwd");
+
+        when(userRepo.findByEmail("test@example.com")).thenReturn(Optional.empty());
+        when(userRepo.findByUsername("john")).thenReturn(Optional.of(User.builder().build()));
+
+        // when / then
+        assertThatThrownBy(() -> userService.signup(req))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining(ErrorCode.USERNAME_USED.getMessage());
+
+        verify(userRepo, never()).save(any());
+        verify(mailTokenRepo, never()).save(any());
+        verify(publisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void signInShouldReturnResponseWithCookiesAndSecureFalseWhenNotProd() {
+        String username = "alice";
+        String email = "alice@example.com";
+        String ipAddress = "127.0.0.1";
+
+        when(jwtService.generateRefreshToken(username, email)).thenReturn("refresh-token-123");
+        when(jwtService.generateSignedDeviceId()).thenReturn("device-id-456");
+        when(jwtService.generateAccessToken(username, email)).thenReturn("access-token-789");
+        when(env.getActiveProfiles()).thenReturn(new String[]{"dev"});
+
+        ResponseEntity<SigninResp> response = userService.signin(username, email, ipAddress);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+
+        SigninResp body = response.getBody();
+        assertEquals("access-token-789", body.getAccessToken());
+        assertNotNull(body.getUser());
+        assertEquals(username, body.getUser().getUsername());
+        assertEquals(email, body.getUser().getEmail());
+
+        List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+        assertNotNull(cookies);
+        assertEquals(2, cookies.size());
+
+        String refreshCookie = cookies.get(0);
+        String deviceCookie = cookies.get(1);
+
+        assertTrue(refreshCookie.contains("refreshToken=refresh-token-123"));
+        assertTrue(refreshCookie.contains("HttpOnly"));
+        assertTrue(refreshCookie.contains("Path=/auth"));
+        assertTrue(refreshCookie.contains("SameSite=Strict"));
+        assertFalse(refreshCookie.contains("Secure"));
+
+        assertTrue(deviceCookie.contains("deviceId=device-id-456"));
+        assertTrue(deviceCookie.contains("HttpOnly"));
+        assertTrue(deviceCookie.contains("Path=/"));
+        assertTrue(deviceCookie.contains("SameSite=Strict"));
+        assertFalse(deviceCookie.contains("Secure"));
+
+        verify(jwtService).generateRefreshToken(username, email);
+        verify(jwtService).generateSignedDeviceId();
+        verify(jwtService).generateAccessToken(username, email);
+        verify(env).getActiveProfiles();
+    }
+
+    @Test
+    void signInShouldReturnSecureCookiesWhenProdProfileIsActive() {
+        String username = "bob";
+        String email = "bob@example.com";
+        String ipAddress = "10.0.0.1";
+
+        when(jwtService.generateRefreshToken(username, email)).thenReturn("refresh-prod");
+        when(jwtService.generateSignedDeviceId()).thenReturn("device-prod");
+        when(jwtService.generateAccessToken(username, email)).thenReturn("access-prod");
+        when(env.getActiveProfiles()).thenReturn(new String[]{"prod"});
+
+        ResponseEntity<SigninResp> response = userService.signin(username, email, ipAddress);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("access-prod", response.getBody().getAccessToken());
+        assertEquals(username, response.getBody().getUser().getUsername());
+        assertEquals(email, response.getBody().getUser().getEmail());
+
+        List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+        assertNotNull(cookies);
+        assertEquals(2, cookies.size());
+
+        String refreshCookie = cookies.get(0);
+        String deviceCookie = cookies.get(1);
+
+        assertTrue(refreshCookie.contains("refreshToken=refresh-prod"));
+        assertTrue(refreshCookie.contains("Secure"));
+
+        assertTrue(deviceCookie.contains("deviceId=device-prod"));
+        assertTrue(deviceCookie.contains("Secure"));
+
+        verify(jwtService).generateRefreshToken(username, email);
+        verify(jwtService).generateSignedDeviceId();
+        verify(jwtService).generateAccessToken(username, email);
+        verify(env).getActiveProfiles();
+    }
+
+    @Test
+    void signInShouldTreatProdAsActiveWhenProdExistsAmongMultipleProfiles() {
+        String username = "charlie";
+        String email = "charlie@example.com";
+        String ipAddress = "192.168.1.10";
+
+        when(jwtService.generateRefreshToken(username, email)).thenReturn("refresh-multi");
+        when(jwtService.generateSignedDeviceId()).thenReturn("device-multi");
+        when(jwtService.generateAccessToken(username, email)).thenReturn("access-multi");
+        when(env.getActiveProfiles()).thenReturn(new String[]{"dev", "prod"});
+
+        ResponseEntity<SigninResp> response = userService.signin(username, email, ipAddress);
+
+        List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+        assertNotNull(cookies);
+        assertEquals(2, cookies.size());
+
+        assertTrue(cookies.get(0).contains("Secure"));
+        assertTrue(cookies.get(1).contains("Secure"));
+    }
 }

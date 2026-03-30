@@ -3,7 +3,7 @@ package com.example.guards;
 import java.util.EnumSet;
 import java.util.Map;
 
-import com.example.exception.DatasetStatusException;
+import com.example.exception.types.DatasetStatusException;
 import com.example.exception.ErrorCode;
 import com.example.upload.domain.DatasetStatus;
 

@@ -30,7 +30,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private static final String AUTH_HEADER = "Authorization";
     private static final String BEARER = "Bearer ";
 
-    private final SecretService jwtService;
+    private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
     @Override

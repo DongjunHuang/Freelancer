@@ -1,41 +1,49 @@
 package com.example.auth.app.user;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import com.example.auth.domain.user.*;
+import com.example.auth.infra.jpa.RefreshTokenRepo;
+import com.example.exception.*;
+import com.example.exception.types.*;
+import com.example.security.JwtService;
+import com.example.security.TokenInfo;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.auth.domain.user.MailToken;
-import com.example.auth.domain.user.SignupReq;
-import com.example.auth.domain.user.User;
-import com.example.auth.domain.user.UserStatus;
-import com.example.auth.domain.user.VerificationCreatedEvent;
 import com.example.auth.infra.jpa.MailTokenRepo;
 import com.example.auth.infra.jpa.UserRepo;
-import com.example.exception.BusinessRuleException;
-import com.example.exception.ConflictException;
-import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
 import com.example.utils.TokenUtils;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private static final String DEFAULT_ROLE = "USER";
-    private final int TTL_Hours = 1;
+    private static final int TTL_Hours = 1;
+    private static final int REFRESH_TOKEN_TTL_IN_DAYS = 7;
 
     // The user repo in charge of user database
     private final UserRepo userRepo;
+    private final RefreshTokenRepo refreshTokenRepo;
     private final MailTokenRepo mailTokenRepo;
+
+    private final JwtService jwtService;
 
     private final PasswordEncoder encoder;
     private final ApplicationEventPublisher publisher;
+    private final Environment env;
 
     @Transactional
     public void signup(SignupReq req) {
@@ -136,18 +144,161 @@ public class UserService {
         publisher.publishEvent(new VerificationCreatedEvent(user.getUserId(), user.getEmail(), token.getToken()));
     }
 
-    public static String clientIp(HttpServletRequest req) {
-        String[] headers = {
-                "CF-Connecting-IP",
-                "X-Forwarded-For",
-                "X-Real-IP"
-        };
-        for (String h : headers) {
-            String v = req.getHeader(h);
-            if (v != null && !v.isBlank()) {
-                return v.split(",")[0].trim();
-            }
+    /**
+     * Create and save the refresh token. The token genereted will be issue with the
+     * email to the user.
+     * TODO: we might need to change to enter the code.
+     *
+     * @param username   the user name.
+     * @param token      the token.
+     * @param deviceId   device ID generated per device issued by backend.
+     * @param ipAddress  the ip address.
+     * @param expiryDate the expiry date.
+     * @return the token generated.
+     */
+    @Transactional
+    public RefreshToken createAndSaveRefreshToken(String username,
+                                                  String token,
+                                                  String deviceId,
+                                                  String ipAddress,
+                                                  LocalDateTime expiryDate) {
+        refreshTokenRepo.deleteByUsernameAndDeviceId(username, deviceId);
+
+        RefreshToken entity = RefreshToken.builder()
+                .username(username)
+                .token(token)
+                .expiresAt(expiryDate)
+                .ipAddress(ipAddress)
+                .deviceId(deviceId)
+                .build();
+        return refreshTokenRepo.save(entity);
+    }
+
+
+    /**
+     * Find the token information from the token string.
+     *
+     * @param token the token information.
+     * @return the token.
+     */
+    public Optional<RefreshToken> findByToken(String token) {
+        return refreshTokenRepo.findByToken(token);
+    }
+
+    /**
+     * Validate the refresh token.
+     *
+     * @param token the token string.
+     * @return whether the token is valid.
+     */
+    public boolean validateRefreshToken(String token) {
+        return refreshTokenRepo.findByToken(token)
+                .filter(rt -> rt.getExpiresAt().isAfter(LocalDateTime.now()))
+                .isPresent();
+    }
+
+    /**
+     * Revoke the token by user name and device id.
+     *
+     * @param username the usernme.
+     * @param deviceId the device id.
+     */
+    public void revokeByUsernameAndDeviceId(String username, String deviceId) {
+        refreshTokenRepo.deleteByUsernameAndDeviceId(username, deviceId);
+    }
+
+    /**
+     * Check if the token is expired.
+     *
+     * @param rt the token.
+     * @return if expired.
+     */
+    public boolean isExpired(RefreshToken rt) {
+        return rt.getExpiresAt().isBefore(LocalDateTime.now());
+    }
+
+
+    /**
+     * Sign in function, mainly to issue refresh token to users.
+     *
+     * @param username  the username.
+     * @param email     the email.
+     * @param ipAddress the ipaddress.
+     * @return the sign in response.
+     */
+    public ResponseEntity<SigninResp> signin(String username, String email, String ipAddress) {
+        String refreshToken = jwtService.generateRefreshToken(username, email);
+        String deviceId = jwtService.generateSignedDeviceId();
+
+        // Create and save refresh token
+        createAndSaveRefreshToken(username,
+                refreshToken,
+                deviceId,
+                ipAddress,
+                LocalDateTime.now().plusDays(REFRESH_TOKEN_TTL_IN_DAYS));
+
+        boolean isProd = List.of(env.getActiveProfiles()).contains("prod");
+
+        // Generate cookie sending back to the client.
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(isProd)
+                .path("/auth")
+                .maxAge(Duration.ofDays(REFRESH_TOKEN_TTL_IN_DAYS))
+                .sameSite("Strict")
+                .build();
+
+        ResponseCookie did = ResponseCookie.from("deviceId", deviceId)
+                .httpOnly(true)
+                .secure(isProd)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ofDays(400))
+                .build();
+
+        var accessToken = jwtService.generateAccessToken(username, email);
+        SigninResp resp = SigninResp.builder()
+                .accessToken(accessToken)
+                .user(
+                        SigninResp.UserInfo.builder()
+                                .username(username)
+                                .email(email)
+                                .build()
+                )
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString(), did.toString())
+                .body(resp);
+    }
+
+    public RefreshResp refreshAccessToken(String refreshToken, String deviceId) {
+        if (refreshToken == null || refreshToken.isBlank() || deviceId == null) {
+            throw new BadRequestException(ErrorCode.NOT_VALID_REFRESH_TOKEN);
         }
-        return req.getRemoteAddr();
+
+        if (!jwtService.isValid(refreshToken)) {
+            throw new AuthenticationException(ErrorCode.TOKEN_INVALID);
+        }
+
+        TokenInfo info = jwtService.parse(refreshToken);
+        Optional<RefreshToken> rtoken = refreshTokenRepo.findByToken(refreshToken);
+
+        if (rtoken.isEmpty()) {
+            throw new AuthenticationException(ErrorCode.TOKEN_INVALID);
+        }
+
+        var rt = rtoken.get();
+
+        if (rt.getExpiresAt().isBefore(LocalDateTime.now())
+                || !rt.getDeviceId().equals(deviceId)) {
+            throw new AuthenticationException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        String newAccessToken = jwtService.generateAccessToken(
+                info.getUsername(),
+                info.getEmail()
+        );
+
+        return new RefreshResp(newAccessToken);
     }
 }

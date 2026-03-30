@@ -1,22 +1,34 @@
 package com.example.security;
 
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
-public class SecretServiceTests {
-    private static final String TEST_KEY = "0123456789_0123456789_0123456789_0123";
+public class JwtServiceTests {
+    private static final String PRIVATE_KEY = "0123456789_0123456789_0123456789_0123";
+    private static final long ACCESS_EXPIRATION = 300000;
+    private static final long REFRESH_EXPIRATION = 300000;
+    private static final long ADMIN_ACCESS_EXPIRATION = 300000;
+    JwtService service;
 
-    private SecretService newService() {
-        return new SecretService(TEST_KEY);
+    @BeforeEach
+    void setUp() {
+        JwtProperties properties = new JwtProperties();
+        properties.setPrivateKey(PRIVATE_KEY);
+        properties.setAccessExpiration(ACCESS_EXPIRATION);
+        properties.setRefreshExpiration(REFRESH_EXPIRATION);
+        properties.setAdminAccessExpiration(ADMIN_ACCESS_EXPIRATION);
+        service = new JwtService(properties);
     }
 
     @Test
     void generateAccessToken_shouldBeValid_andParseCorrectClaims() {
         // given
-        SecretService service = newService();
         String username = "alice";
         String email = "alice@example.com";
 
@@ -35,7 +47,6 @@ public class SecretServiceTests {
     @Test
     void generateRefreshToken_shouldBeValid_andParseCorrectClaims() {
         // given
-        SecretService service = newService();
         String username = "bob";
         String email = "bob@example.com";
 
@@ -52,33 +63,31 @@ public class SecretServiceTests {
     }
 
     @Test
-    void isValid_shouldReturnFalse_whenTokenIsRandomString() {
-        // given
-        SecretService service = newService();
-
+    void isValidShouldReturnFalseWhenTokenIsRandomString() {
         // when / assert
         assertThat(service.isValid("abc.def.ghi")).isFalse();
         assertThat(service.isValid("not-a-jwt")).isFalse();
     }
 
     @Test
-    void isValid_shouldReturnFalse_whenSignedWithDifferentKey() {
+    void isValidShouldReturnFalseWhenSignedWithDifferentKey() {
         // given
-        SecretService serviceA = new SecretService(TEST_KEY);
-        SecretService serviceB = new SecretService("another_secure_key_1234567890_abcdef");
+        JwtProperties secondProperties = new JwtProperties();
+        secondProperties.setPrivateKey("123dasdasrtgregre==----qeweqwe12321312312fsdfdsfds");
+        secondProperties.setAccessExpiration(ACCESS_EXPIRATION);
+        secondProperties.setRefreshExpiration(REFRESH_EXPIRATION);
+        secondProperties.setAdminAccessExpiration(ADMIN_ACCESS_EXPIRATION);
+        JwtService secondService = new JwtService(secondProperties);
 
-        String tokenFromA = serviceA.generateAccessToken("user1", "u1@example.com");
+        String tokenFromA = service.generateAccessToken("user1", "u1@example.com");
 
         // when / assert
-        assertThat(serviceA.isValid(tokenFromA)).isTrue();
-        assertThat(serviceB.isValid(tokenFromA)).isFalse(); 
+        assertThat(service.isValid(tokenFromA)).isTrue();
+        assertThat(secondService.isValid(tokenFromA)).isFalse();
     }
 
     @Test
-    void generateSignedDeviceId_shouldReturnValueWithSignature_andValidateTrue() {
-        // given
-        SecretService service = newService();
-
+    void generateSignedDeviceIdShouldReturnValueWithSignatureAndValidateTrue() {
         // when
         String signed = service.generateSignedDeviceId();
 
@@ -93,9 +102,8 @@ public class SecretServiceTests {
     }
 
     @Test
-    void validateSignedDeviceId_shouldReturnFalse_whenDeviceIdTampered() {
+    void validateSignedDeviceIdShouldReturnFalseWhenDeviceIdTampered() {
         // given
-        SecretService service = newService();
         String signed = service.generateSignedDeviceId();
         String[] parts = signed.split("\\.");
 
@@ -106,9 +114,8 @@ public class SecretServiceTests {
     }
 
     @Test
-    void validateSignedDeviceId_shouldReturnFalse_whenSignatureTampered() {
+    void validateSignedDeviceIdShouldReturnFalseWhenSignatureTampered() {
         // given
-        SecretService service = newService();
         String signed = service.generateSignedDeviceId();
         String[] parts = signed.split("\\.");
 

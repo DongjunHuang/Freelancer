@@ -35,355 +35,355 @@ import com.example.utils.ColumnsTypeInfer;
 
 @ExtendWith(MockitoExtension.class)
 public class DatasetBuilderTests {
-        DatasetBuilder builder;
-        DatasetStateGuard guard;
+    DatasetBuilder builder;
+    DatasetStateGuard guard;
 
-        @Mock
-        private DatasetMetadataRepo metadataRepo;
+    @Mock
+    private DatasetMetadataRepo metadataRepo;
 
-        @BeforeEach
-        void setup() {
-                guard = new DatasetStateGuard(metadataRepo);
-                builder = new DatasetBuilder(guard);
+    @BeforeEach
+    void setup() {
+        guard = new DatasetStateGuard(metadataRepo);
+        builder = new DatasetBuilder(guard);
+    }
+
+    @Test
+    void testisMetricColumn() {
+        assertFalse(ColumnsTypeInfer.isMetricColumn("user_id", ColumnType.NUMBER));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("  customerId  ", ColumnType.NUMBER));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("order_id_number", ColumnType.NUMBER));
+        assertTrue(ColumnsTypeInfer.isMetricColumn("price", ColumnType.NUMBER));
+        assertTrue(ColumnsTypeInfer.isMetricColumn("  closing_value  ", ColumnType.NUMBER));
+        assertTrue(ColumnsTypeInfer.isMetricColumn("TOTAL_REVENUE", ColumnType.NUMBER));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("price", ColumnType.STRING));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("amount", ColumnType.BOOLEAN));
+        assertFalse(ColumnsTypeInfer.isMetricColumn(null, ColumnType.STRING));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("  TradeDATE  ", ColumnType.NUMBER));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("CREATED_DATE", ColumnType.NUMBER));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("product_code_value", ColumnType.NUMBER));
+        assertFalse(ColumnsTypeInfer.isMetricColumn("CODE_metric", ColumnType.NUMBER));
+
+        boolean result = ColumnsTypeInfer.isMetricColumn(null, ColumnType.NUMBER);
+        assertFalse(result);
+    }
+
+    @Test
+    void testExistingDatasetReturnedWhenNotNew() {
+
+        /*
+         * DatasetMetadata dataset = DatasetMetadata.builder()
+         * .userId(userId)
+         * .id(datasetId)
+         * .datasetName(datasetName)
+         * .recordDateColumnName(dateColumn)
+         * .recordSymbolName(symbolColumn)
+         * .status(DatasetStatus.ACTIVE)
+         * .build();
+         */
+        DataProps props = DataProps.builder()
+                .newDataset(false)
+                .userId(1L)
+                .datasetName("prices")
+                .build();
+
+        DatasetMetadata existing = DatasetMetadata.builder()
+                .id("UserId")
+                .userId(1L)
+                .datasetName("prices")
+                .recordDateColumnName("date")
+                .recordSymbolName("symbol")
+                .current(VersionControl.builder()
+                        .version(1)
+                        .headers(new ArrayList<>())
+                        .rowCount(100L)
+                        .build())
+                .status(DatasetStatus.ACTIVE)
+                .build();
+
+        when(metadataRepo.findByUserIdAndDatasetName(1L, "prices")).thenReturn(Optional.of(existing));
+
+        // --- Act ---
+        DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, metadataRepo);
+
+        // --- Assert ---
+        assertNotNull(result);
+        assertEquals("UserId", result.getId());
+        assertEquals("date", props.getRecordDateColumnName());
+        assertEquals("symbol", props.getRecordSymbolColumnName());
+
+        verify(metadataRepo).findByUserIdAndDatasetName(1L, "prices");
+    }
+
+    @Test
+    void testNewDatasetCreatedWhenPropsIsNew() {
+        Long userId = 1L;
+        String datasetName = "dataset";
+        String dateColumn = "date";
+        String symbolColumn = "symbol";
+
+        // --- Arrange ---
+        DataProps props = DataProps.builder()
+                .newDataset(true)
+                .userId(userId)
+                .datasetName(datasetName)
+                .recordDateColumnName(dateColumn)
+                .recordSymbolColumnName(symbolColumn)
+                .build();
+        when(metadataRepo.findByUserIdAndDatasetName(userId, datasetName)).thenReturn(Optional.empty());
+
+        // --- Act ---
+        DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, metadataRepo);
+
+        // --- Assert ---
+        assertNotNull(result);
+        assertEquals(datasetName, result.getDatasetName());
+        assertEquals(dateColumn, result.getRecordDateColumnName());
+        assertEquals(symbolColumn, result.getRecordSymbolName());
+        assertEquals(DatasetStatus.UPLOADING, result.getStatus());
+
+        assertNotNull(result.getCurrent());
+        assertEquals(0, result.getCurrent().getVersion());
+        assertEquals(0, result.getCurrent().getRowCount());
+        assertTrue(result.getCurrent().getHeaders().isEmpty());
+    }
+
+    @Test
+    void testMergeAndFillInferNeededColumnShouldCopyExistingAndAddNewColumns() {
+        // Given col_a(NUMBER, metric)，col_b(STRING, non-metric)
+        ColumnMeta colA = ColumnMeta.builder()
+                .columnName("col_a")
+                .dataType(ColumnType.NUMBER)
+                .metric(true)
+                .build();
+
+        ColumnMeta colB = ColumnMeta.builder()
+                .columnName("col_b")
+                .dataType(ColumnType.STRING)
+                .metric(false)
+                .build();
+
+        VersionControl current = VersionControl.builder()
+                .version(3)
+                .rowCount(100L)
+                .headers(new ArrayList<>(List.of(colA, colB)))
+                .build();
+
+        DatasetMetadata dataset = DatasetMetadata.builder()
+                .datasetName("test_dataset")
+                .current(current)
+                .staged(null)
+                .build();
+
+        List<String> newHeaders = List.of("col_a", "col_c");
+
+        Set<String> columnsNeedsInfer = new HashSet<>();
+        columnsNeedsInfer.add("already_here");
+
+        // when
+        builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, newHeaders);
+
+        // then
+        assertNotNull(dataset.getStaged());
+        VersionControl staged = dataset.getStaged();
+
+        assertEquals(4, staged.getVersion());
+        assertEquals(100, staged.getRowCount());
+
+        // 2) staged.headers should contain：col_a, col_b（have） + col_c（new）
+        assertEquals(3, staged.getHeaders().size());
+
+        Map<String, ColumnMeta> byName = new HashMap<>();
+        for (ColumnMeta c : staged.getHeaders()) {
+            byName.put(c.getColumnName(), c);
         }
 
-        @Test
-        void testisMetricColumn() {
-                assertFalse(ColumnsTypeInfer.isMetricColumn("user_id", ColumnType.NUMBER));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("  customerId  ", ColumnType.NUMBER));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("order_id_number", ColumnType.NUMBER));
-                assertTrue(ColumnsTypeInfer.isMetricColumn("price", ColumnType.NUMBER));
-                assertTrue(ColumnsTypeInfer.isMetricColumn("  closing_value  ", ColumnType.NUMBER));
-                assertTrue(ColumnsTypeInfer.isMetricColumn("TOTAL_REVENUE", ColumnType.NUMBER));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("price", ColumnType.STRING));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("amount", ColumnType.BOOLEAN));
-                assertFalse(ColumnsTypeInfer.isMetricColumn(null, ColumnType.STRING));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("  TradeDATE  ", ColumnType.NUMBER));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("CREATED_DATE", ColumnType.NUMBER));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("product_code_value", ColumnType.NUMBER));
-                assertFalse(ColumnsTypeInfer.isMetricColumn("CODE_metric", ColumnType.NUMBER));
+        assertTrue(byName.containsKey("col_a"));
+        assertTrue(byName.containsKey("col_b"));
+        assertTrue(byName.containsKey("col_c"));
 
-                boolean result = ColumnsTypeInfer.isMetricColumn(null, ColumnType.NUMBER);
-                assertFalse(result);
-        }
+        // The original should not change
+        ColumnMeta stagedA = byName.get("col_a");
+        assertEquals(ColumnType.NUMBER, stagedA.getDataType());
+        assertTrue(stagedA.isMetric());
 
-        @Test
-        void testExistingDatasetReturnedWhenNotNew() {
+        ColumnMeta stagedC = byName.get("col_c");
+        assertEquals(ColumnType.STRING, stagedC.getDataType());
+        assertFalse(stagedC.isMetric());
 
-                /*
-                 * DatasetMetadata dataset = DatasetMetadata.builder()
-                 * .userId(userId)
-                 * .id(datasetId)
-                 * .datasetName(datasetName)
-                 * .recordDateColumnName(dateColumn)
-                 * .recordSymbolName(symbolColumn)
-                 * .status(DatasetStatus.ACTIVE)
-                 * .build();
-                 */
-                DataProps props = DataProps.builder()
-                                .newDataset(false)
-                                .userId(1L)
-                                .datasetName("prices")
-                                .build();
+        assertEquals(2, columnsNeedsInfer.size());
+        assertTrue(columnsNeedsInfer.contains("already_here"));
+        assertTrue(columnsNeedsInfer.contains("col_c"));
+    }
 
-                DatasetMetadata existing = DatasetMetadata.builder()
-                                .id("UserId")
-                                .userId(1L)
-                                .datasetName("prices")
-                                .recordDateColumnName("date")
-                                .recordSymbolName("symbol")
-                                .current(VersionControl.builder()
-                                                .version(1)
-                                                .headers(new ArrayList<>())
-                                                .rowCount(100L)
-                                                .build())
-                                .status(DatasetStatus.ACTIVE)
-                                .build();
+    @Test
+    void testMergeAndFillInferNeededColumnNoNewColumns() {
+        // given
+        ColumnMeta colA = ColumnMeta.builder()
+                .columnName("col_a")
+                .dataType(ColumnType.NUMBER)
+                .metric(true)
+                .build();
 
-                when(metadataRepo.findByUserIdAndDatasetName(1L, "prices")).thenReturn(Optional.of(existing));
+        VersionControl current = VersionControl.builder()
+                .version(1)
+                .rowCount(10L)
+                .headers(new ArrayList<>(List.of(colA)))
+                .build();
 
-                // --- Act ---
-                DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, metadataRepo);
+        DatasetMetadata dataset = DatasetMetadata.builder()
+                .datasetName("test_dataset")
+                .current(current)
+                .staged(null)
+                .build();
 
-                // --- Assert ---
-                assertNotNull(result);
-                assertEquals("UserId", result.getId());
-                assertEquals("date", props.getRecordDateColumnName());
-                assertEquals("symbol", props.getRecordSymbolColumnName());
+        // headers should be the same
+        List<String> headers = List.of("col_a");
 
-                verify(metadataRepo).findByUserIdAndDatasetName(1L, "prices");
-        }
+        Set<String> columnsNeedsInfer = new HashSet<>(Set.of("exists"));
 
-        @Test
-        void testNewDatasetCreatedWhenPropsIsNew() {
-                Long userId = 1L;
-                String datasetName = "dataset";
-                String dateColumn = "date";
-                String symbolColumn = "symbol";
+        // when
+        builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, headers);
 
-                // --- Arrange ---
-                DataProps props = DataProps.builder()
-                                .newDataset(true)
-                                .userId(userId)
-                                .datasetName(datasetName)
-                                .recordDateColumnName(dateColumn)
-                                .recordSymbolColumnName(symbolColumn)
-                                .build();
-                when(metadataRepo.findByUserIdAndDatasetName(userId, datasetName)).thenReturn(Optional.empty());
+        // then
+        VersionControl staged = dataset.getStaged();
+        assertNotNull(staged);
+        assertEquals(2, staged.getVersion());
+        assertEquals(10L, staged.getRowCount());
 
-                // --- Act ---
-                DatasetMetadata result = builder.createIfNotPresentDatasetMetadata(props, metadataRepo);
+        // headers should only have "col_a"
+        assertEquals(1, staged.getHeaders().size());
+        assertEquals("col_a", staged.getHeaders().get(0).getColumnName());
 
-                // --- Assert ---
-                assertNotNull(result);
-                assertEquals(datasetName, result.getDatasetName());
-                assertEquals(dateColumn, result.getRecordDateColumnName());
-                assertEquals(symbolColumn, result.getRecordSymbolName());
-                assertEquals(DatasetStatus.UPLOADING, result.getStatus());
+        // No new columns should be added to infer set
+        assertEquals(1, columnsNeedsInfer.size());
+        assertTrue(columnsNeedsInfer.contains("exists"));
+    }
 
-                assertNotNull(result.getCurrent());
-                assertEquals(0, result.getCurrent().getVersion());
-                assertEquals(0, result.getCurrent().getRowCount());
-                assertTrue(result.getCurrent().getHeaders().isEmpty());
-        }
+    @Test
+    void mergeAndFillInferNeededColumnsShouldIgnoreDuplicatedNewHeaders() {
+        // given
+        VersionControl current = VersionControl.builder()
+                .version(0)
+                .rowCount(0L)
+                .headers(new ArrayList<>())
+                .build();
 
-        @Test
-        void testMergeAndFillInferNeededColumnShouldCopyExistingAndAddNewColumns() {
-                // Given col_a(NUMBER, metric)，col_b(STRING, non-metric)
-                ColumnMeta colA = ColumnMeta.builder()
-                                .columnName("col_a")
-                                .dataType(ColumnType.NUMBER)
-                                .metric(true)
-                                .build();
+        DatasetMetadata dataset = DatasetMetadata.builder()
+                .datasetName("test_dataset")
+                .current(current)
+                .staged(null)
+                .build();
 
-                ColumnMeta colB = ColumnMeta.builder()
-                                .columnName("col_b")
+        List<String> headers = List.of("value", "value", "value");
+
+        Set<String> columnsNeedsInfer = new HashSet<>();
+
+        // when
+        builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, headers);
+
+        // then
+        VersionControl staged = dataset.getStaged();
+        assertNotNull(staged);
+
+        assertEquals(1, staged.getHeaders().size());
+        ColumnMeta only = staged.getHeaders().get(0);
+        assertEquals("value", only.getColumnName());
+        assertEquals(ColumnType.STRING, only.getDataType());
+        assertFalse(only.isMetric());
+
+        assertEquals(1, columnsNeedsInfer.size());
+        assertTrue(columnsNeedsInfer.contains("value"));
+    }
+
+    @Test
+    void inferAndfillStagedColumnsShouldInferTypesAndMetricFlags() {
+        // 1. Prepare dataset
+        VersionControl staged = VersionControl.builder()
+                .version(1)
+                .rowCount(0L)
+                .headers(new ArrayList<>(List.of(
+                        DatasetMetadata.ColumnMeta.builder()
+                                .columnName("price")
                                 .dataType(ColumnType.STRING)
                                 .metric(false)
-                                .build();
+                                .build(),
+                        DatasetMetadata.ColumnMeta.builder()
+                                .columnName("trade_date")
+                                .dataType(ColumnType.STRING)
+                                .metric(false)
+                                .build(),
+                        DatasetMetadata.ColumnMeta.builder()
+                                .columnName("user_id")
+                                .dataType(ColumnType.STRING)
+                                .metric(false)
+                                .build(),
+                        DatasetMetadata.ColumnMeta.builder()
+                                .columnName("note")
+                                .dataType(ColumnType.STRING)
+                                .metric(false)
+                                .build())))
+                .build();
 
-                VersionControl current = VersionControl.builder()
-                                .version(3)
-                                .rowCount(100L)
-                                .headers(new ArrayList<>(List.of(colA, colB)))
-                                .build();
+        DatasetMetadata dataset = DatasetMetadata.builder()
+                .datasetName("test-dataset")
+                .current(null)
+                .staged(staged)
+                .build();
 
-                DatasetMetadata dataset = DatasetMetadata.builder()
-                                .datasetName("test_dataset")
-                                .current(current)
-                                .staged(null)
-                                .build();
+        // 2. Prepare several lines of CSV to infer
+        List<Map<String, String>> inferRows = List.of(
+                Map.of(
+                        "price", "100.5",
+                        "trade_date", "2024-01-01",
+                        "user_id", "1001",
+                        "note", "first"),
+                Map.of(
+                        "price", "200.75",
+                        "trade_date", "2024-01-02",
+                        "user_id", "1002",
+                        "note", "second"),
+                Map.of(
+                        "price", "1,234.00",
+                        "trade_date", "2024/01/03",
+                        "user_id", "1003",
+                        "note", "third"));
 
-                List<String> newHeaders = List.of("col_a", "col_c");
+        // 3. The collection of the columns to be infered
+        Set<String> columnsNeedsInfer = new HashSet<>(Arrays.asList(
+                "price",
+                "trade_date",
+                "user_id"));
 
-                Set<String> columnsNeedsInfer = new HashSet<>();
-                columnsNeedsInfer.add("already_here");
+        // 4. Test
+        builder.inferAndfillStagedColumns(dataset, inferRows, columnsNeedsInfer);
 
-                // when
-                builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, newHeaders);
+        // 5. Assert
+        ColumnMeta priceCol = findHeader(dataset, "price");
+        assertNotNull(priceCol);
+        assertEquals(ColumnType.NUMBER, priceCol.getDataType(), "price should be NUMBER");
+        assertTrue(priceCol.isMetric(), "price should METRIC column");
 
-                // then
-                assertNotNull(dataset.getStaged());
-                VersionControl staged = dataset.getStaged();
+        ColumnMeta tradeDateCol = findHeader(dataset, "trade_date");
+        assertNotNull(tradeDateCol);
+        assertEquals(ColumnType.DATE, tradeDateCol.getDataType(), "trade_date should be DATE");
+        assertFalse(tradeDateCol.isMetric(), "should not be METRIC");
 
-                assertEquals(4, staged.getVersion());
-                assertEquals(100, staged.getRowCount());
+        ColumnMeta userIdCol = findHeader(dataset, "user_id");
+        assertNotNull(userIdCol);
+        assertEquals(ColumnType.STRING, userIdCol.getDataType(), "user_id should be STRING");
+        assertFalse(userIdCol.isMetric(), "id should not be METRIC");
 
-                // 2) staged.headers should contain：col_a, col_b（have） + col_c（new）
-                assertEquals(3, staged.getHeaders().size());
+        // The not column is not in the infer list should not be infered.
+        ColumnMeta noteCol = findHeader(dataset, "note");
+        assertNotNull(noteCol);
+        assertEquals(ColumnType.STRING, noteCol.getDataType(), "note should be STRING, should not be infered");
+        assertFalse(noteCol.isMetric(), "note should not be METRIC");
+    }
 
-                Map<String, ColumnMeta> byName = new HashMap<>();
-                for (ColumnMeta c : staged.getHeaders()) {
-                        byName.put(c.getColumnName(), c);
-                }
-
-                assertTrue(byName.containsKey("col_a"));
-                assertTrue(byName.containsKey("col_b"));
-                assertTrue(byName.containsKey("col_c"));
-
-                // The original should not change
-                ColumnMeta stagedA = byName.get("col_a");
-                assertEquals(ColumnType.NUMBER, stagedA.getDataType());
-                assertTrue(stagedA.isMetric());
-
-                ColumnMeta stagedC = byName.get("col_c");
-                assertEquals(ColumnType.STRING, stagedC.getDataType());
-                assertFalse(stagedC.isMetric());
-
-                assertEquals(2, columnsNeedsInfer.size());
-                assertTrue(columnsNeedsInfer.contains("already_here"));
-                assertTrue(columnsNeedsInfer.contains("col_c"));
-        }
-
-        @Test
-        void testMergeAndFillInferNeededColumnNoNewColumns() {
-                // given
-                ColumnMeta colA = ColumnMeta.builder()
-                                .columnName("col_a")
-                                .dataType(ColumnType.NUMBER)
-                                .metric(true)
-                                .build();
-
-                VersionControl current = VersionControl.builder()
-                                .version(1)
-                                .rowCount(10L)
-                                .headers(new ArrayList<>(List.of(colA)))
-                                .build();
-
-                DatasetMetadata dataset = DatasetMetadata.builder()
-                                .datasetName("test_dataset")
-                                .current(current)
-                                .staged(null)
-                                .build();
-
-                // headers should be the same
-                List<String> headers = List.of("col_a");
-
-                Set<String> columnsNeedsInfer = new HashSet<>(Set.of("exists"));
-
-                // when
-                builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, headers);
-
-                // then
-                VersionControl staged = dataset.getStaged();
-                assertNotNull(staged);
-                assertEquals(2, staged.getVersion());
-                assertEquals(10L, staged.getRowCount());
-
-                // headers should only have "col_a"
-                assertEquals(1, staged.getHeaders().size());
-                assertEquals("col_a", staged.getHeaders().get(0).getColumnName());
-
-                // No new columns should be added to infer set
-                assertEquals(1, columnsNeedsInfer.size());
-                assertTrue(columnsNeedsInfer.contains("exists"));
-        }
-
-        @Test
-        void mergeAndFillInferNeededColumnsShouldIgnoreDuplicatedNewHeaders() {
-                // given
-                VersionControl current = VersionControl.builder()
-                                .version(0)
-                                .rowCount(0L)
-                                .headers(new ArrayList<>())
-                                .build();
-
-                DatasetMetadata dataset = DatasetMetadata.builder()
-                                .datasetName("test_dataset")
-                                .current(current)
-                                .staged(null)
-                                .build();
-
-                List<String> headers = List.of("value", "value", "value");
-
-                Set<String> columnsNeedsInfer = new HashSet<>();
-
-                // when
-                builder.mergeAndFillInferNeededColumns(columnsNeedsInfer, dataset, headers);
-
-                // then
-                VersionControl staged = dataset.getStaged();
-                assertNotNull(staged);
-
-                assertEquals(1, staged.getHeaders().size());
-                ColumnMeta only = staged.getHeaders().get(0);
-                assertEquals("value", only.getColumnName());
-                assertEquals(ColumnType.STRING, only.getDataType());
-                assertFalse(only.isMetric());
-
-                assertEquals(1, columnsNeedsInfer.size());
-                assertTrue(columnsNeedsInfer.contains("value"));
-        }
-
-        @Test
-        void inferAndfillStagedColumnsShouldInferTypesAndMetricFlags() {
-                // 1. Prepare dataset
-                VersionControl staged = VersionControl.builder()
-                                .version(1)
-                                .rowCount(0L)
-                                .headers(new ArrayList<>(List.of(
-                                                DatasetMetadata.ColumnMeta.builder()
-                                                                .columnName("price")
-                                                                .dataType(ColumnType.STRING)
-                                                                .metric(false)
-                                                                .build(),
-                                                DatasetMetadata.ColumnMeta.builder()
-                                                                .columnName("trade_date")
-                                                                .dataType(ColumnType.STRING)
-                                                                .metric(false)
-                                                                .build(),
-                                                DatasetMetadata.ColumnMeta.builder()
-                                                                .columnName("user_id")
-                                                                .dataType(ColumnType.STRING)
-                                                                .metric(false)
-                                                                .build(),
-                                                DatasetMetadata.ColumnMeta.builder()
-                                                                .columnName("note")
-                                                                .dataType(ColumnType.STRING)
-                                                                .metric(false)
-                                                                .build())))
-                                .build();
-
-                DatasetMetadata dataset = DatasetMetadata.builder()
-                                .datasetName("test-dataset")
-                                .current(null)
-                                .staged(staged)
-                                .build();
-
-                // 2. Prepare several lines of CSV to infer
-                List<Map<String, String>> inferRows = List.of(
-                                Map.of(
-                                                "price", "100.5",
-                                                "trade_date", "2024-01-01",
-                                                "user_id", "1001",
-                                                "note", "first"),
-                                Map.of(
-                                                "price", "200.75",
-                                                "trade_date", "2024-01-02",
-                                                "user_id", "1002",
-                                                "note", "second"),
-                                Map.of(
-                                                "price", "1,234.00",
-                                                "trade_date", "2024/01/03",
-                                                "user_id", "1003",
-                                                "note", "third"));
-
-                // 3. The collection of the columns to be infered
-                Set<String> columnsNeedsInfer = new HashSet<>(Arrays.asList(
-                                "price",
-                                "trade_date",
-                                "user_id"));
-
-                // 4. Test
-                builder.inferAndfillStagedColumns(dataset, inferRows, columnsNeedsInfer);
-
-                // 5. Assert
-                ColumnMeta priceCol = findHeader(dataset, "price");
-                assertNotNull(priceCol);
-                assertEquals(ColumnType.NUMBER, priceCol.getDataType(), "price should be NUMBER");
-                assertTrue(priceCol.isMetric(), "price should METRIC column");
-
-                ColumnMeta tradeDateCol = findHeader(dataset, "trade_date");
-                assertNotNull(tradeDateCol);
-                assertEquals(ColumnType.DATE, tradeDateCol.getDataType(), "trade_date should be DATE");
-                assertFalse(tradeDateCol.isMetric(), "should not be METRIC");
-
-                ColumnMeta userIdCol = findHeader(dataset, "user_id");
-                assertNotNull(userIdCol);
-                assertEquals(ColumnType.STRING, userIdCol.getDataType(), "user_id should be STRING");
-                assertFalse(userIdCol.isMetric(), "id should not be METRIC");
-
-                // The not column is not in the infer list should not be infered.
-                ColumnMeta noteCol = findHeader(dataset, "note");
-                assertNotNull(noteCol);
-                assertEquals(ColumnType.STRING, noteCol.getDataType(), "note should be STRING, should not be infered");
-                assertFalse(noteCol.isMetric(), "note should not be METRIC");
-        }
-
-        private DatasetMetadata.ColumnMeta findHeader(DatasetMetadata dataset, String name) {
-                return dataset.getStaged().getHeaders().stream()
-                                .filter(c -> name.equals(c.getColumnName()))
-                                .findFirst()
-                                .orElse(null);
-        }
+    private DatasetMetadata.ColumnMeta findHeader(DatasetMetadata dataset, String name) {
+        return dataset.getStaged().getHeaders().stream()
+                .filter(c -> name.equals(c.getColumnName()))
+                .findFirst()
+                .orElse(null);
+    }
 }

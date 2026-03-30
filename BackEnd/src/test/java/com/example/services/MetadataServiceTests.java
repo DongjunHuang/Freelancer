@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
-import com.example.exception.NotFoundException;
+import com.example.exception.types.NotFoundException;
 import com.example.guards.DatasetStateGuard;
 import com.example.upload.app.MetadataService;
 import com.example.upload.domain.DatasetStatus;

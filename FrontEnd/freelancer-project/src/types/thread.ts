@@ -4,13 +4,6 @@ export enum ThreadStatus {
   RESOLVED = 'RESOLVED',
 }
 
-export enum ThreadFilterStatus {
-  OPEN = 'OPEN',
-  WAITING_ADMIN = 'WAITING_ADMIN',
-  WAITING_USER = 'WAITING_USER',
-  RESOLVED = 'RESOLVED',
-}
-
 export enum ThreadType {
   BUG = 'BUG',
   PERFORMANCE = 'PERFORMANCE',

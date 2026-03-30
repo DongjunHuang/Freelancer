@@ -2,6 +2,7 @@ package com.example.security;
 
 import java.util.Collection;
 
+import lombok.Builder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -11,6 +12,7 @@ import com.example.auth.domain.user.UserStatus;
 import lombok.Data;
 
 @Data
+@Builder
 public class JwtUserDetails implements UserDetails {
     private User user;
     Collection<GrantedAuthority> authorities;

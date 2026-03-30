@@ -50,8 +50,8 @@ const issueRules: FormRules = {
 function resetIssue() {
   Object.assign(issueModel, {
     title: '',
-    type: 'bug',
-    url: '',
+    type: 'Bug',
+    description: '',
     impact: '',
   })
 }

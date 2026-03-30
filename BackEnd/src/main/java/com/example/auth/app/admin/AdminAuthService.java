@@ -2,10 +2,10 @@ package com.example.auth.app.admin;
 
 import com.example.auth.domain.admin.AdminSigninReq;
 import com.example.auth.domain.admin.AdminSigninResp;
-import com.example.exception.AuthenticationException;
+import com.example.exception.types.AuthenticationException;
 import com.example.exception.ErrorCode;
 import com.example.security.JwtUserDetails;
-import com.example.security.SecretService;
+import com.example.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class AdminAuthService {
 
     private final AuthenticationManager authenticationManager;
-    private final SecretService jwtService;
+    private final JwtService jwtService;
 
     public AdminSigninResp signin(AdminSigninReq req) {
         Authentication authentication = authenticationManager.authenticate(
@@ -33,7 +33,6 @@ public class AdminAuthService {
             throw new AuthenticationException(ErrorCode.NOT_VALID_ADMIN);
         }
 
-        // 生成 admin token
         String token = jwtService.generateAdminAccessToken(principal.getUsername());
 
         return AdminSigninResp.builder()

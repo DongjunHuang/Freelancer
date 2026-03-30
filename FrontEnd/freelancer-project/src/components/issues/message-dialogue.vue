@@ -116,13 +116,16 @@ watch(
 )
 </script>
 <template>
-  <div class="flex-1 min-w-0">
-    <NCard class="h-full rounded-2xl">
-      <div class="h-full flex flex-col">
+  <div class="flex min-h-0 flex-1 min-w-0">
+    <NCard class="h-full w-full rounded-2xl" content-class="h-full p-0">
+      <div class="flex h-full min-h-0 flex-col">
         <!-- Header -->
-        <div v-if="props.showHeader" class="pb-4 border-b flex items-start justify-between gap-4">
+        <div
+          v-if="props.showHeader"
+          class="shrink-0 border-b px-6 py-4 flex items-start justify-between gap-4"
+        >
           <div class="min-w-0">
-            <div class="text-xl font-semibold text-gray-900 truncate">
+            <div class="truncate text-xl font-semibold text-gray-900">
               {{ props.title }}
             </div>
 
@@ -135,6 +138,7 @@ watch(
             <NTag size="small" :type="statusTagType(props.threadStatus)">
               {{ props.threadStatus }}
             </NTag>
+
             <NSelect
               size="small"
               style="width: 160px"
@@ -146,75 +150,83 @@ watch(
         </div>
 
         <!-- Loading -->
-        <div v-if="props.loading" class="flex-1 flex items-center justify-center text-gray-500">
+        <div
+          v-if="props.loading"
+          class="flex min-h-0 flex-1 items-center justify-center px-6 py-4 text-gray-500"
+        >
           Loading conversation...
         </div>
 
         <!-- Content -->
-        <template v-else>
+        <div v-else class="flex min-h-0 flex-1 flex-col px-6 py-4">
           <!-- Messages -->
-          <div ref="messageContainer" class="flex-1 overflow-y-auto py-4 space-y-4">
-            <div class="flex justify-center">
-              <NButton
-                v-if="props.hasMore"
-                size="small"
-                tertiary
-                :loading="props.loadingMore"
-                @click="handleLoadMore"
-              >
-                Load older messages
-              </NButton>
-            </div>
+          <div ref="messageContainer" class="min-h-0 flex-1 overflow-y-auto">
+            <div class="space-y-4 pr-1">
+              <div class="flex justify-center">
+                <NButton
+                  v-if="props.hasMore"
+                  size="small"
+                  tertiary
+                  :loading="props.loadingMore"
+                  @click="handleLoadMore"
+                >
+                  Load older messages
+                </NButton>
+              </div>
 
-            <div
-              v-for="message in props.messages"
-              :key="message.id"
-              class="flex"
-              :class="isOwnMessage(message) ? 'justify-end' : 'justify-start'"
-            >
               <div
-                class="max-w-[75%] rounded-2xl px-4 py-3 border cursor-pointer transition"
-                :class="[
-                  isOwnMessage(message)
-                    ? 'bg-blue-600/10 text-white border-blue-600/20'
-                    : 'bg-white-100 text-gray-900 border-gray-200',
-                ]"
-                @click="handleMessageClick(message)"
+                v-for="message in props.messages"
+                :key="message.id"
+                class="flex"
+                :class="isOwnMessage(message) ? 'justify-end' : 'justify-start'"
               >
-                <div class="flex items-center gap-2 mb-1">
-                  <span
-                    class="text-xs font-medium"
-                    :class="[
-                      message.role === 'user'
-                        ? 'text-gray-700'
-                        : message.role === 'admin'
-                          ? 'text-blue-700'
-                          : 'text-gray-500',
-                    ]"
-                  >
-                    {{ roleLabel(message.role) }}
-                  </span>
+                <div
+                  class="max-w-[75%] rounded-2xl border px-4 py-3 transition"
+                  :class="
+                    isOwnMessage(message)
+                      ? 'border-blue-600/20 bg-blue-600/10 text-gray-900'
+                      : 'border-gray-200 bg-white text-gray-900'
+                  "
+                  @click="handleMessageClick(message)"
+                >
+                  <div class="mb-1 flex items-center gap-2">
+                    <span
+                      class="text-xs font-medium"
+                      :class="
+                        message.role === 'user'
+                          ? 'text-gray-700'
+                          : message.role === 'admin'
+                            ? 'text-blue-700'
+                            : 'text-gray-500'
+                      "
+                    >
+                      {{ roleLabel(message.role) }}
+                    </span>
 
-                  <span class="text-xs text-gray-400">
-                    {{ formatDate(message.createdAt) }}
-                  </span>
+                    <span class="text-xs text-gray-400">
+                      {{ formatDate(message.createdAt) }}
+                    </span>
 
-                  <NTag v-if="message.isInternal" size="small" type="warning"> Internal </NTag>
-                </div>
+                    <NTag v-if="message.isInternal" size="small" type="warning"> Internal </NTag>
+                  </div>
 
-                <div class="whitespace-pre-wrap text-sm text-gray-900">
-                  {{ message.content }}
+                  <div class="whitespace-pre-wrap break-words text-sm text-gray-900">
+                    {{ message.content }}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div v-if="props.messages.length === 0" class="text-sm text-gray-500 text-center py-8">
-              {{ props.emptyText }}
+              <div
+                v-if="props.messages.length === 0"
+                class="py-8 text-center text-sm text-gray-500"
+              >
+                {{ props.emptyText }}
+              </div>
             </div>
           </div>
 
           <!-- Reply -->
-          <div v-if="props.canReply" class="pt-4 border-t space-y-3">
+          <div v-if="props.canReply" class="mt-4 shrink-0 border-t pt-4 space-y-3">
             <div class="font-medium">Reply</div>
 
             <NInput
@@ -237,7 +249,7 @@ watch(
               </NButton>
             </div>
           </div>
-        </template>
+        </div>
       </div>
     </NCard>
   </div>

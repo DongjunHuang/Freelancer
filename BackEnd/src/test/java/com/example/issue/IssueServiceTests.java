@@ -1,7 +1,7 @@
 package com.example.issue;
 
-import com.example.exception.BadRequestException;
-import com.example.exception.NotFoundException;
+import com.example.exception.types.BadRequestException;
+import com.example.exception.types.NotFoundException;
 import com.example.issue.app.IssueService;
 import com.example.issue.domain.*;
 import com.example.issue.infra.jpa.IssueMessageRepo;

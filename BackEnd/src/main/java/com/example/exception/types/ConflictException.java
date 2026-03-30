@@ -1,5 +1,6 @@
-package com.example.exception;
+package com.example.exception.types;
 
+import com.example.exception.ErrorCode;
 import lombok.Getter;
 
 /**
@@ -9,14 +10,14 @@ import lombok.Getter;
  */
 @Getter
 public class ConflictException extends RuntimeException {
-    private final ErrorCode error;
+    private final ErrorCode errorCode;
 
     public ConflictException(ErrorCode error) {
         super(error.getMessage());
-        this.error = error;
+        this.errorCode = error;
     }
 
-    public String getCode() {
-        return error.getCode();
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
 }

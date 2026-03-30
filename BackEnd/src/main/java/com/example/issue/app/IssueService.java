@@ -1,8 +1,8 @@
 package com.example.issue.app;
 
-import com.example.exception.BadRequestException;
+import com.example.exception.types.BadRequestException;
 import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
+import com.example.exception.types.NotFoundException;
 import com.example.issue.domain.*;
 import com.example.issue.infra.jpa.IssueMessageRepo;
 import com.example.issue.infra.jpa.IssueThreadRepo;
@@ -243,7 +243,7 @@ public class IssueService {
     @Transactional
     public void updateThreadStatus(UserType userType, Long userId, Long threadId, ThreadStatus newStatus) {
         if (newStatus == null) {
-            throw new BadRequestException(ErrorCode.NOT_VALID_THREAD_STATUS);
+            throw new BadRequestException(ErrorCode.NOT_VALID_PARAMS);
         }
         IssueThread thread = null;
 

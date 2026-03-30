@@ -2,50 +2,163 @@ package com.example.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
-@AllArgsConstructor
 public enum ErrorCode {
+    EMAIL_USED(
+            "EMAIL_USED",
+            "Email Already Registered",
+            ErrorCategory.CONFLICT,
+            HttpStatus.BAD_REQUEST),
 
-    EMAIL_USED("EMAIL_USED", "Email already registered"),
-    USERNAME_USED("USERNAME_USED", "Username already taken"),
-    EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Email not verified"),
+    USERNAME_USED("USERNAME_USED",
+            "Username Already Taken",
+            ErrorCategory.CONFLICT,
+            HttpStatus.BAD_REQUEST),
 
-    PASSWORD_TOO_SHORT("PASSWORD_TOO_SHORT", "Password length must be >= 6"),
 
-    USER_IS_NOT_PENDING("USER_IS_NOT_PENDING", "User is not pending"),
-    TOKEN_EXPIRED("TOKEN_EXPIRED", "The token is expired."),
-    TOKEN_INVALID("TOKEN_INVALID", "The token is not valid."),
-
-    NOT_VALID_USER("NOT_VALID_USER", "The user is not valid"),
-    NOT_VALID_ADMIN("NOT_VALID_ADMIN", "The user is not valid admin"),
+    USER_IS_NOT_PENDING(
+            "USER_IS_NOT_PENDING",
+            "User Is Not Pending",
+            ErrorCategory.BUSINESS_RULE,
+            HttpStatus.BAD_REQUEST),
 
     // Not found exception
-    NOT_FOUND("NOT_FOUND", "Resource not found"),
-    USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
-    DATASET_NOT_FOUND("DATASET_NOT_FOUND", "Dataset not found"),
-    FEEDBACK_THREAD_NOT_FOUND("FEEDBACK_THREAD_NOT_FOUND", "The feedback thread not found."),
+    NOT_FOUND(
+    "NOT_FOUND",
+    "Resource Not Found",
+            ErrorCategory.NOT_FOUND,
+            HttpStatus.NOT_FOUND),
 
-    // Bad request exception
-    NOT_VALID_FILE("NOT_VALID_FILE", "The file is not valid"),
-    NOT_VALID_SET_NAME("NOT_VALID_SET_NAME", "The dataset name is not valid"),
-    FILE_READ_FAILED("FILE_READ_FAILED", "Failed to read the file"),
-    NOT_VALID_DATE_COLUMN("NOT_VALID_DATE_COLUMN", "Not able to find date column"),
-    NOT_VALID_SYMBOL_COLUMN("NOT_VALID_SYMBOL_COLUMN", "Not able to find symbol column"),
-    DATASET_NAME_USED("DATASET_NAME_USED", "The dataset is already existed."),
-    NOT_VALID_THREAD_STATUS("NOT_VALUD_THREAD_STATUS", "The thread status is not valid."),
+    USER_NOT_FOUND(
+            "USER_NOT_FOUND",
+            "User Not Found",
+            ErrorCategory.NOT_FOUND,
+            HttpStatus.NOT_FOUND),
 
-    // Dataset status exception
-    DATASET_NOT_AVAILABLE("DATASET_NOT_AVAILABLE", "The dataset is not available, please try again."),
+    DATASET_NOT_FOUND(
+            "DATASET_NOT_FOUND",
+            "Dataset Not Found",
+            ErrorCategory.NOT_FOUND,
+            HttpStatus.NOT_FOUND),
 
-    // Dataset Explainable Code
-    UPLOAD_FAILED("UPLOAD_FAILED", "Failed to upload"),
-    DELETE_FAILED("DELETE_FAILED", "Failed to delete the dataset"),
+    FILE_READ_FAILED(
+            "FILE_READ_FAILED",
+            "Failed To Read The File",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    NOT_VALID_DATE_COLUMN(
+            "NOT_VALID_DATE_COLUMN",
+            "Not Able To Find Date Column",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    NOT_VALID_PARAMS(
+            "NOT_VALID_PARAMS",
+            "Not Valid Parameters",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    NOT_VALID_SYMBOL_COLUMN(
+            "NOT_VALID_SYMBOL_COLUMN",
+            "Not Able To Find Symbol Column",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    NOT_VALID_REFRESH_TOKEN(
+            "NOT_VALID_REFRESH_TOKEN",
+            "Not Able To Find Refresh Token",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    DATASET_NAME_USED(
+            "DATASET_NAME_USED",
+            "The Dataset Is Already Existed.",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    NOT_VALID_FILE(
+            "NOT_VALID_FILE",
+            "The File Is Not Valid",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    DATASET_NOT_AVAILABLE(
+            "DATASET_NOT_AVAILABLE",
+            "The Dataset Is Not Available, Please Try Again.",
+            ErrorCategory.DATASET_STATUS,
+            HttpStatus.INTERNAL_SERVER_ERROR),
+
+    UPLOAD_FAILED(
+            "UPLOAD_FAILED",
+            "Failed To Upload",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    NOT_VALID_SET_NAME(
+            "NOT_VALID_SET_NAME",
+            "The Dataset Name Is Not Valid",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
+
+    DELETE_FAILED(
+            "DELETE_FAILED",
+            "Failed To Delete The Dataset",
+            ErrorCategory.BAD_REQUEST,
+            HttpStatus.BAD_REQUEST),
 
     // Authentication
-    USER_IS_NOT_VERIFIED("USER_IS_NOT_VERIFIED", "The user is not verified through email");
-    
+    USER_IS_NOT_VERIFIED(
+            "USER_IS_NOT_VERIFIED",
+            "The user is not verified through email",
+            ErrorCategory.AUTHENTICATION,
+            HttpStatus.UNAUTHORIZED),
+
+    TOKEN_EXPIRED(
+            "TOKEN_EXPIRED",
+            "The Token Is Expired.",
+            ErrorCategory.BUSINESS_RULE,
+            HttpStatus.UNAUTHORIZED),
+
+    TOKEN_INVALID(
+            "TOKEN_INVALID",
+            "The Token Is Not Valid.",
+            ErrorCategory.BUSINESS_RULE,
+            HttpStatus.UNAUTHORIZED),
+
+    NOT_VALID_ADMIN(
+            "NOT_VALID_ADMIN",
+            "The User Is Not Valid Admin",
+            ErrorCategory.AUTHENTICATION,
+            HttpStatus.UNAUTHORIZED);
+
     private final String code;
     private final String message;
+    private final ErrorCategory category;
+    private final HttpStatus httpStatus;
 
+    ErrorCode(String code, String message, ErrorCategory category, HttpStatus httpStatus) {
+        this.code = code;
+        this.message = message;
+        this.category = category;
+        this.httpStatus = httpStatus;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public ErrorCategory getCategory() {
+        return category;
+    }
+
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
+    }
 }

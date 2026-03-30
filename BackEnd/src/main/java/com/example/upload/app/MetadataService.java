@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
-import com.example.exception.BadRequestException;
+import com.example.exception.types.BadRequestException;
 import com.example.exception.ErrorCode;
 import com.example.guards.DatasetAction;
 import com.example.guards.DatasetStateGuard;

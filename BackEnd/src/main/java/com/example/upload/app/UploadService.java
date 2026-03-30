@@ -24,9 +24,9 @@ import com.example.common.dataset.domain.DataProps;
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
-import com.example.exception.BadRequestException;
+import com.example.exception.types.BadRequestException;
 import com.example.exception.ErrorCode;
-import com.example.exception.NotFoundException;
+import com.example.exception.types.NotFoundException;
 import com.example.upload.domain.DatasetStatus;
 
 import jakarta.transaction.Transactional;
@@ -139,7 +139,7 @@ public class UploadService {
         } catch (BadRequestException bex) {
             if (dataset != null) {
                 dataset.setStatus(DatasetStatus.FAILED);
-                dataset.setLastErrorCode(bex.getError());
+                dataset.setLastErrorCode(bex.getErrorCode());
                 dataset.setLastErrorMessage(bex.getMessage());
                 metadataRepo.save(dataset);
             }

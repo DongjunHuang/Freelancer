@@ -24,6 +24,56 @@ import AppUser from '@/app-user.vue'
 
 import { useAuth } from '@/stores/auth'
 import { useAdminAuth } from '@/stores/auth-admin'
+import { http } from '@/api/http-user'
+import axios from 'axios'
+
+function parseJwtPayload(token: string): Record<string, any> | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+
+    const base64 = parts[1]
+    const normalized = base64.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4 || 4)) % 4),
+      '=',
+    )
+
+    const json = atob(padded)
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
+function isTokenExpired(token: string, bufferSeconds = 30): boolean {
+  const payload = parseJwtPayload(token)
+  if (!payload?.exp) return true
+
+  const now = Math.floor(Date.now() / 1000)
+  return payload.exp <= now + bufferSeconds
+}
+
+async function tryRefreshUser(): Promise<boolean> {
+  const auth = useAuth()
+
+  try {
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_BASE}/auth/refresh`,
+      {},
+      {
+        withCredentials: true,
+        timeout: 10000,
+      },
+    )
+
+    auth.setToken(res.data.accessToken)
+    return true
+  } catch {
+    auth.clear()
+    return false
+  }
+}
 
 const BASE = import.meta.env.BASE_URL
 
@@ -104,34 +154,44 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to) => {
   const auth = useAuth()
   const adminAuth = useAdminAuth()
 
+  // The path to admin path
   if (to.meta.requiresAdmin) {
     if (!adminAuth.isLoggedIn) {
-      next({
+      return {
         path: '/admin/login',
         query: { redirect: to.fullPath },
-      })
-      return
+      }
     }
 
-    next()
-    return
+    return true
   }
 
+  // The path to user auth
   if (to.meta.requiresAuth) {
-    if (!auth.isLoggedIn) {
-      next({
-        path: '/signin',
-        query: { redirect: to.fullPath },
-      })
-      return
+    const token = auth.accessToken
+
+    if (!token || isTokenExpired(token, 30)) {
+      const ok = await refreshAccessToken()
+      if (!ok) {
+        return {
+          path: '/signin',
+          query: { redirect: to.fullPath },
+        }
+      }
     }
+    return true
   }
 
-  next()
+  return true
 })
+
+async function refreshAccessToken(): Promise<string> {
+  const res = await http.post('/auth/refresh')
+  return res.data.accessToken
+}
 
 export default router
