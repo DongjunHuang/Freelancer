@@ -18,7 +18,7 @@ public class FetchRecordsProps {
     private List<String> columns;
     private List<String> symbols;
 
-    public static FetchRecordsProps fromFetchRecordsReq(FetchRecordsReq req) {
+    public static FetchRecordsProps fromFetchRecordsReq(String datasetName, FetchRecordsReq req) {
         List<String> columnsUpperCase = new ArrayList<>();
         if (req.getColumns() != null) {
             for (int i = 0; i < req.getColumns().size(); i++) {

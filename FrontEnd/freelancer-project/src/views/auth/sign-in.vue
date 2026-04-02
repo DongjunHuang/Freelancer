@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { signin, resendEmail } from '@/api/auth'
 import { useAuth } from '@/stores/auth'
 
+import { UserType } from '@/types/user'
 const errorMsg = ref('')
 const { setToken, setUser } = useAuth()
 const router = useRouter()
@@ -45,32 +46,34 @@ function startCooldown(seconds = 60) {
 
 // The on query method to query for metrics
 async function submit() {
-  error.value = ''
+  errorMsg.value = ''
   loading.value = true
-  try {
-    const res = await signin({
-      username: f.signin.username,
-      password: f.signin.password,
-    })
 
-    // Receive the access token from backend.
+  try {
+    console.log('username is ' + f.signin.username + ' password is ' + f.signin.password)
+    const res = await signin(UserType.USER, f.signin.username, f.signin.password)
+
     const accessToken = res.data?.accessToken
     const user = res.data?.user
 
-    if (accessToken) {
-      setToken(accessToken)
-      setUser(user)
-      router.push('/dashboard')
-    } else {
+    if (!accessToken) {
       throw new Error('No access token in response')
     }
+
+    setToken(accessToken)
+    setUser(user)
+    await router.push('/dashboard')
   } catch (e: any) {
-    console.log(e)
-    const error = e?.response?.data?.error
-    if (error === 'Invalid credentials') {
-      errorMsg.value = error
-    } else if (error == 'EMAIL_NOT_VERIFIED') {
+    console.error(e)
+
+    const errorCode = e?.response?.data?.error
+
+    if (errorCode === 'Invalid credentials') {
+      errorMsg.value = errorCode
+    } else if (errorCode === 'EMAIL_NOT_VERIFIED') {
       showVerifyModal.value = true
+    } else {
+      errorMsg.value = 'Sign-in failed. Please try again.'
     }
   } finally {
     loading.value = false

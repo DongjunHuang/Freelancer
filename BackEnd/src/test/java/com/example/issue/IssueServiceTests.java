@@ -50,7 +50,7 @@ class IssueServiceTests {
 
         when(threadRepo.findByIdAndUserId(threadId, userId)).thenReturn(Optional.of(thread));
 
-        issueThreadService.postMessage(userId, threadId, req, UserType.USER);
+        issueThreadService.postMessage(UserType.USER, userId, threadId, req);
 
         ArgumentCaptor<IssueMessage> messageCaptor = ArgumentCaptor.forClass(IssueMessage.class);
         verify(messageRepo).save(messageCaptor.capture());
@@ -84,7 +84,7 @@ class IssueServiceTests {
 
         when(threadRepo.findById(threadId)).thenReturn(Optional.of(thread));
 
-        issueThreadService.postMessage(userId, threadId, req, UserType.ADMIN);
+        issueThreadService.postMessage( UserType.ADMIN ,null, threadId, req);
 
         ArgumentCaptor<IssueMessage> messageCaptor = ArgumentCaptor.forClass(IssueMessage.class);
         verify(messageRepo).save(messageCaptor.capture());
@@ -92,7 +92,6 @@ class IssueServiceTests {
         IssueMessage savedMessage = messageCaptor.getValue();
         assertEquals(threadId, savedMessage.getThreadId());
         assertEquals(UserType.ADMIN, savedMessage.getUserType());
-        assertEquals(userId, savedMessage.getSenderId());
         assertEquals("hello from admin", savedMessage.getBody());
         assertTrue(savedMessage.isInternal());
         assertNotNull(savedMessage.getCreatedAt());
@@ -117,7 +116,7 @@ class IssueServiceTests {
 
         assertThrows(
                 NotFoundException.class,
-                () -> issueThreadService.postMessage(userId, threadId, req, UserType.USER)
+                () -> issueThreadService.postMessage(UserType.USER, userId, threadId, req)
         );
 
         verify(threadRepo).findByIdAndUserId(threadId, userId);
@@ -139,7 +138,7 @@ class IssueServiceTests {
 
         assertThrows(
                 NotFoundException.class,
-                () -> issueThreadService.postMessage(userId, threadId, req, UserType.ADMIN)
+                () -> issueThreadService.postMessage(UserType.ADMIN, null, threadId, req)
         );
 
         verify(threadRepo).findById(threadId);
@@ -318,7 +317,7 @@ class IssueServiceTests {
         IssueMessage m1 = buildMessage(1L, Instant.parse("2026-03-23T10:00:00Z"));
         IssueMessage m2 = buildMessage(2L, Instant.parse("2026-03-23T10:01:00Z"));
 
-        when(messageRepo.listFirstPage(threadId, isInternal, size + 1))
+        when(messageRepo.fetchLatestPage(threadId, isInternal, size + 1))
                 .thenReturn(List.of(m1, m2));
 
         MessagePageResp result = issueThreadService.getMessages(
@@ -336,7 +335,7 @@ class IssueServiceTests {
         assertNull(result.getNextCursor());
 
         verify(threadRepo).findById(threadId);
-        verify(messageRepo).listFirstPage(threadId, isInternal, size + 1);
+        verify(messageRepo).fetchLatestPage(threadId, isInternal, size + 1);
         verifyNoMoreInteractions(threadRepo, messageRepo);
     }
 
@@ -350,7 +349,7 @@ class IssueServiceTests {
         when(threadRepo.findByIdAndUserId(threadId, userId)).thenReturn(Optional.of(new IssueThread()));
 
         IssueMessage m1 = buildMessage(1L, Instant.parse("2026-03-23T10:00:00Z"));
-        when(messageRepo.listFirstPage(threadId, isInternal, size + 1))
+        when(messageRepo.fetchLatestPage(threadId, isInternal, size + 1))
                 .thenReturn(List.of(m1));
 
         MessagePageResp result = issueThreadService.getMessages(
@@ -368,7 +367,7 @@ class IssueServiceTests {
         assertNull(result.getNextCursor());
 
         verify(threadRepo).findByIdAndUserId(threadId, userId);
-        verify(messageRepo).listFirstPage(threadId, isInternal, size + 1);
+        verify(messageRepo).fetchLatestPage(threadId, isInternal, size + 1);
         verifyNoMoreInteractions(threadRepo, messageRepo);
     }
 
@@ -392,7 +391,7 @@ class IssueServiceTests {
         IssueMessage m1 = buildMessage(101L, Instant.parse("2026-03-23T10:00:00Z"));
         IssueMessage m2 = buildMessage(102L, Instant.parse("2026-03-23T10:01:00Z"));
 
-        when(messageRepo.listNextPage(threadId, isInternal, lastMessageAt, lastId, size + 1))
+        when(messageRepo.fetchNextPage(threadId, isInternal, lastMessageAt, lastId, size + 1))
                 .thenReturn(List.of(m1, m2));
 
         try (MockedStatic<Cursor> mockedCursor = mockStatic(Cursor.class)) {
@@ -414,7 +413,7 @@ class IssueServiceTests {
 
             mockedCursor.verify(() -> Cursor.decode(objectMapper, cursor));
             verify(threadRepo).findByIdAndUserId(threadId, userId);
-            verify(messageRepo).listNextPage(threadId, isInternal, lastMessageAt, lastId, size + 1);
+            verify(messageRepo).fetchNextPage(threadId, isInternal, lastMessageAt, lastId, size + 1);
             verifyNoMoreInteractions(threadRepo, messageRepo);
         }
     }
@@ -431,7 +430,7 @@ class IssueServiceTests {
         IssueMessage m2 = buildMessage(2L, Instant.parse("2026-03-23T10:01:00Z"));
         IssueMessage m3 = buildMessage(3L, Instant.parse("2026-03-23T10:02:00Z"));
 
-        when(messageRepo.listFirstPage(threadId, isInternal, size + 1))
+        when(messageRepo.fetchLatestPage(threadId, isInternal, size + 1))
                 .thenReturn(List.of(m1, m2, m3));
 
         String encodedNextCursor = "next-cursor";
@@ -455,7 +454,7 @@ class IssueServiceTests {
             assertEquals(encodedNextCursor, result.getNextCursor());
 
             verify(threadRepo).findById(threadId);
-            verify(messageRepo).listFirstPage(threadId, isInternal, size + 1);
+            verify(messageRepo).fetchLatestPage(threadId, isInternal, size + 1);
 
             mockedCursor.verify(() -> Cursor.encode(eq(objectMapper), any(Cursor.class)));
             verifyNoMoreInteractions(threadRepo, messageRepo);
@@ -473,7 +472,7 @@ class IssueServiceTests {
         IssueMessage m1 = buildMessage(1L, Instant.parse("2026-03-23T10:00:00Z"));
         IssueMessage m2 = buildMessage(2L, Instant.parse("2026-03-23T10:01:00Z"));
 
-        when(messageRepo.listFirstPage(threadId, isInternal, size + 1))
+        when(messageRepo.fetchLatestPage(threadId, isInternal, size + 1))
                 .thenReturn(List.of(m1, m2));
 
         MessagePageResp result = issueThreadService.getMessages(
@@ -491,7 +490,7 @@ class IssueServiceTests {
         assertNull(result.getNextCursor());
 
         verify(threadRepo).findById(threadId);
-        verify(messageRepo).listFirstPage(threadId, isInternal, size + 1);
+        verify(messageRepo).fetchLatestPage(threadId, isInternal, size + 1);
         verifyNoMoreInteractions(threadRepo, messageRepo);
     }
 
@@ -514,8 +513,8 @@ class IssueServiceTests {
         );
 
         verify(threadRepo).findById(threadId);
-        verify(messageRepo, never()).listFirstPage(anyLong(), anyBoolean(), anyInt());
-        verify(messageRepo, never()).listNextPage(anyLong(), anyBoolean(), any(), anyLong(), anyInt());
+        verify(messageRepo, never()).fetchLatestPage(anyLong(), anyBoolean(), anyInt());
+        verify(messageRepo, never()).fetchNextPage(anyLong(), anyBoolean(), any(), anyLong(), anyInt());
     }
 
     @Test
@@ -538,8 +537,8 @@ class IssueServiceTests {
         );
 
         verify(threadRepo).findByIdAndUserId(threadId, userId);
-        verify(messageRepo, never()).listFirstPage(anyLong(), anyBoolean(), anyInt());
-        verify(messageRepo, never()).listNextPage(anyLong(), anyBoolean(), any(), anyLong(), anyInt());
+        verify(messageRepo, never()).fetchLatestPage(anyLong(), anyBoolean(), anyInt());
+        verify(messageRepo, never()).fetchNextPage(anyLong(), anyBoolean(), any(), anyLong(), anyInt());
     }
 
     @Test
@@ -548,7 +547,7 @@ class IssueServiceTests {
         boolean isInternal = false;
 
         when(threadRepo.findById(threadId)).thenReturn(Optional.of(new IssueThread()));
-        when(messageRepo.listFirstPage(threadId, isInternal, 2))
+        when(messageRepo.fetchLatestPage(threadId, isInternal, 2))
                 .thenReturn(List.of());
 
         MessagePageResp result = issueThreadService.getMessages(
@@ -566,7 +565,7 @@ class IssueServiceTests {
         assertNull(result.getNextCursor());
 
         verify(threadRepo).findById(threadId);
-        verify(messageRepo).listFirstPage(threadId, isInternal, 2);
+        verify(messageRepo).fetchLatestPage(threadId, isInternal, 2);
         verifyNoMoreInteractions(threadRepo, messageRepo);
     }
 
@@ -576,7 +575,7 @@ class IssueServiceTests {
         boolean isInternal = false;
 
         when(threadRepo.findById(threadId)).thenReturn(Optional.of(new IssueThread()));
-        when(messageRepo.listFirstPage(threadId, isInternal, 51))
+        when(messageRepo.fetchLatestPage(threadId, isInternal, 51))
                 .thenReturn(List.of());
 
         MessagePageResp result = issueThreadService.getMessages(
@@ -594,7 +593,7 @@ class IssueServiceTests {
         assertNull(result.getNextCursor());
 
         verify(threadRepo).findById(threadId);
-        verify(messageRepo).listFirstPage(threadId, isInternal, 51);
+        verify(messageRepo).fetchLatestPage(threadId, isInternal, 51);
         verifyNoMoreInteractions(threadRepo, messageRepo);
     }
 

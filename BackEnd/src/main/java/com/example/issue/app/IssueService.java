@@ -66,7 +66,7 @@ public class IssueService {
      * @param req      the request.
      */
     @Transactional
-    public void postMessage(Long userId, Long threadId, PostMessageReq req, UserType type) {
+    public PostMessageResp postMessage(UserType type, Long userId, Long threadId, PostMessageReq req) {
         IssueThread thread;
         if (type == UserType.USER) {
             thread = threadRepo.findByIdAndUserId(threadId, userId)
@@ -77,17 +77,21 @@ public class IssueService {
         }
 
         var now = Instant.now();
-        messageRepo.save(IssueMessage.builder()
+        IssueMessage message = IssueMessage.builder()
                 .threadId(threadId)
                 .userType(type)
                 .senderId(userId)
                 .body(req.getBody())
                 .createdAt(now)
                 .isInternal(req.isInternal())
-                .build());
-
+                .build();
         thread.setLastMessageAt(now);
+        messageRepo.save(message);
         threadRepo.save(thread);
+        return PostMessageResp.builder()
+                .thread(ThreadItem.from(thread))
+                .message(MessageItem.from(message))
+                .build();
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +102,6 @@ public class IssueService {
             String cursor,
             UserType userType) {
         List<String> statuses = mapStatuses(status);
-        logger.info("Get threads for user id {}, status {}, size {}, cursor {}", userId, statuses, size, cursor);
 
         List<IssueThread> rows = listThreads(userId, size, userType, cursor, statuses);
 
@@ -106,7 +109,6 @@ public class IssueService {
             throw new NotFoundException(ErrorCode.NOT_FOUND);
         }
 
-        logger.info("Received the information from database with size {}", rows.size());
 
         var items = rows.stream()
                 .map(ThreadItem::from)
@@ -177,12 +179,11 @@ public class IssueService {
     /**
      * To fetch messages for the corresponding thread id.
      *
-     * @param userId the user id, not admin id.
-     * @param threadId the thread id.
-     * @param size the size.
-     * @param cursor the cursor pointing to the next page.
+     * @param userId     the user id, not admin id.
+     * @param threadId   the thread id.
+     * @param size       the size.
+     * @param cursor     the cursor pointing to the next page.
      * @param isInternal whether the message is internal (for now is false)
-     *
      * @return the message fetched.
      */
     @Transactional(readOnly = true)
@@ -199,10 +200,11 @@ public class IssueService {
 
         List<IssueMessage> rows;
         if (cursor == null || cursor.isBlank()) {
-            rows = messageRepo.listFirstPage(threadId, isInternal,pageSize + 1);
+            rows = messageRepo.fetchLatestPage(threadId, isInternal, pageSize + 1);
         } else {
             Cursor messageCursor = Cursor.decode(objectMapper, cursor);
-            rows = messageRepo.listNextPage(
+            logger.info("The mesasge fetched before {}", messageCursor.getLastMessageAt());
+            rows = messageRepo.fetchNextPage(
                     threadId,
                     isInternal,
                     messageCursor.getLastMessageAt(),
@@ -210,20 +212,19 @@ public class IssueService {
                     pageSize + 1
             );
         }
-
         boolean hasMore = rows.size() > pageSize;
         if (hasMore) {
             rows = rows.subList(0, pageSize);
         }
 
         List<MessageItem> items = rows.stream()
-                .map(MessageItem::toMessageItem)
-                .toList();
+                .map(MessageItem::from)
+                .toList().reversed();
 
         String nextCursor = null;
         if (hasMore && !rows.isEmpty()) {
-            IssueMessage last = rows.get(rows.size() - 1);
-            nextCursor = Cursor.encode(objectMapper, new Cursor(last.getCreatedAt(), last.getId()));
+            IssueMessage first = rows.get(rows.size() - 1);
+            nextCursor = Cursor.encode(objectMapper, new Cursor(first.getCreatedAt(), first.getId()));
         }
 
         return MessagePageResp.builder()
@@ -236,8 +237,8 @@ public class IssueService {
     /**
      * Update the thread status by user.
      *
-     * @param userId the user id.
-     * @param threadId the thread id.
+     * @param userId    the user id.
+     * @param threadId  the thread id.
      * @param newStatus the status.
      */
     @Transactional
@@ -262,10 +263,10 @@ public class IssueService {
     /**
      * According to different requirements to fetch list of threads.
      *
-     * @param userId the user id.
-     * @param size the size of the page.
+     * @param userId   the user id.
+     * @param size     the size of the page.
      * @param userType the user type.
-     * @param cursor the cursor.
+     * @param cursor   the cursor.
      * @param statuses the status.
      * @return the threads found.
      */
@@ -325,5 +326,33 @@ public class IssueService {
                 };
             }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public MessagePageResp getLatestUserMessages(UserType userType, Long userId, Long threadId, Instant after) {
+        IssueThread thread = null;
+
+        if (userType == UserType.ADMIN) {
+            thread = threadRepo.findById(threadId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        } else {
+            thread = threadRepo.findByIdAndUserId(threadId, userId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        }
+
+        List<IssueMessage> messages = messageRepo.findLatestMessagesAfter(
+                threadId,
+                after
+        );
+
+        List<MessageItem> items = messages.stream()
+                .map(MessageItem::from)
+                .toList();
+
+        return MessagePageResp.builder()
+                .items(items)
+                .nextCursor(null)
+                .hasMore(false)
+                .build();
     }
 }

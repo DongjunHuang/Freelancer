@@ -1,5 +1,15 @@
-import http from '@/api/http-user'
+import { getApiClient, API_ENDPOINTS } from '@/api/endpoints'
 import type { DatasetReq, Dataset } from '@/types/user'
+
+// The api to fetch datasets for the user
+export const fetchDatasets = () => {
+  return getApiClient().get<Dataset[]>(API_ENDPOINTS.upload.fetchDatasets)
+}
+
+// The api to delete dataset
+export const deleteDataset = (datasetName: string) => {
+  return getApiClient().delete(API_ENDPOINTS.upload.deleteDataset(datasetName))
+}
 
 // The api to upload csv file
 export const uploadCsv = (
@@ -14,7 +24,7 @@ export const uploadCsv = (
   formData.append('file', file)
   formData.append('dataset', new Blob([JSON.stringify(dataset)], { type: 'application/json' }))
 
-  return http.post(`/upload/uploadCsv`, formData, {
+  return getApiClient().post(API_ENDPOINTS.upload.uploadCsv, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -26,18 +36,6 @@ export const uploadCsv = (
       }
     },
   })
-}
-
-// The api to fetch datasets for the user
-export async function fetchDatasets(): Promise<Dataset[]> {
-  const res = await http.get<Dataset[]>(`/dashboard/fetchDatasets`)
-  return res.data
-}
-
-// The api to delete dataset
-export async function deleteDataset(datasetName: string): Promise<void> {
-  const res = await http.delete(`/upload/dataset/${datasetName}`)
-  return res.data
 }
 
 // ====================================================================

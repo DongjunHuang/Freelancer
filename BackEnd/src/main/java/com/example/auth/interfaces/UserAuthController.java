@@ -151,6 +151,8 @@ public class UserAuthController {
                 .ok(Map.of("message", "If the account exists and is not verified, a new link has been sent."));
     }
 
+    // TODO: add password change functionality
+
     /**
      * Get the ip address of the clients.
      *

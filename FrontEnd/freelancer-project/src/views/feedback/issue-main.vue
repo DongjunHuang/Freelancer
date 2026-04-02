@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { UserType } from '@/types/user'
 import { getThreads } from '@/api/issue'
 
-import type { Thread } from '@/types/thread'
+import type { Thread } from '@/types/issue'
 
 const route = useRoute()
 const router = useRouter()

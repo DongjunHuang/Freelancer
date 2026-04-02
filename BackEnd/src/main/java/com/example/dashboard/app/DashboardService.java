@@ -63,12 +63,7 @@ public class DashboardService {
         Sort sort = Sort.by(
                 Sort.Order.asc(MongoKeys.Record.RECORD_DATE),
                 Sort.Order.asc(MongoKeys.Record.SYMBOL));
-        logger.info("The symbols found {} with datasetid {}, version {}, start date {}, enddate {}",
-                props.getSymbols(),
-                datasetId,
-                version,
-                props.getStartDate(),
-                props.getEndDate());
+
         if (props.getSymbols() == null || props.getSymbols().isEmpty()) {
             records = recordRepo.findByDatasetIdAndVersionLteAndRecordDateBetween(
                     datasetId,

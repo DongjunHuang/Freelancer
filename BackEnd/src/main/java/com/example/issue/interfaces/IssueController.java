@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.issue.app.IssueService;
 import com.example.security.JwtUserDetails;
 
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -35,8 +36,6 @@ public class IssueController {
     public ResponseEntity<?> createThread(
             @RequestBody CreateIssueThreadReq req,
             @AuthenticationPrincipal JwtUserDetails user) {
-
-        logger.info("Create message thread for user {}", user.getId());
         service.createThread(user.getId(), req);
         return ResponseEntity.ok().body(Map.of("Result", "Success"));
     }
@@ -47,8 +46,6 @@ public class IssueController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String cursor,
             @AuthenticationPrincipal JwtUserDetails user) {
-        logger.info("Get message thread for user {} for status {}", user.getId(), status);
-
         // 20 is the default.
         int pageSize = Math.min(Math.max(size, 1), 20);
 
@@ -63,12 +60,12 @@ public class IssueController {
     }
 
     @PostMapping("/{threadId}/postMessage")
-    public ResponseEntity<?> postMessage(
+    public ResponseEntity<PostMessageResp> postMessage(
             @PathVariable Long threadId,
             @RequestBody PostMessageReq req,
             @AuthenticationPrincipal JwtUserDetails user) {
-        service.postMessage(user.getId(), threadId, req, UserType.USER);
-        return ResponseEntity.ok().body(Map.of("Result", "Success"));
+        PostMessageResp resp = service.postMessage(UserType.USER, user.getId(), threadId, req);
+        return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/{threadId}/getMessages")
@@ -77,7 +74,6 @@ public class IssueController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String cursor,
             @AuthenticationPrincipal JwtUserDetails user) {
-        logger.info("Get the message information for user {} and thread id {}", user.getId(), threadId);
         int pageSize = Math.min(Math.max(size, 1), 50);
         // TODO: is internal could be used in the future
         MessagePageResp resp = service.getMessages(UserType.USER, user.getId(), threadId, pageSize, cursor, false);
@@ -88,7 +84,6 @@ public class IssueController {
     public ResponseEntity<ThreadItem> getThread(
             @PathVariable Long threadId,
             @AuthenticationPrincipal JwtUserDetails user) {
-        logger.info("Get the thread information for user {} and thread id {}", user.getId(), threadId);
         ThreadItem resp = service.getUserThreadDetail(user.getId(), threadId);
         return ResponseEntity.ok(resp);
     }
@@ -100,5 +95,20 @@ public class IssueController {
             @AuthenticationPrincipal JwtUserDetails user) {
         service.updateThreadStatus(UserType.USER, user.getId(), threadId, req.getStatus());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{threadId}/messages/latest")
+    public ResponseEntity<MessagePageResp> getLatestMessages(
+            @PathVariable Long threadId,
+            @RequestParam Instant after,
+            @AuthenticationPrincipal JwtUserDetails user) {
+        MessagePageResp resp = service.getLatestUserMessages(
+                UserType.USER,
+                user.getId(),
+                threadId,
+                after
+        );
+
+        return ResponseEntity.ok(resp);
     }
 }

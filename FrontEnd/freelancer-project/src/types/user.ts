@@ -40,6 +40,13 @@ export interface FetchRecordsResp {
   datapoints: DataPoint[] // The datapoints for the corresponding columns
 }
 
+export interface FetchDatapointsReq {
+  startDate: string
+  endDate: string
+  columns: string[]
+  symbols: string
+}
+
 export interface Series {
   key: string
   label: string

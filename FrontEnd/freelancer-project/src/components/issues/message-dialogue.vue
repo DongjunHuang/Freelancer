@@ -9,6 +9,20 @@ import type {
   DialogueRole,
 } from '@/components/issues/types'
 
+const statusOptions = [
+  { label: 'Waiting Admin', value: 'WAITING_ADMIN' },
+  { label: 'Waiting User', value: 'WAITING_USER' },
+  { label: 'Resolved', value: 'RESOLVED' },
+]
+
+const messageContainer = ref<HTMLElement | null>(null)
+
+const isNearBottom = (el: HTMLElement) => {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 50
+}
+
+const emit = defineEmits<MessageDialogueEmits>()
+
 const props = withDefaults(defineProps<MessageDialogueProps>(), {
   loading: false,
   loadingMore: false,
@@ -24,8 +38,6 @@ const props = withDefaults(defineProps<MessageDialogueProps>(), {
   emptyText: 'No messages yet.',
   currentActor: 'admin',
 })
-
-const emit = defineEmits<MessageDialogueEmits>()
 
 const canSend = computed(() => {
   return props.canReply && !!props.replyText.trim() && !props.sending
@@ -92,17 +104,6 @@ function handleStatusChange(value: string) {
   emit('change-status', value)
 }
 
-const statusOptions = [
-  { label: 'Waiting Admin', value: 'WAITING_ADMIN' },
-  { label: 'Waiting User', value: 'WAITING_USER' },
-  { label: 'Resolved', value: 'RESOLVED' },
-]
-
-const messageContainer = ref<HTMLElement | null>(null)
-const isNearBottom = (el: HTMLElement) => {
-  return el.scrollHeight - el.scrollTop - el.clientHeight < 50
-}
-
 watch(
   () => props.messages,
   async () => {
@@ -116,7 +117,7 @@ watch(
 )
 </script>
 <template>
-  <div class="flex min-h-0 flex-1 min-w-0">
+  <div class="flex min-h-0 flex-1 min-w-0 h-full">
     <NCard class="h-full w-full rounded-2xl" content-class="h-full p-0">
       <div class="flex h-full min-h-0 flex-col">
         <!-- Header -->

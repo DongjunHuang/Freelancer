@@ -1,19 +1,26 @@
-import http from '@/api/http-user'
+import { getApiClient, API_ENDPOINTS } from '@/api/endpoints'
+import { UserType } from '@/types/user'
 
-// The log in API
-export const signin = (data: { username: string; password: string }) =>
-  http.post(`/auth/signin`, data)
+// USER/ADMIN API to login
+export const signin = (userType: UserType, username: string, password: string) => {
+  return getApiClient(userType).post(API_ENDPOINTS.auth.signin(userType), {
+    username,
+    password,
+  })
+}
 
-// The sign up api
+// USER/ADMIN API to sign out
+export const signout = (userType: UserType) =>
+  getApiClient(userType).post(API_ENDPOINTS.auth.signout(userType))
+
+// User only sign up api
 export const signup = (data: { username: string; password: string; email: string }) =>
-  http.post(`/auth/signup`, data)
+  getApiClient().post(API_ENDPOINTS.auth.signup, data)
 
-// The sign out api
-export const signout = () => http.post(`/auth/signout`)
+// User only resend email api
+export const resendEmail = (data: { username: string }) =>
+  getApiClient().post(API_ENDPOINTS.auth.resendEmail, data)
 
-// The verify email api
+// User only verify email api
 export const verifyEmail = (token: string) =>
-  http.get(`/auth/verify?token=${encodeURIComponent(token)}`)
-
-// To resend email
-export const resendEmail = (data: { username: string }) => http.post(`/auth/resendEmail`, data)
+  getApiClient().post(API_ENDPOINTS.auth.verifyEmail(token))

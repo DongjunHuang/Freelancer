@@ -1,22 +1,13 @@
-import http from '@/api/http-user'
-import type { Dataset, FetchRecordsResp } from '@/types/user'
+import { getApiClient, API_ENDPOINTS } from '@/api/endpoints'
+import type { Dataset, FetchRecordsResp, FetchDatapointsReq } from '@/types/user'
 
-// The api to request for refresh token
-export const refreshAccessTokenRequest = () => http.get(`/dashboard/getNumberSql`)
-
-export async function fetchDatasets(): Promise<Dataset[]> {
-  const res = await http.get<Dataset[]>(`/dashboard/fetchDatasets`)
-  return res.data
+export const fetchDatasets = () => {
+  return getApiClient().get<Dataset[]>(API_ENDPOINTS.dashboard.fetchDatasets)
 }
 
-export interface FetchRecordsParams {
-  datasetName: string
-  startDate: string
-  endDate: string
-  columns: string[]
-  symbols: string
-}
-
-export const fetchDatapoints = (params: FetchRecordsParams) => {
-  return http.post<FetchRecordsResp>(`/dashboard/queryDatapoints`, params)
+export const fetchDatapoints = (datasetName: string, req: FetchDatapointsReq) => {
+  return getApiClient().post<FetchRecordsResp>(
+    API_ENDPOINTS.dashboard.fetchDatapoints(datasetName),
+    req,
+  )
 }

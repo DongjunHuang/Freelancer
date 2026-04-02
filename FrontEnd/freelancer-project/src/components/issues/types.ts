@@ -1,7 +1,7 @@
 export type DialogueRole = 'user' | 'admin' | 'system'
 
 export type DialogueMessage = {
-  id: number | string
+  id: number
   role: DialogueRole
   content: string
   createdAt: string

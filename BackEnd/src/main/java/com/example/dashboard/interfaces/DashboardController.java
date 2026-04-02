@@ -7,11 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.common.dataset.domain.DatasetMetadata;
 import com.example.dashboard.app.DashboardService;
@@ -42,17 +38,13 @@ public class DashboardController {
 
         return ResponseEntity.ok(responses);
     }
-
-    @PostMapping("/queryDatapoints")
+    @PostMapping("/datasets/{datasetName}/datapoints/query")
     public ResponseEntity<FetchRecordsResp> queryDatapoints(
+            @PathVariable String datasetName,
             @RequestBody FetchRecordsReq req,
             @AuthenticationPrincipal JwtUserDetails user) {
         Long userId = user.getId();
-        logger.info("Handle the fetch datapoints request from user {} with request {}", userId, req);
-
-        // Prepare props
-        FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(req);
-
+        FetchRecordsProps props = FetchRecordsProps.fromFetchRecordsReq(datasetName, req);
         FetchRecordsResp resp = dashboardService.queryDatapoints(userId, props);
         return ResponseEntity.ok(resp);
     }

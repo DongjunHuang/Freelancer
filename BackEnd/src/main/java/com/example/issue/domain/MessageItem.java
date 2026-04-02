@@ -16,7 +16,7 @@ public class MessageItem {
     private Boolean isInternal;
     private Instant createdAt;
 
-    public static MessageItem toMessageItem(IssueMessage message) {
+    public static MessageItem from(IssueMessage message) {
         return MessageItem.builder()
                 .id(message.getId())
                 .threadId(message.getThreadId())

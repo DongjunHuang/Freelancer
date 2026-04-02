@@ -1,5 +1,7 @@
 <!-- Upload.vue -->
 <script setup lang="ts">
+import { ref, onMounted, computed, reactive, onBeforeUnmount } from 'vue'
+
 // Import components
 import UploadFileConfigPane from '@/components/upload/upload-file-config-pane.vue'
 import UploadFilePane from '@/components/upload/upload-file-pane.vue'
@@ -11,7 +13,6 @@ import type { DatasetReq, Dataset } from '@/types/user'
 
 // Import functions
 import { createInitialUploadState } from '@/composables/upload-composable'
-import { ref, onMounted, computed, reactive, onBeforeUnmount } from 'vue'
 import { uploadCsv, fetchDatasets, deleteDataset } from '@/api/upload'
 import { useMessage } from 'naive-ui'
 
@@ -120,7 +121,7 @@ async function loadDatasets() {
     const resp = await fetchDatasets()
 
     // Assign the datasets locally
-    datasets.value = resp
+    datasets.value = resp.data
 
     // The default is the first of the datasets
     if (datasets.value.length > 0) {

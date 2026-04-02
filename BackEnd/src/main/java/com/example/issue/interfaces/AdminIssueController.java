@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.Map;
 
 @RestController
@@ -48,13 +49,13 @@ public class AdminIssueController {
     }
 
     @PostMapping("/{threadId}/postMessage")
-    public ResponseEntity<?> postMessage(
+    public ResponseEntity<PostMessageResp> postMessage(
             @PathVariable Long threadId,
             @RequestBody PostMessageReq req,
             @AuthenticationPrincipal JwtUserDetails admin) {
         logger.info("Post by admin for message thread id {}", threadId);
-        issueService.postMessage(admin.getId(), threadId, req, UserType.ADMIN);
-        return ResponseEntity.ok().body(Map.of("Result", "Success"));
+        PostMessageResp resp = issueService.postMessage(UserType.ADMIN, null, threadId, req);
+        return ResponseEntity.ok(resp);
     }
 
 
@@ -84,6 +85,21 @@ public class AdminIssueController {
             @PathVariable Long threadId,
             @AuthenticationPrincipal JwtUserDetails admin) {
         ThreadItem resp = issueService.getAdminThreadDetail(threadId);
+        return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/{threadId}/messages/latest")
+    public ResponseEntity<MessagePageResp> getLatestMessages(
+            @PathVariable Long threadId,
+            @RequestParam Instant after,
+            @AuthenticationPrincipal JwtUserDetails admin) {
+        MessagePageResp resp = issueService.getLatestUserMessages(
+                UserType.ADMIN,
+                null,
+                threadId,
+                after
+        );
+
         return ResponseEntity.ok(resp);
     }
 }

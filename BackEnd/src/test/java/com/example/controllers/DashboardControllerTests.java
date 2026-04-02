@@ -54,7 +54,7 @@ public class DashboardControllerTests {
         when(dashboardService.queryDatapoints(eq(userId), propsCaptor.capture())).thenReturn(serviceResp);
 
         // when
-        ResponseEntity<FetchRecordsResp> response = controller.queryDatapoints(req, jwtUserDetails);
+        ResponseEntity<FetchRecordsResp> response = controller.queryDatapoints(req.getDatasetName(), req, jwtUserDetails);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(serviceResp, response.getBody());

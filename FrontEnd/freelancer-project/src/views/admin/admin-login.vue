@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { FormInst, FormRules } from 'naive-ui'
 import { NCard, NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
 import { useAdminAuth } from '@/stores/auth-admin'
-import { adminSignin } from '@/api/admin'
+import { signin } from '@/api/auth'
+
+import type { FormInst, FormRules } from 'naive-ui'
+import { UserType } from '@/types/user'
 
 const { setAccessToken, setAdmin } = useAdminAuth()
 
@@ -45,10 +47,7 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    const res = await adminSignin({
-      username: form.value.username,
-      password: form.value.password,
-    })
+    const res = await signin(UserType.ADMIN, form.value.username, form.value.password)
 
     // Receive the access token from backend.
     const accessToken = res.data?.accessToken

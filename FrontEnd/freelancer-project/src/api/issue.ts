@@ -1,44 +1,26 @@
-import http from '@/api/http-user'
-import httpa from '@/api/http-admin'
-import { MessagePageResp, GetMessagesParams } from '@/types/message'
+import { getApiClient, API_ENDPOINTS } from '@/api/endpoints'
 import { UserType } from '@/types/user'
 
-import type { AxiosInstance } from 'axios'
 import type {
   ThreadStatus,
   Thread,
-  GetThreadsParams,
+  GetThreadsReq,
   ThreadPageResp,
   ThreadStatsResp,
-} from '@/types/thread'
+  GetMessagesParams,
+  PostMessageResp,
+  GetLatestMessagesResp,
+  MessagePageResp,
+} from '@/types/issue'
 
-type ApiContext = {
-  client: AxiosInstance
-  prefix: string
-}
-
-function getApiContext(userType: UserType = UserType.USER): ApiContext {
-  if (userType === UserType.ADMIN) {
-    return {
-      client: httpa,
-      prefix: '/admin',
-    }
-  }
-
-  return {
-    client: http,
-    prefix: '',
-  }
-}
-
-// USER API to create feedback thread
+// USER only api to create feedback thread
 export const createThread = (
   title: string,
   description: string,
   impact: string | null,
   type: string,
 ) =>
-  http.post(`/issues/createThread`, {
+  getApiClient().post(API_ENDPOINTS.issue.createThread, {
     title,
     description,
     impact,
@@ -47,10 +29,12 @@ export const createThread = (
 
 // USER/ADMIN API to post messages
 export const postMessage = (userType: UserType, threadId: number, body: string) => {
-  const apiContext = getApiContext(userType)
-  return apiContext.client.post(`${apiContext.prefix}/issues/${threadId}/postMessage`, {
-    body,
-  })
+  return getApiClient(userType).post<PostMessageResp>(
+    API_ENDPOINTS.issue.postMessage(userType, threadId),
+    {
+      body,
+    },
+  )
 }
 
 // USER/ADMIN API to get messages
@@ -59,10 +43,8 @@ export const getMessages = (
   threadId: number,
   params: GetMessagesParams = {},
 ) => {
-  const apiContext = getApiContext(userType)
-
-  return apiContext.client.get<MessagePageResp>(
-    `${apiContext.prefix}/issues/${threadId}/getMessages`,
+  return getApiClient(userType).get<MessagePageResp>(
+    API_ENDPOINTS.issue.getMessages(userType, threadId),
     {
       params: {
         size: params.size ?? 20,
@@ -74,22 +56,19 @@ export const getMessages = (
 
 // USER/ADMIN API to get single thread
 export const getThread = (userType: UserType, threadId: number) => {
-  const apiContext = getApiContext(userType)
-  return apiContext.client.get<Thread>(`${apiContext.prefix}/issues/${threadId}`)
+  return getApiClient(userType).get<Thread>(API_ENDPOINTS.issue.getThread(userType, threadId))
 }
 
 // USER/ADMIN API to update thread status
 export const updateThreadStatus = (userType: UserType, threadId: number, status: ThreadStatus) => {
-  const apiContext = getApiContext(userType)
-
-  return apiContext.client.patch(`${apiContext.prefix}/issues/${threadId}/status`, { status })
+  return getApiClient(userType).patch(API_ENDPOINTS.issue.updateThreadStatus(userType, threadId), {
+    status,
+  })
 }
 
 // USER/ADMIN API to get threads
-export const getThreads = (userType: UserType, params: GetThreadsParams = {}) => {
-  const apiContext = getApiContext(userType)
-
-  return apiContext.client.get<ThreadPageResp>(`${apiContext.prefix}/issues/getThreads`, {
+export const getThreads = (userType: UserType, params: GetThreadsReq = {}) => {
+  return getApiClient(userType).get<ThreadPageResp>(API_ENDPOINTS.issue.getThreads(userType), {
     params: {
       status: params.status ?? undefined,
       size: params.size ?? 20,
@@ -100,6 +79,17 @@ export const getThreads = (userType: UserType, params: GetThreadsParams = {}) =>
 
 // USER/ADMIN API to get thread stats
 export const getThreadStats = (userType: UserType) => {
-  const apiContext = getApiContext(userType)
-  return apiContext.client.get<ThreadStatsResp>(`${apiContext.prefix}/issues/thread-stats`)
+  return getApiClient(userType).get<ThreadStatsResp>(API_ENDPOINTS.issue.getThreadStats(userType))
+}
+
+// USER/ADMIN API to get messages for the corresponding thread after specific time
+export const getLatestMessages = (userType: UserType, threadId: number, after: string) => {
+  return getApiClient(userType).get<GetLatestMessagesResp>(
+    API_ENDPOINTS.issue.getLatestMessages(userType, threadId),
+    {
+      params: {
+        after,
+      },
+    },
+  )
 }

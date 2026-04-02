@@ -76,20 +76,6 @@ async function onQueryNosql() {
     loading.value = false
   }
 }
-
-// Test refresh token, this should be called only when you have already logged in
-async function onRefreshAccessTokenRequest() {
-  try {
-    localStorage.removeItem('access_token')
-    const res = await dashboard.refreshAccessTokenRequest()
-    const count = typeof res.data === 'number' ? res.data : res.data.count
-    showToast(`Fetched count = ${count}`)
-  } catch (e) {
-    showToast('Query failed')
-  } finally {
-    loading.value = false
-  }
-}
 </script>
 
 <template>
@@ -102,7 +88,6 @@ async function onRefreshAccessTokenRequest() {
       <button :disabled="loading" @click="onInsertNosql">➕ Test Insert to MongoDB</button>
       <button :disabled="loading" @click="onQueryNosql">🔍 Test Query from MongoDB</button>
       <button :disabled="loading" @click="onSendEmailTest">🔍 Test Send Email</button>
-      <button :disabled="loading" @click="onRefreshAccessTokenRequest">🔍 Test Refresh Token API</button>
     </div>
 
     <p v-if="toast" class="toast">{{ toast }}</p>
@@ -111,13 +96,49 @@ async function onRefreshAccessTokenRequest() {
 </template>
 
 <style scoped>
-.wrap { max-width: 840px; margin: 32px auto; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-.actions { display: flex; gap: 12px; margin: 12px 0 18px; }
-button { padding: 8px 14px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; }
-button:disabled { opacity: 0.6; cursor: not-allowed; }
-.toast { color: #0a7; margin: 6px 0 12px; }
-.tbl { width: 100%; border-collapse: collapse; }
-.tbl th, .tbl td { border: 1px solid #eee; padding: 8px 10px; text-align: left; }
-.tbl thead { background: #fafafa; }
-.empty { color: #777; }
+.wrap {
+  max-width: 840px;
+  margin: 32px auto;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0 18px;
+}
+button {
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.toast {
+  color: #0a7;
+  margin: 6px 0 12px;
+}
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tbl th,
+.tbl td {
+  border: 1px solid #eee;
+  padding: 8px 10px;
+  text-align: left;
+}
+.tbl thead {
+  background: #fafafa;
+}
+.empty {
+  color: #777;
+}
 </style>

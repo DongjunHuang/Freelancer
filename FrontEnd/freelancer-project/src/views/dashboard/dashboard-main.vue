@@ -108,7 +108,8 @@ const availableMetricColumns = computed<ColumnMeta[]>(() => {
 async function loadData() {
   try {
     loading.value = true
-    datasets.value = await fetchDatasets()
+    const res = await fetchDatasets()
+    datasets.value = res.data
   } catch (e) {
     console.error(e)
     error.value = 'Failed to load data'
@@ -129,8 +130,7 @@ async function generate() {
     error.value = ''
     console.log('Prepare request {}', filters)
 
-    const res = await fetchDatapoints({
-      datasetName: filters.selectedDatasetName,
+    const res = await fetchDatapoints(filters.selectedDatasetName, {
       startDate: filters.startDate,
       endDate: filters.endDate,
       columns: filters.selectedColumns,
