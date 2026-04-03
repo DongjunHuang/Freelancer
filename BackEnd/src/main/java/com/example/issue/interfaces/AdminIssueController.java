@@ -25,7 +25,6 @@ public class AdminIssueController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String cursor,
             @AuthenticationPrincipal JwtUserDetails admin) {
-        logger.info("Get thread for admin {} for status {}", admin.getId(), status);
         int pageSize = Math.min(Math.max(size, 1), 50);
 
         CursorPageDto<ThreadItem> cursorPageDto = issueService.getThreads(
@@ -43,7 +42,6 @@ public class AdminIssueController {
     @GetMapping("/thread-stats")
     public ResponseEntity<ThreadStatsResp> getThreadStats(
             @AuthenticationPrincipal JwtUserDetails admin) {
-        logger.info("Admin {} to fetch all threads status", admin.getId());
         ThreadStatsResp resp = issueService.getThreadStats();
         return ResponseEntity.ok(resp);
     }
@@ -53,7 +51,6 @@ public class AdminIssueController {
             @PathVariable Long threadId,
             @RequestBody PostMessageReq req,
             @AuthenticationPrincipal JwtUserDetails admin) {
-        logger.info("Post by admin for message thread id {}", threadId);
         PostMessageResp resp = issueService.postMessage(UserType.ADMIN, null, threadId, req);
         return ResponseEntity.ok(resp);
     }
@@ -65,7 +62,6 @@ public class AdminIssueController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String cursor,
             @AuthenticationPrincipal JwtUserDetails admin) {
-        logger.info("Get the message information for user {} and thread id {}", admin.getId(), threadId);
         int pageSize = Math.min(Math.max(size, 1), 50);
         MessagePageResp resp = issueService.getMessages(UserType.ADMIN, null, threadId, pageSize, cursor, false);
         return ResponseEntity.ok(resp);

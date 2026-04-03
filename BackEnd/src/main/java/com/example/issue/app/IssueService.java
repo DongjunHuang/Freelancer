@@ -117,7 +117,6 @@ public class IssueService {
         if (rows == null) {
             throw new NotFoundException(ErrorCode.NOT_FOUND);
         }
-        logger.info("The data  is {}", rows);
 
         var items = rows.stream()
                 .map(ThreadItem::from)
@@ -337,13 +336,11 @@ public class IssueService {
 
     @Transactional(readOnly = true)
     public MessagePageResp getLatestUserMessages(UserType userType, Long userId, Long threadId, Instant after) {
-        IssueThread thread = null;
-
         if (userType == UserType.ADMIN) {
-            thread = threadRepo.findById(threadId)
+            threadRepo.findById(threadId)
                     .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
         } else {
-            thread = threadRepo.findByIdAndUserId(threadId, userId)
+            threadRepo.findByIdAndUserId(threadId, userId)
                     .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
         }
 
