@@ -1,5 +1,7 @@
 package com.example.issue.app;
 
+import com.example.auth.domain.user.User;
+import com.example.auth.infra.jpa.UserRepo;
 import com.example.exception.types.BadRequestException;
 import com.example.exception.ErrorCode;
 import com.example.exception.types.NotFoundException;
@@ -14,7 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,8 @@ public class IssueService {
 
     private final IssueThreadRepo threadRepo;
     private final IssueMessageRepo messageRepo;
+    private final UserRepo userRepo;
+
     private final ObjectMapper objectMapper;
 
     /**
@@ -75,6 +80,11 @@ public class IssueService {
             thread = threadRepo.findById(threadId)
                     .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
         }
+        if (type == UserType.ADMIN) {
+            thread.setUnreadByUser(1);
+        } else {
+            thread.setUnreadByAdmin(1);
+        }
 
         var now = Instant.now();
         IssueMessage message = IssueMessage.builder()
@@ -102,13 +112,12 @@ public class IssueService {
             String cursor,
             UserType userType) {
         List<String> statuses = mapStatuses(status);
-
         List<IssueThread> rows = listThreads(userId, size, userType, cursor, statuses);
 
         if (rows == null) {
             throw new NotFoundException(ErrorCode.NOT_FOUND);
         }
-
+        logger.info("The data  is {}", rows);
 
         var items = rows.stream()
                 .map(ThreadItem::from)
@@ -189,7 +198,6 @@ public class IssueService {
     @Transactional(readOnly = true)
     public MessagePageResp getMessages(UserType userType, Long userId, Long threadId, int size, String cursor, boolean isInternal) {
         int pageSize = Math.min(Math.max(size, 1), 50);
-
         if (userType == UserType.ADMIN) {
             threadRepo.findById(threadId)
                     .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
@@ -203,7 +211,6 @@ public class IssueService {
             rows = messageRepo.fetchLatestPage(threadId, isInternal, pageSize + 1);
         } else {
             Cursor messageCursor = Cursor.decode(objectMapper, cursor);
-            logger.info("The mesasge fetched before {}", messageCursor.getLastMessageAt());
             rows = messageRepo.fetchNextPage(
                     threadId,
                     isInternal,
@@ -354,5 +361,45 @@ public class IssueService {
                 .nextCursor(null)
                 .hasMore(false)
                 .build();
+    }
+
+    @Transactional
+    public void markAsRead(UserType userType, Long userId, Long threadId) {
+        if (userType == UserType.ADMIN) {
+            IssueThread thread = threadRepo.findById(threadId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+            thread.setUnreadByAdmin(0);
+        } else {
+            IssueThread thread = threadRepo.findByIdAndUserId(threadId, userId)
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+            thread.setUnreadByUser(0);
+        }
+    }
+
+    public void fillUserIdFieldForAdmin(List<ThreadItem> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+
+        Set<Long> userIds = list.stream()
+                .map(ThreadItem::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, String> userMap = userRepo.findAllById(userIds).stream()
+                .collect(Collectors.toMap(
+                        User::getUserId,
+                        User::getUsername
+                ));
+
+        list.forEach(item -> {
+            item.setUsername(
+                    userMap.getOrDefault(item.getUserId(), "Unknown User")
+            );
+        });
     }
 }

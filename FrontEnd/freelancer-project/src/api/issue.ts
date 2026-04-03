@@ -93,3 +93,8 @@ export const getLatestMessages = (userType: UserType, threadId: number, after: s
     },
   )
 }
+
+// USER/ADMIN API to mark the thread as read.
+export const markThreadAsRead = (userType: UserType, threadId: number) => {
+  return getApiClient(userType).patch(API_ENDPOINTS.issue.markThreadAsRead(userType, threadId))
+}

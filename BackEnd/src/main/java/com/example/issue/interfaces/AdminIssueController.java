@@ -11,7 +11,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,6 +35,7 @@ public class AdminIssueController {
                 cursor,
                 UserType.ADMIN
         );
+        issueService.fillUserIdFieldForAdmin(cursorPageDto.getItems());
         ThreadPageResp resp = ThreadPageResp.fromCursorPageDto(cursorPageDto);
         return ResponseEntity.ok(resp);
     }
@@ -71,15 +71,6 @@ public class AdminIssueController {
         return ResponseEntity.ok(resp);
     }
 
-    @PatchMapping("/{threadId}/status")
-    public ResponseEntity<Void> updateThreadStatus(
-            @PathVariable Long threadId,
-            @RequestBody UpdateThreadStatusReq req,
-            @AuthenticationPrincipal JwtUserDetails admin) {
-        issueService.updateThreadStatus(UserType.ADMIN, null, threadId, req.getStatus());
-        return ResponseEntity.ok().build();
-    }
-
     @GetMapping("/{threadId}")
     public ResponseEntity<ThreadItem> getThread(
             @PathVariable Long threadId,
@@ -101,5 +92,23 @@ public class AdminIssueController {
         );
 
         return ResponseEntity.ok(resp);
+    }
+
+    @PatchMapping("/{threadId}/markAsRead")
+    public ResponseEntity<Void> markAsRead(
+            @PathVariable Long threadId,
+            @AuthenticationPrincipal JwtUserDetails principal
+    ) {
+        issueService.markAsRead(UserType.ADMIN, null, threadId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{threadId}/status")
+    public ResponseEntity<Void> updateThreadStatus(
+            @PathVariable Long threadId,
+            @RequestBody UpdateThreadStatusReq req,
+            @AuthenticationPrincipal JwtUserDetails admin) {
+        issueService.updateThreadStatus(UserType.ADMIN, null, threadId, req.getStatus());
+        return ResponseEntity.ok().build();
     }
 }

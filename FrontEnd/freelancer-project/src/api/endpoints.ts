@@ -1,6 +1,7 @@
 import { UserType } from '@/types/user'
 import http from '@/api/http-user'
 import httpa from '@/api/http-admin'
+import { markThreadAsRead } from './issue'
 
 /**
  * Get corresponding http client for user/admin.
@@ -53,6 +54,8 @@ export const API_ENDPOINTS = {
     getThreadStats: (userType: UserType) => `${getPrefix(userType)}/issues/thread-stats`,
     getLatestMessages: (userType: UserType, threadId: number) =>
       `${getPrefix(userType)}/issues/${threadId}/messages/latest`,
+    markThreadAsRead: (userType: UserType, threadId: number) =>
+      `${getPrefix(userType)}/issues/${threadId}/markAsRead`,
   },
   tests: {
     insertMetricMysql: '/tests/insert',

@@ -28,6 +28,7 @@ export type Message = {
 export type Thread = {
   id: number
   userId: number
+  username: string
   title: string
   status: ThreadStatus
   type: ThreadType

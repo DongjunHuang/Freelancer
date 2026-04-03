@@ -15,8 +15,10 @@ import lombok.Data;
 public class ThreadItem {
     private Long id;
     private Long userId;
+    private String username; // Username only used by admin, so needed to be handled separately.
     private String title;
     private ThreadStatus status;
+    private IssueType type;
     private Instant lastMessageAt;
     private Instant createdAt;
     private int unreadByUser;
@@ -25,7 +27,9 @@ public class ThreadItem {
     public static ThreadItem from(IssueThread t) {
         return ThreadItem.builder()
                 .id(t.getId())
+                .userId(t.getUserId())
                 .title(t.getTitle())
+                .type(t.getIssueType())
                 .status(t.getStatus())
                 .lastMessageAt(t.getLastMessageAt())
                 .createdAt(t.getCreatedAt())

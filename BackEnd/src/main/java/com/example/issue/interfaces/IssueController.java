@@ -111,4 +111,13 @@ public class IssueController {
 
         return ResponseEntity.ok(resp);
     }
+
+    @PatchMapping("/issues/{threadId}/read")
+    public ResponseEntity<Void> markUserRead(
+            @PathVariable Long threadId,
+            @AuthenticationPrincipal JwtUserDetails principal
+    ) {
+        service.markAsRead(UserType.USER, principal.getId(), threadId);
+        return ResponseEntity.noContent().build();
+    }
 }

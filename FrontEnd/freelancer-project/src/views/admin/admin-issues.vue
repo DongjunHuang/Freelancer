@@ -8,6 +8,7 @@ import {
   updateThreadStatus,
   postMessage,
   getLatestMessages,
+  markThreadAsRead,
 } from '@/api/issue'
 import { Thread, ThreadStatus, ThreadStatsResp, MessageState } from '@/types/issue'
 import { UserType } from '@/types/user'
@@ -125,11 +126,14 @@ async function fetchInitialMessages(threadId: number) {
     const resp = await getMessages(UserType.ADMIN, threadId, {
       size: 10,
     })
-
     state.items = [...resp.data.items]
     state.nextCursor = resp.data.nextCursor
     state.hasMore = resp.data.hasMore
     state.initialized = true
+    await markThreadAsRead(UserType.ADMIN, threadId)
+    if (threadSelected.value) {
+      threadSelected.value.unreadByAdmin = 0
+    }
   } finally {
     state.loading = false
   }
@@ -251,19 +255,6 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString()
 }
 
-function statusTagType(status: ThreadStatus) {
-  switch (status) {
-    case ThreadStatus.WAITING_ADMIN:
-      return 'error'
-    case ThreadStatus.WAITING_USER:
-      return 'warning'
-    case ThreadStatus.RESOLVED:
-      return 'success'
-    default:
-      return 'default'
-  }
-}
-
 async function handleChangeStatus(status: string) {
   if (!threadSelected.value) {
     return
@@ -283,6 +274,19 @@ async function handleChangeStatus(status: string) {
 async function changeStatus(status: ThreadStatus) {
   threadSelectedStatus.value = status
   fetchInitialThreads()
+}
+
+function formatIssueType(issueType?: string) {
+  switch (issueType) {
+    case 'BUG':
+      return 'Bug'
+    case 'SUGGESTION':
+      return 'Suggestion'
+    case 'QUESTION':
+      return 'Question'
+    default:
+      return issueType || 'Unknown'
+  }
 }
 </script>
 <template>
@@ -371,26 +375,25 @@ async function changeStatus(status: ThreadStatus) {
                       <div class="text-sm font-semibold text-gray-900 truncate">
                         {{ item.title }}
                       </div>
+
+                      <span
+                        class="rounded-full bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 font-medium shrink-0"
+                      >
+                        {{ formatIssueType(item.type) }}
+                      </span>
                     </div>
 
                     <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
-                      <span>#{{ item.id }}</span>
-                      <span>User #{{ item.userId }}</span>
+                      <span>Username: {{ item.username }}</span>
                       <span>{{ formatDate(item.lastMessageAt) }}</span>
                     </div>
                   </div>
 
                   <div
                     v-if="item.unreadByAdmin > 0"
-                    class="rounded-full bg-red-50 text-red-600 text-xs px-2 py-0.5 font-medium shrink-0"
-                  >
-                    {{ item.unreadByAdmin }}
-                  </div>
+                    class="h-2.5 w-2.5 rounded-full bg-red-500 shrink-0"
+                  ></div>
                 </div>
-              </div>
-
-              <div v-if="threads.length === 0" class="text-sm text-gray-500 py-8 text-center">
-                No threads found.
               </div>
             </div>
           </div>

@@ -20,7 +20,7 @@ public class IssueThread {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(length = 200)
+    @Column(nullable = false, length = 200)
     private String title;
 
     @Column(columnDefinition = "TEXT", nullable = false)
@@ -29,7 +29,8 @@ public class IssueThread {
     @Column(columnDefinition = "TEXT")
     private String impact;
 
-    @Column(name = "issue_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "issue_type", nullable = false, length = 32)
     private IssueType issueType;
 
     @Enumerated(EnumType.STRING)
