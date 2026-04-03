@@ -2,6 +2,7 @@
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { signout } from '@/api/auth'
+import { UserType } from '@/types/user'
 
 // The imported function
 const router = useRouter()
@@ -9,7 +10,7 @@ const auth = useAuth()
 
 async function signOut() {
   try {
-    await signout()
+    await signout(UserType.USER)
   } finally {
     auth.clear()
     router.push('/signin')
