@@ -50,7 +50,6 @@ async function submit() {
   loading.value = true
 
   try {
-    console.log('username is ' + f.signin.username + ' password is ' + f.signin.password)
     const res = await signin(UserType.USER, f.signin.username, f.signin.password)
 
     const accessToken = res.data?.accessToken

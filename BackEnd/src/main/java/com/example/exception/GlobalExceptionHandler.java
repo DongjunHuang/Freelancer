@@ -1,14 +1,22 @@
 package com.example.exception;
 
 import com.example.exception.types.*;
+import com.example.issue.app.IssueService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.time.Instant;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResp> handleConflictException(ConflictException ex) {
         return buildResponse(ex.getErrorCode());
@@ -39,13 +47,20 @@ public class GlobalExceptionHandler {
         return buildResponse(ex.getErrorCode());
     }
 
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResp> handleUnknownException(Exception ex) {
+    public ResponseEntity<ErrorResp> handleUnknownException(
+            Exception ex,
+            HttpServletRequest request) {
+
+        logger.error("Unhandled exception on path={}",
+                request.getRequestURI(), ex);
+
         ErrorResp body = new ErrorResp(
                 "INTERNAL_ERROR",
                 "Unexpected server error",
                 ErrorCategory.UNKNOWN.name(),
-                java.time.Instant.now()
+                Instant.now()
         );
 
         return ResponseEntity.internalServerError().body(body);
