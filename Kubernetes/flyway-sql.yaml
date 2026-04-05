@@ -85,17 +85,18 @@ data:
 
     CREATE INDEX idx_issue_thread_user_status_last_msg
         ON issue_thread(user_id, status, last_message_at DESC);
-  V6__create_issue_message_table.sql :
-    CREATE TABLE issue_message (
-      id BIGINT NOT NULL AUTO_INCREMENT,
-      thread_id BIGINT NOT NULL,
-      sender_type VARCHAR(16) NOT NULL,
-      sender_id BIGINT NULL,
-      body TEXT NOT NULL,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      is_internal BOOLEAN NOT NULL DEFAULT FALSE,
-      PRIMARY KEY (id)
+  V6__create_issue_message_table.sql: CREATE TABLE issue_message (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    thread_id BIGINT NOT NULL,
+    sender_type VARCHAR(16) NOT NULL,
+    sender_id BIGINT NULL,
+    body TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_internal BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id)
     );
 
     CREATE INDEX idx_issue_message_thread_created
-        ON issue_message(thread_id, created_at);
+    ON issue_message(thread_id, created_at);
+  V7__change_thread_table_issue_type_to_varchar.sql: ALTER TABLE issue_thread
+    MODIFY COLUMN issue_type VARCHAR(32) NOT NULL;
