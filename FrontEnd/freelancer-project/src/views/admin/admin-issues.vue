@@ -17,7 +17,7 @@ import { toDialogueMessage } from '@/mappers/message-mapper'
 import MessageDialogue from '@/components/issues/message-dialogue.vue'
 
 onMounted(async () => {
-  await Promise.all([fetchStats(), fetchInitialThreads()])
+  await Promise.all([fetchStats(), loadThreads()])
   startPolling()
 })
 
@@ -26,28 +26,65 @@ onUnmounted(async () => {
 })
 
 // ========================================Thread Field==================================================
-const threads = ref<Thread[]>([])
+type ThreadListState = {
+  items: Thread[]
+  loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  nextCursor: string | null
+}
+
+const threadState = reactive<ThreadListState>({
+  items: [],
+  loading: false,
+  loadingMore: false,
+  hasMore: false,
+  nextCursor: null,
+})
+
+const THREAD_PAGE_SIZE = 10
 const threadSelected = ref<Thread | null>(null)
-const threadNextCursor = ref<string | null>(null)
-const threadHasMore = ref(false)
 const threadCounts = ref<ThreadStatsResp | null>(null)
 const threadKeyword = ref('')
-const threadLoading = ref(false)
 const threadSelectedStatus = ref<ThreadStatus>(ThreadStatus.WAITING_ADMIN) // Default status
 
 /**
  * Fetch first page of all threads.
  */
-async function fetchInitialThreads() {
-  const resp = await getThreads(UserType.ADMIN, {
-    status: threadSelectedStatus.value,
-    size: 20,
-    cursor: null,
-  })
+async function loadThreads(reset = true) {
+  if (reset) {
+    threadState.loading = true
+    threadState.items = []
+    threadState.nextCursor = null
+    threadState.hasMore = false
+  } else {
+    threadState.loadingMore = true
+  }
 
-  threads.value = resp.data.items
-  threadNextCursor.value = resp.data.nextCursor
-  threadHasMore.value = resp.data.hasMore
+  try {
+    const resp = await getThreads(UserType.ADMIN, {
+      size: THREAD_PAGE_SIZE,
+      cursor: reset ? null : threadState.nextCursor,
+      status: threadSelectedStatus.value,
+    })
+
+    if (reset) {
+      threadState.items = resp.data.items
+    } else {
+      threadState.items.push(...resp.data.items)
+    }
+
+    threadState.nextCursor = resp.data.nextCursor
+    threadState.hasMore = resp.data.hasMore
+  } finally {
+    threadState.loading = false
+    threadState.loadingMore = false
+  }
+}
+
+async function loadMoreThreads() {
+  if (!threadState.hasMore || threadState.loadingMore) return
+  await loadThreads(false)
 }
 
 /**
@@ -96,11 +133,11 @@ async function loadMessages(thread: Thread) {
     return
   }
 
-  threadLoading.value = true
+  threadState.loading = true
   try {
     await fetchInitialMessages(thread.id)
   } finally {
-    threadLoading.value = false
+    threadState.loading = false
   }
 }
 
@@ -200,7 +237,7 @@ async function submitReply() {
     state.items = [...state.items, newMessage]
 
     threadSelected.value = updatedThread
-    threads.value = threads.value.map((thread) =>
+    threadState.items = threadState.items.map((thread) =>
       thread.id === updatedThread.id ? updatedThread : thread,
     )
   } finally {
@@ -265,7 +302,7 @@ async function handleChangeStatus(status: string) {
     await updateThreadStatus(UserType.ADMIN, threadSelected.value.id, st)
 
     threadSelected.value.status = st
-    await fetchInitialThreads()
+    await loadThreads()
   } catch (e) {
     console.error(e)
   }
@@ -273,7 +310,7 @@ async function handleChangeStatus(status: string) {
 
 async function changeStatus(status: ThreadStatus) {
   threadSelectedStatus.value = status
-  fetchInitialThreads()
+  loadThreads()
 }
 
 function formatIssueType(issueType?: string) {
@@ -294,7 +331,7 @@ function formatIssueType(issueType?: string) {
     <main class="w-full px-6 py-6">
       <!-- Issue List -->
       <NCard class="mt-6 rounded-2xl shadow-sm">
-        <div v-if="threadLoading" class="py-10 text-center text-gray-500">Loading...</div>
+        <div v-if="threadState.loading" class="py-10 text-center text-gray-500">Loading...</div>
 
         <div v-else-if="threadCounts?.all === 0" class="py-10 text-center text-gray-500">
           No threads found.
@@ -357,43 +394,75 @@ function formatIssueType(issueType?: string) {
             </div>
 
             <!-- List -->
-            <div class="mt-4 flex-1 overflow-y-auto space-y-3 pr-1">
-              <div
-                v-for="item in threads"
-                :key="item.id"
-                class="rounded-2xl border p-4 cursor-pointer transition"
-                :class="
-                  threadSelected?.id === item.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                "
-                @click="loadMessages(item)"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <div class="text-sm font-semibold text-gray-900 truncate">
-                        {{ item.title }}
+            <div class="mt-4 flex-1 min-h-0 flex flex-col">
+              <div class="flex-1 overflow-y-auto pr-1 space-y-3">
+                <div
+                  v-for="item in threadState.items"
+                  :key="item.id"
+                  class="rounded-2xl border p-4 cursor-pointer transition"
+                  :class="
+                    threadSelected?.id === item.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  "
+                  @click="loadMessages(item)"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <div class="text-sm font-semibold text-gray-900 truncate">
+                          {{ item.title }}
+                        </div>
+
+                        <span
+                          class="rounded-full bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 font-medium shrink-0"
+                        >
+                          {{ formatIssueType(item.type) }}
+                        </span>
                       </div>
 
-                      <span
-                        class="rounded-full bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 font-medium shrink-0"
-                      >
-                        {{ formatIssueType(item.type) }}
-                      </span>
+                      <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
+                        <span>Username: {{ item.username }}</span>
+                        <span>{{ formatDate(item.lastMessageAt) }}</span>
+                      </div>
                     </div>
 
-                    <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
-                      <span>Username: {{ item.username }}</span>
-                      <span>{{ formatDate(item.lastMessageAt) }}</span>
-                    </div>
+                    <div
+                      v-if="item.unreadByAdmin > 0"
+                      class="h-2.5 w-2.5 rounded-full bg-red-500 shrink-0"
+                    />
                   </div>
-
-                  <div
-                    v-if="item.unreadByAdmin > 0"
-                    class="h-2.5 w-2.5 rounded-full bg-red-500 shrink-0"
-                  ></div>
                 </div>
+
+                <div v-if="threadState.loading" class="py-6 text-center text-sm text-gray-500">
+                  Loading threads...
+                </div>
+
+                <div
+                  v-else-if="threadState.loadingMore"
+                  class="py-4 text-center text-sm text-gray-500"
+                >
+                  Loading more...
+                </div>
+
+                <div
+                  v-else-if="!threadState.loading && threadState.items.length === 0"
+                  class="py-10 text-center text-sm text-gray-500"
+                >
+                  No threads found.
+                </div>
+              </div>
+
+              <div class="pt-3">
+                <NButton
+                  v-if="threadState.hasMore"
+                  block
+                  secondary
+                  :loading="threadState.loadingMore"
+                  @click="loadMoreThreads"
+                >
+                  Load more
+                </NButton>
               </div>
             </div>
           </div>
