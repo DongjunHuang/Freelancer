@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Import necessarry dependencies
+import axios from 'axios'
 import { computed, ref, onMounted, watch } from 'vue'
 import { fetchDatasets, fetchDatapoints } from '@/api/dashboard'
 import { useDashboardState } from '@/composables/dashboard-state'
@@ -22,7 +22,12 @@ const resp = ref<FetchRecordsResp | null>(null)
 const selectedDataset = computed(
   () => datasets.value.find((d) => d.datasetName === filters.selectedDatasetName) || null,
 )
-
+const uiState = computed(() => {
+  if (loading.value) return 'loading'
+  if (error.value) return 'error'
+  if (resp.value) return 'success'
+  return 'empty'
+})
 // Load data when mounted
 onMounted(loadData)
 
@@ -50,7 +55,6 @@ function buildSymbolsForColumn(points: DataPoint[], col: string): string[] {
 }
 
 function buildSeriesMapForColumn(points: DataPoint[], col: string, labels: string[]) {
-  // sym -> (date -> value)
   const bySym = new Map<string, Map<string, number | null>>()
 
   for (const p of points) {
@@ -120,6 +124,9 @@ async function loadData() {
 
 // Fetch the datapoints from the backend
 async function generate() {
+  loading.value = true
+  error.value = ''
+  resp.value = null
   if (!filters.selectedDatasetName) {
     console.log('Not able to find selectedDatasetName')
     return
@@ -128,7 +135,6 @@ async function generate() {
   try {
     loading.value = true
     error.value = ''
-    console.log('Prepare request {}', filters)
 
     const res = await fetchDatapoints(filters.selectedDatasetName, {
       startDate: filters.startDate,
@@ -138,10 +144,13 @@ async function generate() {
     })
 
     resp.value = res.data
-    console.log('[Resp] ', resp)
-  } catch (e) {
-    console.error(e)
-    error.value = 'Failed to load'
+  } catch (e: unknown) {
+    if (axios.isAxiosError(e)) {
+      error.value = e.response?.data?.message || 'Failed to load'
+    } else {
+      error.value = 'Failed to load'
+    }
+    console.log(error.value)
   } finally {
     loading.value = false
   }
@@ -186,21 +195,41 @@ const canLoad = computed(
             </span>
           </div>
 
-          <p v-if="!resp" class="text-xs text-slate-500">
-            Please select dataset、date range、columns，then click Generate graph.
-          </p>
+          <div class="relative min-h-[300px]">
+            <!-- loading -->
+            <div
+              v-if="uiState === 'loading'"
+              class="absolute inset-0 z-10 flex items-center justify-center bg-white/70 rounded-2xl"
+            >
+              <NSpin size="large" />
+            </div>
 
-          <div v-else class="flex flex-col gap-4">
-            <SingleMetricChart
-              v-for="col in resp?.columns ?? []"
-              :key="col"
-              :labels="chartsByCol[col]?.labels ?? []"
-              :column="col"
-              :symbols="chartsByCol[col]?.symbols ?? []"
-              :seriesMap="chartsByCol[col]?.seriesMap ?? {}"
-              :selectedKeys="selectedKeysByCol[col] ?? []"
-              @update:selectedKeys="(v) => (selectedKeysByCol[col] = v)"
-            />
+            <!-- error -->
+            <div
+              v-else-if="uiState === 'error'"
+              class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+            >
+              {{ error }}
+            </div>
+
+            <!-- success -->
+            <div v-else-if="uiState === 'success'">
+              <SingleMetricChart
+                v-for="col in resp?.columns"
+                :key="col"
+                :labels="chartsByCol[col]?.labels ?? []"
+                :column="col"
+                :symbols="chartsByCol[col]?.symbols ?? []"
+                :seriesMap="chartsByCol[col]?.seriesMap ?? {}"
+                :selectedKeys="selectedKeysByCol[col] ?? []"
+                @update:selectedKeys="(v) => (selectedKeysByCol[col] = v)"
+              />
+            </div>
+
+            <!-- empty -->
+            <p v-else class="text-xs text-slate-500">
+              Please select dataset, date range, columns, then click Generate graph.
+            </p>
           </div>
         </div>
         <!-- Simply showcase -->

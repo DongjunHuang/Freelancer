@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
+import * as echarts from 'echarts'
+
 const props = defineProps<{
   labels: string[]
   column: string
@@ -6,8 +9,6 @@ const props = defineProps<{
   selectedKeys: string[]
   seriesMap: Record<string, Array<number | null>>
 }>()
-import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
-import * as echarts from 'echarts'
 
 const onResize = () => chart?.resize()
 const chartEl = ref<HTMLElement | null>(null)
@@ -59,10 +60,6 @@ function render() {
   }
 
   const rect = chartEl.value.getBoundingClientRect()
-  console.log('[chart] rect', rect.width, rect.height)
-  console.log('[chart] labels', props.labels.length)
-  console.log('[chart] selectedKeys', props.selectedKeys)
-  console.log('[chart] seriesMap keys', Object.keys(props.seriesMap || {}))
 
   if (rect.width === 0 || rect.height === 0) {
     console.warn('[chart] container has 0 size, skip render')
@@ -71,7 +68,6 @@ function render() {
 
   if (!chart) chart = echarts.init(chartEl.value)
   const option = buildOption()
-  console.log('[chart] option series len', (option as any).series?.length)
   chart.setOption(option, true)
 }
 
