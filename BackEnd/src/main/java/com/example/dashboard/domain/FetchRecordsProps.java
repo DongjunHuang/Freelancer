@@ -39,7 +39,7 @@ public class FetchRecordsProps {
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .symbols(symbols)
-                .datasetName(req.getDatasetName())
+                .datasetName(datasetName)
                 .build();
         return fetchRecordsProps;
     }
