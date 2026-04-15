@@ -6,6 +6,7 @@ import com.example.issue.app.IssueService;
 import com.example.issue.domain.*;
 import com.example.issue.infra.jpa.IssueMessageRepo;
 import com.example.issue.infra.jpa.IssueThreadRepo;
+import com.example.notification.NotificationEventPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,9 @@ class IssueServiceTests {
 
     @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private NotificationEventPublisher notificationEventPublisher;
 
     @InjectMocks
     @Spy
