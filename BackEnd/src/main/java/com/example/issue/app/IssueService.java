@@ -8,6 +8,8 @@ import com.example.exception.types.NotFoundException;
 import com.example.issue.domain.*;
 import com.example.issue.infra.jpa.IssueMessageRepo;
 import com.example.issue.infra.jpa.IssueThreadRepo;
+import com.example.notification.NotificationEventPublisher;
+import com.example.notification.domain.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -24,6 +26,8 @@ import java.util.stream.Collectors;
 public class IssueService {
     private static final Logger logger = LoggerFactory.getLogger(IssueService.class);
 
+    private final NotificationEventPublisher notificationEventPublisher;
+
     private final IssueThreadRepo threadRepo;
     private final IssueMessageRepo messageRepo;
     private final UserRepo userRepo;
@@ -32,7 +36,6 @@ public class IssueService {
 
     /**
      * Create a new feedback thread and append the first mesasge to the thread.
-     *
      * @param userId the user id.
      * @param req    the request.
      */
@@ -64,17 +67,16 @@ public class IssueService {
     }
 
     /**
-     * Post mesasge to the corresponding thread from user side.
-     *
-     * @param userId   the user id,according to user type to determine whether user id or admin id.
+     * Post message to the corresponding thread from user side.
+     * @param controlId   the id of whether user or admin.
      * @param threadId the thread id.
      * @param req      the request.
      */
     @Transactional
-    public PostMessageResp postMessage(UserType type, Long userId, Long threadId, PostMessageReq req) {
+    public PostMessageResp postMessage(UserType type, Long controlId, Long threadId, PostMessageReq req) {
         IssueThread thread;
         if (type == UserType.USER) {
-            thread = threadRepo.findByIdAndUserId(threadId, userId)
+            thread = threadRepo.findByIdAndUserId(threadId, controlId)
                     .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
         } else {
             thread = threadRepo.findById(threadId)
@@ -90,7 +92,7 @@ public class IssueService {
         IssueMessage message = IssueMessage.builder()
                 .threadId(threadId)
                 .userType(type)
-                .senderId(userId)
+                .senderId(controlId)
                 .body(req.getBody())
                 .createdAt(now)
                 .isInternal(req.isInternal())
@@ -98,10 +100,33 @@ public class IssueService {
         thread.setLastMessageAt(now);
         messageRepo.save(message);
         threadRepo.save(thread);
+
+        NotificationCommand notification = NotificationCommand.builder()
+                .recipientId(thread.getUserId())
+                .recipientType(toTargetNotificationRecipientType(type))
+                .content(req.getBody())
+                .title(thread.getTitle())
+                .category(NotificationCategory.COMMUNICATION)
+                .type(NotificationType.ISSUE_NEW_MESSAGE)
+                .sourceType(NotificationSourceType.ISSUE_THREAD)
+                .sourceId(null)
+                .targetType(NotificationTargetType.ISSUE_THREAD)
+                .targetId(threadId)
+                .build();
+
+        notificationEventPublisher.publish(notification);
         return PostMessageResp.builder()
                 .thread(ThreadItem.from(thread))
                 .message(MessageItem.from(message))
                 .build();
+    }
+
+    private NotificationRecipientType toTargetNotificationRecipientType(UserType userType) {
+        return switch (userType) {
+            case UserType.ADMIN -> NotificationRecipientType.USER;
+            case UserType.USER -> NotificationRecipientType.ADMIN;
+            default -> NotificationRecipientType.NONE;
+        };
     }
 
     @Transactional(readOnly = true)
@@ -164,8 +189,7 @@ public class IssueService {
     }
 
     /**
-     * To return the summaization of the threads, used by ADMIN.
-     *
+     * To return the summary of the threads, used by ADMIN.
      * @return the status of the threads returned.
      */
     @Transactional(readOnly = true)
@@ -186,7 +210,6 @@ public class IssueService {
 
     /**
      * To fetch messages for the corresponding thread id.
-     *
      * @param userId     the user id, not admin id.
      * @param threadId   the thread id.
      * @param size       the size.

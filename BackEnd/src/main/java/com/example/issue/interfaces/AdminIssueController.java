@@ -51,7 +51,7 @@ public class AdminIssueController {
             @PathVariable Long threadId,
             @RequestBody PostMessageReq req,
             @AuthenticationPrincipal JwtUserDetails admin) {
-        PostMessageResp resp = issueService.postMessage(UserType.ADMIN, null, threadId, req);
+        PostMessageResp resp = issueService.postMessage(UserType.ADMIN, admin.getId(), threadId, req);
         return ResponseEntity.ok(resp);
     }
 

@@ -203,6 +203,7 @@ public class UserService {
      * @param username the usernme.
      * @param deviceId the device id.
      */
+    @Transactional
     public void revokeByUsernameAndDeviceId(String username, String deviceId) {
         refreshTokenRepo.deleteByUsernameAndDeviceId(username, deviceId);
     }

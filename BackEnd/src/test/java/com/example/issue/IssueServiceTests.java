@@ -84,7 +84,7 @@ class IssueServiceTests {
 
         when(threadRepo.findById(threadId)).thenReturn(Optional.of(thread));
 
-        issueThreadService.postMessage( UserType.ADMIN ,null, threadId, req);
+        issueThreadService.postMessage(UserType.ADMIN, null, threadId, req);
 
         ArgumentCaptor<IssueMessage> messageCaptor = ArgumentCaptor.forClass(IssueMessage.class);
         verify(messageRepo).save(messageCaptor.capture());

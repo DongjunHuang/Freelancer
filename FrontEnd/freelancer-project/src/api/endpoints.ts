@@ -30,6 +30,14 @@ export const API_ENDPOINTS = {
     resendEmail: '/auth/resendEmail',
     verifyEmail: (token: string) => `/auth/verify?token=${encodeURIComponent(token)}`,
   },
+  notification: {
+    getNotifications: (userType: UserType) => `${getPrefix(userType)}/notification/notifications`,
+    getUnreadCount: (userType: UserType) => `${getPrefix(userType)}/notification/unreadCount`,
+    markRead: (userType: UserType) => `${getPrefix(userType)}/notification/markRead`,
+    markAllRead: (userType: UserType) => `${getPrefix(userType)}/notification/markAllRead`,
+    getNotificationUnreadSummary: (userType: UserType) =>
+      `${getPrefix(userType)}/notification/unreadSummary`,
+  },
   upload: {
     fetchDatasets: '/dashboard/fetchDatasets',
     uploadCsv: '/upload/uploadCsv',

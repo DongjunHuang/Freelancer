@@ -30,7 +30,7 @@ public interface DatasetMetadataRepo extends MongoRepository<DatasetMetadata, St
     List<DatasetMetadata> findByUserId(Long userId);
 
     /**
-     * Find list of datasets according tot he statuses. This will be used mostly
+     * Find list of datasets according to the statuses. This will be used mostly
      * with the background thread to check
      * abnormal datasets periodically.
      * 

@@ -22,6 +22,8 @@ import AdminIssues from '@/views/admin/admin-issues.vue'
 import AppAdmin from '@/app-admin.vue'
 import AppUser from '@/app-user.vue'
 
+import UserNotification from '@/views/notification/notification-main.vue'
+
 import { useAuth } from '@/stores/auth'
 import { useAdminAuth } from '@/stores/auth-admin'
 import { http } from '@/api/http-user'
@@ -127,6 +129,11 @@ const router = createRouter({
         {
           path: 'issue/details/:id',
           component: IssueDetails,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'notification',
+          component: UserNotification,
           meta: { requiresAuth: true },
         },
       ],
