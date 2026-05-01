@@ -8,9 +8,9 @@ import java.util.List;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.example.common.dataset.domain.DatasetMetadata;
-import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
-import com.example.upload.domain.DatasetStatus;
+import com.example.dataset.domain.DatasetMetadata;
+import com.example.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.dataset.domain.DatasetStatus;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,7 @@ public class DatasetStatusMonitor {
 
     private void logStuck(DatasetStatus status, Instant cutoff) {
         List<DatasetMetadata> stuck = metadataRepo
-                .findByStatusInAndUpdatedAtBefore(List.of(status), cutoff);
+                .findByStatusInAndUpdatedAtBeforeAndObsoletedFalse(List.of(status), cutoff);
 
         for (DatasetMetadata ds : stuck) {
             log.warn("[DATASET-STUCK] status={}, userId={}, dataset={}, statusUpdatedAt={}",

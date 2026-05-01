@@ -337,7 +337,7 @@ function formatIssueType(issueType?: string) {
           No threads found.
         </div>
 
-        <div class="h-[calc(100vh-120px)] flex gap-6">
+        <div v-else class="h-[calc(100vh-120px)] flex gap-6">
           <!-- Left: thread list -->
           <div class="w-[420px] shrink-0 flex flex-col">
             <!-- Stats -->

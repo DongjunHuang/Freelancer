@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { UploadState, UploadStatePatch } from '@/composables/upload-composable'
 
 const props = defineProps<{ state: UploadState }>()
@@ -7,25 +7,40 @@ const emit = defineEmits<{
   (e: 'update:state', next: UploadStatePatch): void
 }>()
 const dateFormats = ['yyyy-MM-dd', 'yyyy/MM/dd', 'MM/dd/yyyy', 'dd/MM/yyyy']
+const timezones = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'Asia/Tokyo', label: 'Asia/Tokyo (GMT+9)' },
+  { value: 'Asia/Shanghai', label: 'Asia/Shanghai (GMT+8)' },
+  { value: 'America/New_York', label: 'America/New_York (GMT-5/-4)' },
+  { value: 'America/Los_Angeles', label: 'America/Los_Angeles (GMT-8/-7)' },
+  { value: 'Europe/London', label: 'Europe/London (GMT+0/+1)' },
+]
 
 const recordDateColumn = computed({
-  get: () => props.state.config.recordDateColumn,
+  get: () => props.state.config.recordTimeColumn,
   set: (value: string) => {
-    emit('update:state', { config: { recordDateColumn: value } })
+    emit('update:state', { config: { recordTimeColumn: value } })
   },
 })
 
 const recordDateFormat = computed({
-  get: () => props.state.config.recordDateFormat,
+  get: () => props.state.config.recordTimeFormat,
   set: (value: string) => {
-    emit('update:state', { config: { recordDateFormat: value } })
+    emit('update:state', { config: { recordTimeFormat: value } })
   },
 })
 
 const symbol = computed({
-  get: () => props.state.config.symbol,
+  get: () => props.state.config.recordPrimaryIndexedColumnName,
   set: (value: string) => {
-    emit('update:state', { config: { symbol: value } })
+    emit('update:state', { config: { recordPrimaryIndexedColumnName: value } })
+  },
+})
+
+const timezone = computed({
+  get: () => props.state.config.timezone,
+  set: (value: string) => {
+    emit('update:state', { config: { timezone: value } })
   },
 })
 </script>
@@ -67,6 +82,23 @@ const symbol = computed({
         </select>
         <p class="mt-1 text-[11px] text-slate-400">
           e.g. <code>yyyy-MM-dd</code>, <code>MM/dd/yyyy</code>
+        </p>
+      </div>
+      <!-- timezone -->
+
+      <div>
+        <span class="block text-xs font-medium text-slate-700"> Timezone </span>
+        <select
+          v-model="timezone"
+          class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-400 focus:bg-white"
+        >
+          <option v-for="tz in timezones" :key="tz.value" :value="tz.value">
+            {{ tz.label }}
+          </option>
+        </select>
+
+        <p class="mt-1 text-[11px] text-slate-400">
+          Used to convert date values into UTC timestamps.
         </p>
       </div>
 

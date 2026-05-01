@@ -1,3 +1,10 @@
 package com.example.auth.domain.user;
 
-public record RefreshResp(String accessToken) {}
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class RefreshResp{
+    private String accessToken;
+}

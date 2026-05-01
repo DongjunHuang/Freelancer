@@ -10,8 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
-import com.example.upload.domain.DatasetStatus;
+import com.example.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.dataset.domain.DatasetStatus;
 
 class DatasetStatusMonitorTests {
 
@@ -30,7 +30,7 @@ class DatasetStatusMonitorTests {
 
     @Test
     void monitorStuckDatasets_shouldQueryUploadingAndDeletingWithCorrectCutoffs() {
-        when(repo.findByStatusInAndUpdatedAtBefore(anyList(), any(Instant.class)))
+        when(repo.findByStatusInAndUpdatedAtBeforeAndObsoletedFalse(anyList(), any(Instant.class)))
                 .thenReturn(List.of());
 
         monitor.monitorStuckDatasets();
@@ -39,7 +39,7 @@ class DatasetStatusMonitorTests {
         ArgumentCaptor<List<DatasetStatus>> statusesCap = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<Instant> cutoffCap = ArgumentCaptor.forClass(Instant.class);
 
-        verify(repo, times(2)).findByStatusInAndUpdatedAtBefore(statusesCap.capture(), cutoffCap.capture());
+        verify(repo, times(2)).findByStatusInAndUpdatedAtBeforeAndObsoletedFalse(statusesCap.capture(), cutoffCap.capture());
 
         var statuses = statusesCap.getAllValues();
         var cutoffs = cutoffCap.getAllValues();

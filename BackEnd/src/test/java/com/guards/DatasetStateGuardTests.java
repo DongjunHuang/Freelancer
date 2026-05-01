@@ -10,13 +10,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.common.dataset.domain.DatasetMetadata;
-import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.dataset.domain.DatasetMetadata;
+import com.example.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.exception.types.DatasetStatusException;
 import com.example.exception.ErrorCode;
 import com.example.guards.DatasetAction;
 import com.example.guards.DatasetStateGuard;
-import com.example.upload.domain.DatasetStatus;
+import com.example.dataset.domain.DatasetStatus;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -35,26 +35,26 @@ public class DatasetStateGuardTests {
     @Test
     void shouldBeAllowedWhenActive() {
         Long userId = 1L;
-        String datasetName = "test-dataset";
-        DatasetMetadata ds = DatasetMetadata.builder().userId(userId).datasetName(datasetName)
+        String datasetId = "test-datasetId";
+        DatasetMetadata ds = DatasetMetadata.builder().userId(userId).datasetName(datasetId)
                 .status(DatasetStatus.ACTIVE)
                 .build();
-        when(repo.findByUserIdAndDatasetName(userId, datasetName)).thenReturn(Optional.of(ds));
-        DatasetMetadata ds2 = guard.loadAndCheck(userId, datasetName, DatasetAction.QUERY);
+        when(repo.findByUserIdAndId(userId, datasetId)).thenReturn(Optional.of(ds));
+        DatasetMetadata ds2 = guard.loadAndCheck(userId, datasetId, DatasetAction.QUERY);
         assertThat(ds2.getUserId()).isEqualTo(userId);
-        assertThat(ds2.getDatasetName()).isEqualTo(datasetName);
+        assertThat(ds2.getDatasetName()).isEqualTo(datasetId);
 
     }
 
     @Test
     void shouldRejectWhenDeleting() {
         Long userId = 1L;
-        String datasetName = "test-dataset";
-        DatasetMetadata ds = DatasetMetadata.builder().userId(userId).datasetName(datasetName)
+        String datasetId = "test-datasetId";
+        DatasetMetadata ds = DatasetMetadata.builder().userId(userId).id(datasetId)
                 .status(DatasetStatus.DELETING)
                 .build();
-        when(repo.findByUserIdAndDatasetName(userId, datasetName)).thenReturn(Optional.of(ds));
-        assertThatThrownBy(() -> guard.loadAndCheck(userId, datasetName, DatasetAction.QUERY))
+        when(repo.findByUserIdAndId(userId, datasetId)).thenReturn(Optional.of(ds));
+        assertThatThrownBy(() -> guard.loadAndCheck(userId, datasetId, DatasetAction.QUERY))
                 .isInstanceOf(DatasetStatusException.class)
                 .hasMessageContaining(ErrorCode.DATASET_NOT_AVAILABLE.getMessage());
     }

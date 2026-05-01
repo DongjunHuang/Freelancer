@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Dataset } from '@/types/user'
-import type { DashboardFilters } from '@/composables/dashboard-state'
+import type { Dataset } from '@/types/dataset'
+import type { DashboardFilters } from '@/composables/dashboard-composable'
 
 const props = defineProps<{
   filters: DashboardFilters
@@ -10,12 +10,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'update:filters': [DashboardFilters] }>()
 
-const selectedDatasetName = computed({
-  get: () => props.filters.selectedDatasetName,
-  set: (value: string) => {
+const selectedDatasetId = computed({
+  get: () => props.filters.selectedDatasetId,
+  set: (value: number | null) => {
+    const dataset = props.datasets.find((ds) => ds.datasetId === value)
     emit('update:filters', {
       ...props.filters,
-      selectedDatasetName: value,
+      selectedDatasetId: value,
+      selectedDatasetName: dataset?.datasetName ?? '',
       selectedColumns: [],
     })
   },
@@ -24,7 +26,7 @@ const selectedDatasetName = computed({
 const datasetOptions = computed(() =>
   props.datasets.map((ds) => ({
     label: `${ds.datasetName} (${ds.rowCount} rows)`,
-    value: ds.datasetName,
+    value: ds.datasetId,
   })),
 )
 </script>
@@ -33,14 +35,14 @@ const datasetOptions = computed(() =>
   <div class="rounded-2xl bg-white p-5 shadow-sm">
     <div class="mb-3 flex items-center justify-between">
       <div>
-        <h2 class="text-base font-semibold text-slate-900">Select (Dataset)</h2>
+        <h2 class="text-base font-semibold text-slate-900">Select Dataset</h2>
       </div>
     </div>
 
     <div class="mt-2">
       <label class="text-xs font-medium text-slate-700">Dataset</label>
       <n-select
-        v-model:value="selectedDatasetName"
+        v-model:value="selectedDatasetId"
         :options="datasetOptions"
         placeholder="Select"
         filterable

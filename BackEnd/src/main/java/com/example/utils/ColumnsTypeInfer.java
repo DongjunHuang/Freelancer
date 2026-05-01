@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import com.example.upload.domain.ColumnType;
+import com.example.dataset.domain.ColumnType;
 
 /**
  * The utility class to infer the type of the columns.
@@ -115,7 +115,7 @@ public class ColumnsTypeInfer {
      * @return whether the column is metric.
      */
     public static boolean isMetricColumn(String header, ColumnType type) {
-        // If the type if not number, then should not be metric
+        // If the type is not number, then should not be metric
         if (type != ColumnType.NUMBER || header == null) {
             return false;
         }

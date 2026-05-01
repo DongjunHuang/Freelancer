@@ -2,6 +2,7 @@ package com.example.notification.interfaces;
 
 import com.example.notification.app.NotificationService;
 import com.example.notification.domain.*;
+import com.example.notification.domain.dto.*;
 import com.example.security.JwtUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,7 +28,6 @@ public class NotificationController {
         );
     }
 
-    // ===============================================================================================
     @PostMapping("/markRead")
     public void markRead(
             @RequestBody NotificationsMarkReadReq req,
@@ -41,14 +41,14 @@ public class NotificationController {
     }
 
     @GetMapping("/unreadCount")
-    public NotificationUnreadCountResponse getUnreadCount(
+    public NotificationUnreadCountResp getUnreadCount(
             @AuthenticationPrincipal JwtUserDetails principal
     ) {
         long unreadCount = notificationService.getUnreadCount(
                 NotificationRecipientType.USER,
                 principal.getId()
         );
-        return new NotificationUnreadCountResponse(unreadCount);
+        return new NotificationUnreadCountResp(unreadCount);
     }
 
     @PostMapping("/markAllRead")

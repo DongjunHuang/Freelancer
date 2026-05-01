@@ -1,7 +1,6 @@
 import { UserType } from '@/types/user'
 import http from '@/api/http-user'
 import httpa from '@/api/http-admin'
-import { markThreadAsRead } from './issue'
 
 /**
  * Get corresponding http client for user/admin.
@@ -38,15 +37,10 @@ export const API_ENDPOINTS = {
     getNotificationUnreadSummary: (userType: UserType) =>
       `${getPrefix(userType)}/notification/unreadSummary`,
   },
-  upload: {
-    fetchDatasets: '/dashboard/fetchDatasets',
-    uploadCsv: '/upload/uploadCsv',
-    deleteDataset: (datasetName: string) => `/upload/dataset/${datasetName}`,
-  },
-  dashboard: {
-    fetchDatasets: '/dashboard/fetchDatasets',
-    fetchDatapoints: (datasetName: string) =>
-      `/dashboard/datasets/${encodeURIComponent(datasetName)}/datapoints/query`,
+  dataset: {
+    getUserDatasets: '/datasets/getUserDatasets',
+    queryRecords: (datasetId: string) => `/datasets/${datasetId}/records/query`,
+    createDataset: '/datasets/import/createDataset',
   },
   issue: {
     createThread: '/issues/createThread',

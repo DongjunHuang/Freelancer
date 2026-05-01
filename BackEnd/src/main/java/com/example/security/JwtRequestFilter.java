@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -60,7 +61,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     ud.getAuthorities());
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
 
-            var context = SecurityContextHolder.createEmptyContext();
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(auth);
             SecurityContextHolder.setContext(context);
         }

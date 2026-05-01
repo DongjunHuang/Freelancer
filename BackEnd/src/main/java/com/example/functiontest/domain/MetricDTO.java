@@ -1,9 +1,17 @@
 package com.example.functiontest.domain;
 
+import lombok.Builder;
+import lombok.Data;
+
 import java.time.Instant;
 
-public record MetricDTO(Instant ts, Double value) {
-  public static MetricDTO from(Metric m) {
-    return new MetricDTO(m.getTs(), m.getValue());
-  }
+@Data
+@Builder
+public class MetricDTO {
+    private Instant ts;
+    private Double value;
+
+    public static MetricDTO from(Metric metric) {
+        return MetricDTO.builder().ts(metric.getTs()).value(metric.getValue()).build();
+    }
 }

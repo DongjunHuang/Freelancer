@@ -14,10 +14,11 @@ export interface UploadState {
   config: {
     delimiter: string
     hasHeader: boolean
-    recordDateColumn: string
-    recordDateFormat: string
-    symbol: string
+    recordTimeColumn: string
+    recordTimeFormat: string
+    recordPrimaryIndexedColumnName: string
     headers: string[]
+    timezone: string
   }
 }
 
@@ -34,10 +35,11 @@ export function createInitialUploadState(): UploadState {
     config: {
       delimiter: ',', // The separator of CSV file
       hasHeader: true, // The first row is header
-      recordDateColumn: '', // User select
-      recordDateFormat: '', // User select
-      symbol: '', // User select
+      recordTimeColumn: '', // User select
+      recordTimeFormat: '', // User select
+      recordPrimaryIndexedColumnName: '', // User select
       headers: [], // Headers
+      timezone: '', // timezone
     },
   }
 }

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { computed, ref, onMounted, watch } from 'vue'
-import { fetchDatasets, fetchDatapoints } from '@/api/dashboard'
-import { useDashboardState } from '@/composables/dashboard-state'
+import { getUserDatasets, queryRecords } from '@/api/dataset'
+import { useDashboardState } from '@/composables/dashboard-composable'
+import type { ColumnMeta, QueryRecordsResp, Datapoint } from '@/types/dataset'
+import type { ChartData } from '@/composables/dashboard-composable'
 
 // Imports components
 import SelectDatasetsPane from '@/components/dashboard/select-datasets-pane.vue'
@@ -11,16 +13,13 @@ import SingleMetricChart from '@/components/dashboard/single-metric-chart.vue'
 import DisplayDetailsPane from '@/components/dashboard/display-details-pane.vue'
 import RightSidePane from '@/components/dashboard/right-side-pane.vue'
 
-// Import types
-import type { ColumnMeta, FetchRecordsResp, DataPoint, ChartData } from '@/types/user'
-
 const { filters, datasets } = useDashboardState()
 const error = ref('')
 const loading = ref(false)
-const resp = ref<FetchRecordsResp | null>(null)
+const resp = ref<QueryRecordsResp | null>(null)
 
 const selectedDataset = computed(
-  () => datasets.value.find((d) => d.datasetName === filters.selectedDatasetName) || null,
+  () => datasets.value.find((d) => d.datasetId === filters.selectedDatasetId) || null,
 )
 const uiState = computed(() => {
   if (loading.value) return 'loading'
@@ -33,18 +32,18 @@ onMounted(loadData)
 
 const selectedKeysByCol = ref<Record<string, string[]>>({})
 
-function buildLabelsForColumn(points: DataPoint[], col: string): string[] {
+function buildLabelsForColumn(points: Datapoint[], col: string): string[] {
   const set = new Set<string>()
 
   for (const p of points) {
     if (p.column === col) {
-      set.add(p.recordDate)
+      set.add(p.recordedTime)
     }
   }
   return Array.from(set).sort((a, b) => +new Date(a) - +new Date(b))
 }
 
-function buildSymbolsForColumn(points: DataPoint[], col: string): string[] {
+function buildSymbolsForColumn(points: Datapoint[], col: string): string[] {
   const set = new Set<string>()
   for (const p of points) {
     if (p.column === col) {
@@ -54,7 +53,7 @@ function buildSymbolsForColumn(points: DataPoint[], col: string): string[] {
   return Array.from(set).sort()
 }
 
-function buildSeriesMapForColumn(points: DataPoint[], col: string, labels: string[]) {
+function buildSeriesMapForColumn(points: Datapoint[], col: string, labels: string[]) {
   const bySym = new Map<string, Map<string, number | null>>()
 
   for (const p of points) {
@@ -64,7 +63,7 @@ function buildSeriesMapForColumn(points: DataPoint[], col: string, labels: strin
     if (!bySym.has(p.symbol)) {
       bySym.set(p.symbol, new Map())
     }
-    bySym.get(p.symbol)!.set(p.recordDate, p.value ?? null)
+    bySym.get(p.symbol)!.set(p.recordedTime, p.value ?? null)
   }
 
   const out: Record<string, Array<number>> = {}
@@ -77,7 +76,7 @@ function buildSeriesMapForColumn(points: DataPoint[], col: string, labels: strin
 const chartsByCol = computed<Record<string, ChartData>>(() => {
   if (!resp.value) return {}
 
-  const points = resp.value.datapoints
+  const points = resp.value.records
   const out: Record<string, ChartData> = {}
 
   for (const col of resp.value.columns) {
@@ -112,8 +111,9 @@ const availableMetricColumns = computed<ColumnMeta[]>(() => {
 async function loadData() {
   try {
     loading.value = true
-    const res = await fetchDatasets()
-    datasets.value = res.data
+    const res = await getUserDatasets()
+    datasets.value = res.data.datasets
+    console.log(datasets.value)
   } catch (e) {
     console.error(e)
     error.value = 'Failed to load data'
@@ -135,15 +135,17 @@ async function generate() {
   try {
     loading.value = true
     error.value = ''
+    if (filters.selectedDatasetId) {
+      const res = await queryRecords(filters.selectedDatasetId, {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        columns: filters.selectedColumns,
+        symbols: filters.symbols,
+      })
 
-    const res = await fetchDatapoints(filters.selectedDatasetName, {
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-      columns: filters.selectedColumns,
-      symbols: filters.symbols,
-    })
-
-    resp.value = res.data
+      resp.value = res.data
+      console.log('12345' + resp.value.records)
+    }
   } catch (e: unknown) {
     if (axios.isAxiosError(e)) {
       error.value = e.response?.data?.message || 'Failed to load'
@@ -191,7 +193,7 @@ const canLoad = computed(
           <div class="flex items-center justify-between">
             <h2 class="text-base font-semibold text-slate-900">Data diagram</h2>
             <span class="text-[11px] text-slate-400">
-              {{ resp ? Object.values(resp.datapoints ?? {}).flat().length : 0 }} records
+              {{ resp ? Object.values(resp.records ?? {}).flat().length : 0 }} records
             </span>
           </div>
 

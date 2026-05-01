@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue'
 
 // Import types
 import type { UploadState, UploadStatePatch } from '@/composables/upload-composable'
-import type { Dataset } from '@/types/user'
+import type { Dataset } from '@/types/dataset'
 
 // Consts
 const props = defineProps<{ state: UploadState; datasets: Dataset[] }>()

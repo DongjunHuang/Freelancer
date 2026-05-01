@@ -2,8 +2,8 @@ package com.example.guards;
 
 import org.springframework.stereotype.Component;
 
-import com.example.common.dataset.domain.DatasetMetadata;
-import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.dataset.domain.DatasetMetadata;
+import com.example.dataset.infra.mongo.DatasetMetadataRepo;
 import com.example.exception.ErrorCode;
 import com.example.exception.types.NotFoundException;
 
@@ -23,15 +23,13 @@ public class DatasetStateGuard {
 
     public DatasetMetadata loadAndCheck(
             Long userId,
-            String datasetName,
+            String datasetId,
             DatasetAction action) {
 
         DatasetMetadata ds = metadataRepo
-                .findByUserIdAndDatasetName(userId, datasetName)
+                .findByUserIdAndId(userId, datasetId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.DATASET_NOT_FOUND));
-
         DatasetRules.assertAllowed(action, ds.getStatus());
-
         return ds;
     }
 

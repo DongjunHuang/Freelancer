@@ -2,9 +2,8 @@
 import { ref } from 'vue'
 import { DashboardEvents } from '@/constants/events'
 import { DATE_PRESETS, timePresets } from '@/constants/date-presets'
-
-import type { DashboardFilters } from '@/composables/dashboard-state'
-import type { ColumnMeta } from '@/types/user'
+import type { DashboardFilters } from '@/composables/dashboard-composable'
+import type { ColumnMeta } from '@/types/dataset'
 
 // Only read
 const props = defineProps<{ filters: DashboardFilters; metricColumns: ColumnMeta[] }>()

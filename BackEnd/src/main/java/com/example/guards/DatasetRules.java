@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.example.exception.types.DatasetStatusException;
 import com.example.exception.ErrorCode;
-import com.example.upload.domain.DatasetStatus;
+import com.example.dataset.domain.DatasetStatus;
 
 public final class DatasetRules {
     // The allows actions->status

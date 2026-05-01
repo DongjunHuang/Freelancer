@@ -37,7 +37,7 @@ public class VerificationMailListener {
 
     /**
      * Listner the finish of the transanction.
-     * 
+     *
      * @param event the event to be listened.
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -48,7 +48,7 @@ public class VerificationMailListener {
 
     /**
      * The action to send email to targeted email address.
-     * 
+     *
      * @param email the target email address.
      * @param token the token to be clicked for verification.
      */
@@ -60,10 +60,10 @@ public class VerificationMailListener {
         msg.setSubject("Verify your email");
         msg.setText("""
                 Welcome to Data Report Freelancer!
-
+                
                 Please verify your email by clicking the link below (valid for 2 hours):
                 %s
-
+                
                 If you did not sign up, please ignore this email.
                 """.formatted(link));
         mail.send(msg);

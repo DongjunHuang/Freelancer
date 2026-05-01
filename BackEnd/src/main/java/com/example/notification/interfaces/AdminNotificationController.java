@@ -1,10 +1,10 @@
 package com.example.notification.interfaces;
 
 import com.example.notification.app.NotificationService;
-import com.example.notification.domain.NotificationListResp;
+import com.example.notification.domain.dto.NotificationListResp;
 import com.example.notification.domain.NotificationRecipientType;
-import com.example.notification.domain.NotificationUnreadSummaryResp;
-import com.example.notification.domain.NotificationsMarkReadReq;
+import com.example.notification.domain.dto.NotificationUnreadSummaryResp;
+import com.example.notification.domain.dto.NotificationsMarkReadReq;
 import com.example.security.JwtUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

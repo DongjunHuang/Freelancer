@@ -1,6 +1,9 @@
 package com.example.notification.app;
 
 import com.example.notification.domain.*;
+import com.example.notification.domain.dto.NotificationCategorySummaryDto;
+import com.example.notification.domain.dto.NotificationListResp;
+import com.example.notification.domain.dto.NotificationUnreadSummaryResp;
 import com.example.notification.infra.jpa.NotificationCategoryCountProjection;
 import com.example.notification.infra.jpa.NotificationRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;

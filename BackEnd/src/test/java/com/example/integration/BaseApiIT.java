@@ -2,8 +2,8 @@ package com.example.integration;
 
 import com.example.auth.infra.jpa.MailTokenRepo;
 import com.example.auth.infra.jpa.UserRepo;
-import com.example.common.dataset.infra.mongo.DatasetMetadataRepo;
-import com.example.common.dataset.infra.mongo.DatasetRecordRepo;
+import com.example.dataset.infra.mongo.DatasetMetadataRepo;
+import com.example.dataset.infra.mongo.DatasetRecordRepo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;

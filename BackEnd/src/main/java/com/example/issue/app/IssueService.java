@@ -143,7 +143,7 @@ public class IssueService {
             throw new NotFoundException(ErrorCode.NOT_FOUND);
         }
 
-        var items = rows.stream()
+        List<ThreadItem> items = rows.stream()
                 .map(ThreadItem::from)
                 .toList();
 
@@ -151,7 +151,7 @@ public class IssueService {
         boolean hasMore = rows.size() == size;
 
         if (hasMore) {
-            var last = rows.get(rows.size() - 1);
+            IssueThread last = rows.get(rows.size() - 1);
             nextCursor = Cursor.encode(objectMapper,
                     new Cursor(last.getLastMessageAt(), last.getId()));
         }
@@ -248,7 +248,8 @@ public class IssueService {
 
         List<MessageItem> items = rows.stream()
                 .map(MessageItem::from)
-                .toList().reversed();
+                .toList()
+                .reversed();
 
         String nextCursor = null;
         if (hasMore && !rows.isEmpty()) {

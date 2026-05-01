@@ -22,10 +22,10 @@ import lombok.AccessLevel;
 
 @Entity
 @Table(name = "refresh_tokens", indexes = {
-                @Index(name = "idx_token", columnList = "token"),
-                @Index(name = "idx_user", columnList = "user_id")
+        @Index(name = "idx_token", columnList = "token"),
+        @Index(name = "idx_user", columnList = "user_id")
 }, uniqueConstraints = {
-                @UniqueConstraint(name = "uk_user_device", columnNames = { "user_id", "device_id" })
+        @UniqueConstraint(name = "uk_user_device", columnNames = {"user_id", "device_id"})
 })
 @Data
 @Getter
@@ -34,30 +34,32 @@ import lombok.AccessLevel;
 @AllArgsConstructor
 @Builder
 public class RefreshToken {
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-        @Column(nullable = false, length = 255)
-        private String username;
+    @Column(nullable = false, length = 255)
+    private String username;
 
-        @Column(nullable = false, length = 255)
-        private String token;
+    @Column(nullable = false, length = 255)
+    private String token;
 
-        @Column(name = "device_id", nullable = false, length = 128)
-        private String deviceId;
+    @Column(name = "device_id", nullable = false, length = 128)
+    private String deviceId;
 
-        @Column(name = "ip_address", length = 45)
-        private String ipAddress;
+    @Column(name = "ip_address", length = 45)
+    private String ipAddress;
 
-        /** created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP */
-        @CreationTimestamp
-        @Column(name = "created_at", nullable = false, updatable = false)
-        private LocalDateTime createdAt;
+    /**
+     * created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+     */
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-        @Column(name = "expires_at", nullable = false)
-        private LocalDateTime expiresAt;
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 
-        @Column(nullable = false)
-        private boolean revoked;
+    @Column(nullable = false)
+    private boolean revoked;
 }

@@ -6,6 +6,7 @@ import java.sql.Connection;
 
 import javax.sql.DataSource;
 
+import com.example.async.importdataset.DatasetCsvImportService;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,12 +90,12 @@ public class VerifyBaseApiIT extends BaseApiIT {
     @Test
     void flywayAndJdbcUseSameDatabase() throws Exception {
         String url1;
-        try (var c = dataSource.getConnection()) {
+        try (Connection c = dataSource.getConnection()) {
             url1 = c.getMetaData().getURL();
         }
 
         String url2;
-        try (var c = flyway.getConfiguration().getDataSource().getConnection()) {
+        try (Connection c = flyway.getConfiguration().getDataSource().getConnection()) {
             url2 = c.getMetaData().getURL();
         }
 

@@ -9,11 +9,12 @@ import DatasetSelectionPane from '@/components/upload/dataset-selection-pane.vue
 
 // Import Types
 import type { UploadState, UploadStatePatch } from '@/composables/upload-composable'
-import type { DatasetReq, Dataset } from '@/types/user'
 
 // Import functions
 import { createInitialUploadState } from '@/composables/upload-composable'
-import { uploadCsv, fetchDatasets, deleteDataset } from '@/api/upload'
+import { createDataset } from '@/api/dataset'
+import { Dataset, CreateDatasetReq } from '@/types/dataset'
+import { getUserDatasets } from '@/api/dataset'
 import { useMessage } from 'naive-ui'
 
 // Consts: global params
@@ -40,15 +41,10 @@ const dashOffset = computed(() => circumference * (1 - progress.value / 100))
 
 const canUpload = computed(() => {
   const { dataset, file, error } = uploadState
-
   const hasFile = !!file
-
   const usingExistingOk = !dataset.isNew && !!dataset.selectedName
-
   const creatingNewOk = dataset.isNew && dataset.newName.trim().length > 0
-
   const datasetOk = usingExistingOk || creatingNewOk
-
   return hasFile && datasetOk && !error
 })
 
@@ -77,20 +73,18 @@ async function startUpload() {
     return
   }
 
-  const datasetReq: DatasetReq = {
-    datasetName: uploadState.dataset.isNew
-      ? uploadState.dataset.newName
-      : uploadState.dataset.selectedName,
-    recordDateColumnName: uploadState.config.recordDateColumn,
-    recordDateColumnFormat: uploadState.config.recordDateFormat,
-    recordSymbolColumnName: uploadState.config.symbol,
-    newDataset: uploadState.dataset.isNew,
+  const datasetReq: CreateDatasetReq = {
+    datasetName: uploadState.dataset.newName,
+    recordTimeColumnName: uploadState.config.recordTimeColumn,
+    recordTimeColumnFormat: uploadState.config.recordTimeFormat,
+    recordPrimaryIndexedColumnName: uploadState.config.recordPrimaryIndexedColumnName,
+    timezone: uploadState.config.timezone,
   }
 
   console.log(datasetReq)
 
   try {
-    await uploadCsv(uploadState.file, datasetReq, {
+    await createDataset(uploadState.file, datasetReq, {
       onProgress: (pct) => {
         progress.value = pct
       },
@@ -118,13 +112,13 @@ function cancelUpload() {
 async function loadDatasets() {
   try {
     loading.value = true
-    const resp = await fetchDatasets()
+    const resp = await getUserDatasets()
 
     // Assign the datasets locally
-    datasets.value = resp.data
+    datasets.value = resp.data.datasets
 
     // The default is the first of the datasets
-    if (datasets.value.length > 0) {
+    if (datasets.value.length > 0 && datasets.value[0].datasetName) {
       uploadState.dataset.selectedName = datasets.value[0].datasetName
     }
   } catch (e) {
@@ -144,6 +138,7 @@ onMounted(async () => {
   await loadDatasets()
 })
 
+/*
 async function handleDeleteDataset(name: string) {
   try {
     await deleteDataset(name)
@@ -158,7 +153,7 @@ async function handleDeleteDataset(name: string) {
     console.error(err)
     message.error(`Failed to delete dataset "${name}"`)
   }
-}
+}*/
 
 function updateState(next: UploadStatePatch) {
   if (next.dataset) {
@@ -202,7 +197,7 @@ function onGlobalClick(e: MouseEvent) {
         :state="uploadState"
         :datasets="datasets"
         @update:state="updateState"
-        @delete-dataset="handleDeleteDataset"
+        @delete-dataset=""
         @load-datasets="loadDatasets"
       />
     </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DashboardFilters } from '@/composables/dashboard-state'
+import type { DashboardFilters } from '@/composables/dashboard-composable'
 
 const props = defineProps<{
   filters: DashboardFilters

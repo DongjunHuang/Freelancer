@@ -257,7 +257,7 @@ public class UserService {
                 .maxAge(Duration.ofDays(400))
                 .build();
 
-        var accessToken = jwtService.generateAccessToken(username, email);
+        String accessToken = jwtService.generateAccessToken(username, email);
         SigninResp resp = SigninResp.builder()
                 .accessToken(accessToken)
                 .user(
@@ -300,6 +300,6 @@ public class UserService {
                 info.getEmail()
         );
 
-        return new RefreshResp(newAccessToken);
+        return RefreshResp.builder().accessToken(newAccessToken).build();
     }
 }

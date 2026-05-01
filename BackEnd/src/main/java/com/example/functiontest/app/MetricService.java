@@ -43,7 +43,10 @@ public class MetricService {
         m.setValue(req.getValue());
 
         Metric saved = metricRepository.save(m);
-        return MetricDTO.from(saved);
+        return MetricDTO.builder()
+                .ts(saved.getTs())
+                .value(saved.getValue())
+                .build();
     }
 
     @Transactional(readOnly = true)
