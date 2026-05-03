@@ -12,7 +12,7 @@ const emit = defineEmits<{ 'update:filters': [DashboardFilters] }>()
 
 const selectedDatasetId = computed({
   get: () => props.filters.selectedDatasetId,
-  set: (value: number | null) => {
+  set: (value: string | null) => {
     const dataset = props.datasets.find((ds) => ds.datasetId === value)
     emit('update:filters', {
       ...props.filters,
