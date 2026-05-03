@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import * as tests from '@/api/tests'
-import * as dashboard from '@/api/dashboard'
 
 const loading = ref(false)
 const toast = ref('')
