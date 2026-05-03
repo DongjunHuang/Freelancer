@@ -158,6 +158,10 @@ deploy_to_k8s:
         --from-literal=TEST_MAIL_TO="$TEST_MAIL_TO" \
         --from-literal=FRONTEND_BASE_URL="$FRONTEND_BASE_URL" \
         --from-literal=SENDING_EMAIL="$SENDING_EMAIL" \
+        --from-literal=AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+        --from-literal=AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+        --from-literal=AWS_S3_REGION="$AWS_S3_REGION" \
+        --from-literal=AWS_S3_BUCKET="$AWS_S3_BUCKET" \
         --dry-run=client -o yaml | kubectl -n "$NS" apply -f -
 
     # 10) Apply manifest
