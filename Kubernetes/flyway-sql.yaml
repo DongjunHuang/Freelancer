@@ -217,6 +217,6 @@ data:
 
     CREATE INDEX idx_dataset_import_job_created_at
       ON dataset_import_job (created_at ASC);
-  
-  V9__create_async_job_table.sql: |
+
+  V10__alter_table_dataset_import_job_modify_worker_id_size.sql: |
     ALTER TABLE dataset_import_job MODIFY COLUMN worker_id VARCHAR(255) NULL;
